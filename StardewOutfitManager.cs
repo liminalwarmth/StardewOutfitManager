@@ -22,7 +22,7 @@ namespace StardewOutfitManager
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
-            /// Menu change event
+            // Menu change event
             helper.Events.Display.MenuChanged += this.OnMenuChanged;
         }
 
@@ -57,15 +57,15 @@ namespace StardewOutfitManager
             internal const string FIRST_OPTION_BUTTON = "FirstOption";
             internal const string SECOND_OPTION_BUTTON = "SecondOption";
             internal const string THIRD_OPTION_BUTTON = "ThirdOption";
-            internal const string SLEEVES_OPTION_BUTTON = "SleevesOption";
-            internal const string SHOES_OPTION_BUTTON = "ShoesOption";
 
+            // Item Display Name Labels
             private ClickableComponent descriptionLabel;
             private ClickableComponent hatLabel;
             private ClickableComponent shirtLabel;
             private ClickableComponent pantsLabel;
             private ClickableComponent shoesLabel;
 
+            // Basic UI Button Groups
             public List<ClickableComponent> labels = new List<ClickableComponent>();
             public List<ClickableComponent> itemLabels = new List<ClickableComponent>();
             public List<ClickableComponent> leftSelectionButtons = new List<ClickableComponent>();
@@ -73,84 +73,157 @@ namespace StardewOutfitManager
             public List<ClickableComponent> optionButtons = new List<ClickableComponent>();
             public List<ClickableComponent> featureButtons = new List<ClickableComponent>();
 
+            // Additional Buttons
             public ClickableTextureComponent okButton;
-            public ShopMenu Dresser;
-            public StorageFurniture menuSource;
+
+            // Menu, Inventory Lists, List Indexes
+            public ShopMenu dresserMenu;
+            public StorageFurniture dresserObject;
             public List<ISalable> hatStock = new List<ISalable>();
             public List<Clothing> shirtStock = new List<Clothing>();
             public List<Clothing> pantsStock = new List<Clothing>();
             public List<ISalable> shoesStock = new List<ISalable>();
             public List<ISalable> ringsStock = new List<ISalable>();
-            private int hatIndex = -1;
-            private int shirtIndex = -1;
-            private int pantsIndex = -1;
-            private int shoesIndex = -1;
-            private int priorItemIndex = -1;
+            public int hatIndex = -1;
+            public int shirtIndex = -1;
+            public int pantsIndex = -1;
+            public int shoesIndex = -1;
+            public int priorItemIndex = -1;
 
-            // Index Manager (Cycles through available clothes, -1 is nothing equipped)
-            private static int IndexChange(int index, int listSize, int change)
+            // Index Manager (Cycles through available clothing stock list indices, -1 is nothing equipped)
+            private void IndexChange(ref int itemIndex, ref List<ISalable> stockList, int change, ISalable addToDresser, ISalable removeFromDresser)
             {
+                priorItemIndex = itemIndex;
+                int listSize = stockList.Count;
                 if (listSize > 0)
                 {
-                    index += change;
-                    if (index >= listSize) return -1;
-                    else if (index < -1) return listSize - 1;
-                    else return index;
+                    itemIndex += change;
+                    if (itemIndex >= listSize) itemIndex = -1;
+                    else if (itemIndex < -1) itemIndex = listSize - 1;
                 }
                 else
                 {
-                    return -1;
+                    itemIndex = -1;
+                }
+                if (itemIndex == -1)
+                {
+                    // Case: Moving to or staying on no item equipped, possible prior item
+                    removeFromDresser = null;
+                    // Case: Moving from equipped item to no item equipped
+                    if (priorItemIndex != itemIndex)
+                    {
+                        addToDresser = stockList[priorItemIndex];
+                    }
+                }
+                else
+                {
+                    // Case: Moving from no item equipped to an item equipped
+                    if (priorItemIndex == -1)
+                    {
+                        removeFromDresser = stockList[itemIndex];
+                        addToDresser = null;
+                    }
+                    // Case: Moving from an equipped item to another equipped item
+                    else
+                    {
+                        removeFromDresser = stockList[itemIndex];
+                        addToDresser = stockList[priorItemIndex];
+                    }
                 }
             }
 
-            // Inventory Manager (Keeps dresser items and equipped items in proper sync when changing)
-            private void InventorySwap(ISalable removeThing, ISalable addThing, ShopMenu Dresser, string itemCategory)
+            // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
+            private void ClothingSwap(ShopMenu dresserMenu, string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
             {
-                if (addThing != null)
+                ISalable removeFromDresser = null;
+                ISalable addToDresser = null;
+
+                // Move to next or prior clothing item and update current and prior item indexes for reference
+                priorItemIndex = itemIndex;
+                int listSize = stockList.Count;
+                if (listSize > 0)
                 {
-                    if (addThing is Item)
+                    itemIndex += change;
+                    if (itemIndex >= listSize) itemIndex = -1;
+                    else if (itemIndex < -1) itemIndex = listSize - 1;
+                }
+                else
+                {
+                    itemIndex = -1;
+                }
+                // Calculate clothing items to be swapped between dresser and player, if any
+                if (itemIndex == -1)
+                {
+                    // Case: Moving to or staying on no item equipped, possible prior item
+                    removeFromDresser = null;
+                    // Case: Moving from equipped item to no item equipped
+                    if (priorItemIndex != itemIndex)
                     {
-                        menuSource.heldItems.Add(addThing as Item);
-                        if (Dresser != null && Dresser is ShopMenu)
+                        addToDresser = stockList[priorItemIndex];
+                    }
+                }
+                else
+                {
+                    // Case: Moving from no item equipped to an item equipped
+                    if (priorItemIndex == -1)
+                    {
+                        removeFromDresser = stockList[itemIndex];
+                        addToDresser = null;
+                    }
+                    // Case: Moving from an equipped item to another equipped item
+                    else
+                    {
+                        removeFromDresser = stockList[itemIndex];
+                        addToDresser = stockList[priorItemIndex];
+                    }
+                }
+                
+                // Swap dresser inventory and player equipped items
+                if (addToDresser != null)
+                {
+                    if (addToDresser is Item)
+                    {
+                        dresserObject.heldItems.Add(addToDresser as Item);
+                        if (dresserMenu != null && dresserMenu is ShopMenu)
                         {
                             Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
-                            List<Item> list = menuSource.heldItems.ToList();
-                            list.Sort(menuSource.SortItems);
+                            List<Item> list = dresserObject.heldItems.ToList();
+                            list.Sort(dresserObject.SortItems);
                             foreach (Item item in list)
                             {
                                 contents[item] = new int[2] { 0, 1 };
                             }
-                            (Dresser as ShopMenu).setItemPriceAndStock(contents);
+                            (dresserMenu as ShopMenu).setItemPriceAndStock(contents);
                         }
                     }
                 }
                 // If an item is being taken from the dresser, we need to equip it on the player
-                if (removeThing != null)
+                if (removeFromDresser != null)
                 {
                     // Remove from dresser storage
-                    menuSource.heldItems.Remove(removeThing as Item);
-                    Dresser.forSale.Remove(removeThing);
-                    Dresser.itemPriceAndStock.Remove(removeThing);
+                    dresserObject.heldItems.Remove(removeFromDresser as Item);
+                    dresserMenu.forSale.Remove(removeFromDresser);
+                    dresserMenu.itemPriceAndStock.Remove(removeFromDresser);
                     // Equip on player
-                    Item equipThing = removeThing as Item;
+                    Item equipThing = removeFromDresser as Item;
                     if (equipThing.Category == -95)
                     {
-                        _displayFarmer.hat.Set(hatStock[hatIndex] as StardewValley.Objects.Hat);
+                        _displayFarmer.hat.Set(equipThing as StardewValley.Objects.Hat);
                         hatLabel.name = _displayFarmer.hat.Value.DisplayName;
                     }
                     else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 0)
                     {
-                        _displayFarmer.shirtItem.Set(shirtStock[shirtIndex] as StardewValley.Objects.Clothing);
+                        _displayFarmer.shirtItem.Set(equipThing as StardewValley.Objects.Clothing);
                         shirtLabel.name = _displayFarmer.shirtItem.Value.DisplayName;
                     }
                     else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 1)
                     {
-                        _displayFarmer.pantsItem.Set(pantsStock[pantsIndex] as StardewValley.Objects.Clothing);
+                        _displayFarmer.pantsItem.Set(equipThing as StardewValley.Objects.Clothing);
                         pantsLabel.name = _displayFarmer.pantsItem.Value.DisplayName;
                     }
                     else if (equipThing.Category == -97)
                     {
-                        _displayFarmer.boots.Set(shoesStock[shoesIndex] as StardewValley.Objects.Boots);
+                        _displayFarmer.boots.Set(equipThing as StardewValley.Objects.Boots);
                         shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
                     }
                 }
@@ -186,7 +259,7 @@ namespace StardewOutfitManager
             public WardrobeMenu() : base(Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2, Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2, 1000 + IClickableMenu.borderWidth * 2, 600 + IClickableMenu.borderWidth * 2, showUpperRightCloseButton: true)
             {   
                 /// WARDROBE DATA
-                // Add the current farmer equipment to the wardrobe data
+                // Add the current farmer equipment, if any, to the wardrobe stock lists
                 if (Game1.player.hat.Value != null) {
                     hatStock.Add(Game1.player.hat.Value);
                     hatIndex = 0;
@@ -205,34 +278,34 @@ namespace StardewOutfitManager
                     shoesStock.Add(Game1.player.boots.Value);
                     shoesIndex = 0;
                 }
-                // Get the item data from the base game dresser menu
-                Dresser = (ShopMenu) Game1.activeClickableMenu;
-                menuSource = Dresser.source as StorageFurniture;
-                foreach (ISalable key in Dresser.itemPriceAndStock.Keys)
+                // Add the inventory from the base game dresser menu, if any, to wardrobe stock lists
+                dresserMenu = (ShopMenu) Game1.activeClickableMenu;
+                dresserObject = dresserMenu.source as StorageFurniture;
+                foreach (ISalable key in dresserMenu.itemPriceAndStock.Keys)
                 {
-                    if (!(key is Item item3))
+                    if (!(key is Item item))
                     {
                         continue;
                     }
-                    if (item3.Category == -95)
+                    if (item.Category == -95)
                     {
-                        hatStock.Add(item3);
+                        hatStock.Add(item);
                     }
-                    else if (item3 is Clothing && (item3 as Clothing).clothesType.Value == 0)
+                    else if (item is Clothing && (item as Clothing).clothesType.Value == 0)
                     {
-                        shirtStock.Add(item3 as Clothing);
+                        shirtStock.Add(item as Clothing);
                     }
-                    else if (item3 is Clothing && (item3 as Clothing).clothesType.Value == 1)
+                    else if (item is Clothing && (item as Clothing).clothesType.Value == 1)
                     {
-                        pantsStock.Add(item3 as Clothing);
+                        pantsStock.Add(item as Clothing);
                     }
-                    else if (item3.Category == -97)
+                    else if (item.Category == -97)
                     {
-                        shoesStock.Add(item3);
+                        shoesStock.Add(item);
                     }
-                    else if (item3.Category == -96)
+                    else if (item.Category == -96)
                     {
-                        ringsStock.Add(item3);
+                        ringsStock.Add(item);
                     }
                 }
 
@@ -353,7 +426,7 @@ namespace StardewOutfitManager
                 shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
                 itemLabels.Add(shoesLabel);
 
-                // Add the option buttons
+                // Add the option buttons (TODO)
                 optionButtons.Add(new ClickableTextureComponent(FIRST_OPTION_BUTTON, new Rectangle(_portraitBox.Right - 130, _portraitBox.Y + yOffset, 32, 32), null, "enabled", null, new Rectangle(0, 0, 15, 15), 2f)
                 {
                     myID = 611,
@@ -395,8 +468,7 @@ namespace StardewOutfitManager
                 {
                     case "Hat":
                         {
-                            priorItemIndex = hatIndex;
-                            hatIndex = (IndexChange(hatIndex, hatStock.Count, change));
+                            //IndexChange(ref hatIndex, ref hatStock, change);
                             if (hatIndex == -1)
                             {
                                 _displayFarmer.hat.Set(null);
@@ -426,7 +498,7 @@ namespace StardewOutfitManager
                         }                    
                     case "Shirt":
                         {
-                            shirtIndex = (IndexChange(shirtIndex, shirtStock.Count, change));
+                            //shirtIndex = (IndexChange(shirtIndex, shirtStock.Count, change));
                             if (shirtIndex == -1)
                             {
                                 _displayFarmer.shirtItem.Set(null);
@@ -443,7 +515,7 @@ namespace StardewOutfitManager
                         }
                     case "Pants":
                         {
-                            pantsIndex = (IndexChange(pantsIndex, pantsStock.Count, change));
+                            //pantsIndex = (IndexChange(pantsIndex, pantsStock.Count, change));
                             if (pantsIndex == -1)
                             {
                                 _displayFarmer.pantsItem.Set(null);
@@ -460,7 +532,7 @@ namespace StardewOutfitManager
                         }
                     case "Shoes":
                         {
-                            shoesIndex = (IndexChange(shoesIndex, shoesStock.Count, change));
+                            //shoesIndex = (IndexChange(shoesIndex, shoesStock.Count, change));
                             if (shoesIndex == -1)
                             {
                                 _displayFarmer.boots.Set(null);
