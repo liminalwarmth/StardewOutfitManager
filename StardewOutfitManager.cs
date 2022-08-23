@@ -80,8 +80,8 @@ namespace StardewOutfitManager
             public ShopMenu dresserMenu;
             public StorageFurniture dresserObject;
             public List<ISalable> hatStock = new List<ISalable>();
-            public List<Clothing> shirtStock = new List<Clothing>();
-            public List<Clothing> pantsStock = new List<Clothing>();
+            public List<ISalable> shirtStock = new List<ISalable>();
+            public List<ISalable> pantsStock = new List<ISalable>();
             public List<ISalable> shoesStock = new List<ISalable>();
             public List<ISalable> ringsStock = new List<ISalable>();
             public int hatIndex = -1;
@@ -210,6 +210,7 @@ namespace StardewOutfitManager
                     }
                 }
                 _displayFarmer.UpdateClothing();
+                _displayFarmer.completelyStopAnimatingOrDoingAction();
                 Game1.playSound("pickUpItem");
             }
 
@@ -299,10 +300,11 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
+                
                 // Hat cycle buttons
                 yOffset += 40;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Hat", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
-                {
+                { 
                     myID = 514,
                     upNeighborID = -99998,
                     leftNeighborID = -99998,
@@ -317,9 +319,10 @@ namespace StardewOutfitManager
                     leftNeighborID = -99998,
                     rightNeighborID = -99998,
                     downNeighborID = -99998
-                }); ;
+                });
                 hatLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.hat.Value == null ? "None" : _displayFarmer.hat.Value.DisplayName);
                 itemLabels.Add(hatLabel);
+                
                 // Shirt cycle buttons
                 yOffset += 84;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Shirt", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
@@ -338,9 +341,10 @@ namespace StardewOutfitManager
                     leftNeighborID = -99998,
                     rightNeighborID = -99998,
                     downNeighborID = -99998
-                }); ;
+                });
                 shirtLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.shirtItem.Value == null ? "None" : _displayFarmer.shirtItem.Value.DisplayName);
                 itemLabels.Add(shirtLabel);
+                
                 // Pants cycle buttons
                 yOffset += 84;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Pants", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
@@ -359,7 +363,7 @@ namespace StardewOutfitManager
                     leftNeighborID = -99998,
                     rightNeighborID = -99998,
                     downNeighborID = -99998
-                }); ;
+                });
                 pantsLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.pantsItem.Value == null ? "None" : _displayFarmer.pantsItem.Value.DisplayName);
                 itemLabels.Add(pantsLabel);
                 
@@ -381,7 +385,7 @@ namespace StardewOutfitManager
                     leftNeighborID = -99998,
                     rightNeighborID = -99998,
                     downNeighborID = -99998
-                }); ;
+                });
                 shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
                 itemLabels.Add(shoesLabel);
 
@@ -434,53 +438,17 @@ namespace StardewOutfitManager
                         }                    
                     case "Shirt":
                         {
-                            //shirtIndex = (IndexChange(shirtIndex, shirtStock.Count, change));
-                            if (shirtIndex == -1)
-                            {
-                                _displayFarmer.shirtItem.Set(null);
-                                shirtLabel.name = "None";
-                            }
-                            else
-                            {
-                                _displayFarmer.shirtItem.Set(shirtStock[shirtIndex] as StardewValley.Objects.Clothing);
-                                shirtLabel.name = _displayFarmer.shirtItem.Value.DisplayName;
-                            }
-                            _displayFarmer.UpdateClothing();
-                            Game1.playSound("pickUpItem");
+                            ClothingSwap(name, ref shirtIndex, ref shirtStock, change);
                             break;
                         }
                     case "Pants":
                         {
-                            //pantsIndex = (IndexChange(pantsIndex, pantsStock.Count, change));
-                            if (pantsIndex == -1)
-                            {
-                                _displayFarmer.pantsItem.Set(null);
-                                pantsLabel.name = "None";
-                            }
-                            else
-                            {
-                                _displayFarmer.pantsItem.Set(pantsStock[pantsIndex] as StardewValley.Objects.Clothing);
-                                pantsLabel.name = _displayFarmer.pantsItem.Value.DisplayName;
-                            }
-                            _displayFarmer.UpdateClothing();
-                            Game1.playSound("pickUpItem");
+                            ClothingSwap(name, ref pantsIndex, ref pantsStock, change);
                             break;
                         }
                     case "Shoes":
                         {
-                            //shoesIndex = (IndexChange(shoesIndex, shoesStock.Count, change));
-                            if (shoesIndex == -1)
-                            {
-                                _displayFarmer.boots.Set(null);
-                                shoesLabel.name = "None";
-                            }
-                            else
-                            {
-                                _displayFarmer.boots.Set(shoesStock[shoesIndex] as StardewValley.Objects.Boots);
-                                shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
-                            }
-                            _displayFarmer.UpdateClothing();
-                            Game1.playSound("pickUpItem");
+                            ClothingSwap(name, ref shoesIndex, ref shoesStock, change);
                             break;
                         }
                     case "Direction":
@@ -538,8 +506,24 @@ namespace StardewOutfitManager
                 }
             }
 
-            // Handle GamePad Buttons
-
+            // Handle GamePad Trigger Buttons
+            public override void receiveGamePadButton(Buttons b)
+            {
+                base.receiveGamePadButton(b);
+                if (b != Buttons.RightTrigger && b != Buttons.LeftTrigger)
+                {
+                    return;
+                }
+                if (base.currentlySnappedComponent != null && base.currentlySnappedComponent.myID >= 3546)
+                {
+                    //
+                }
+                else
+                {
+                    this.snapToDefaultClickableComponent();
+                }
+                Game1.playSound("shiny4");
+            }
 
             // Draw Wardrobe Menu
             public override void draw(SpriteBatch b)
