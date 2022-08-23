@@ -17,7 +17,7 @@ using StardewValley.Objects;
 
 namespace StardewOutfitManager
 {
-    public class ModEntry : Mod
+    public class StardewOutfitManager : Mod
     {
         // Mod Entry
         public override void Entry(IModHelper helper)
