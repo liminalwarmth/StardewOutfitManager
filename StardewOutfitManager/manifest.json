@@ -1,0 +1,10 @@
+{
+    "Name": "Stardew Outfit Manager",
+    "Author": "Liminal Warmth",
+    "Version": "1.0.0",
+    "Description": "Easily browse and wear outfits from your in-game dresser.",
+    "UniqueID": "LiminalWarmth.StardewOutfitManager",
+    "EntryDll": "StardewOutfitManager.dll",
+    "MinimumApiVersion": "3.0.0",
+    "UpdateKeys": []
+}

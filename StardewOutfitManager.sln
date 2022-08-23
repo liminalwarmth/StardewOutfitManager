@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32811.315
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StardewOutfitManager", "StardewOutfitManager\StardewOutfitManager.csproj", "{DA8FB810-2362-4C59-849B-F741B02BEB20}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA8FB810-2362-4C59-849B-F741B02BEB20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA8FB810-2362-4C59-849B-F741B02BEB20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA8FB810-2362-4C59-849B-F741B02BEB20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA8FB810-2362-4C59-849B-F741B02BEB20}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4BC43A48-DEA6-4A55-B8BD-E1BBBCBF6702}
+	EndGlobalSection
+EndGlobal
