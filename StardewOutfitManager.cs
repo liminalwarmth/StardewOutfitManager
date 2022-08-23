@@ -90,55 +90,13 @@ namespace StardewOutfitManager
             public int shoesIndex = -1;
             public int priorItemIndex = -1;
 
-            // Index Manager (Cycles through available clothing stock list indices, -1 is nothing equipped)
-            private void IndexChange(ref int itemIndex, ref List<ISalable> stockList, int change, ISalable addToDresser, ISalable removeFromDresser)
-            {
-                priorItemIndex = itemIndex;
-                int listSize = stockList.Count;
-                if (listSize > 0)
-                {
-                    itemIndex += change;
-                    if (itemIndex >= listSize) itemIndex = -1;
-                    else if (itemIndex < -1) itemIndex = listSize - 1;
-                }
-                else
-                {
-                    itemIndex = -1;
-                }
-                if (itemIndex == -1)
-                {
-                    // Case: Moving to or staying on no item equipped, possible prior item
-                    removeFromDresser = null;
-                    // Case: Moving from equipped item to no item equipped
-                    if (priorItemIndex != itemIndex)
-                    {
-                        addToDresser = stockList[priorItemIndex];
-                    }
-                }
-                else
-                {
-                    // Case: Moving from no item equipped to an item equipped
-                    if (priorItemIndex == -1)
-                    {
-                        removeFromDresser = stockList[itemIndex];
-                        addToDresser = null;
-                    }
-                    // Case: Moving from an equipped item to another equipped item
-                    else
-                    {
-                        removeFromDresser = stockList[itemIndex];
-                        addToDresser = stockList[priorItemIndex];
-                    }
-                }
-            }
-
             // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
-            private void ClothingSwap(ShopMenu dresserMenu, string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
+            private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
             {
                 ISalable removeFromDresser = null;
                 ISalable addToDresser = null;
 
-                // Move to next or prior clothing item and update current and prior item indexes for reference
+                // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
                 priorItemIndex = itemIndex;
                 int listSize = stockList.Count;
                 if (listSize > 0)
@@ -322,7 +280,7 @@ namespace StardewOutfitManager
                 _displayFarmer.faceDirection(2);
                 _displayFarmer.FarmerSprite.StopAnimation();
 
-                // Add appearance-related buttons
+                // Player display window movement buttons
                 int yOffset = 160;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 32, _portraitBox.Y + yOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
                 {
@@ -341,7 +299,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-
+                // Hat cycle buttons
                 yOffset += 40;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Hat", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
                 {
@@ -362,7 +320,7 @@ namespace StardewOutfitManager
                 }); ;
                 hatLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.hat.Value == null ? "None" : _displayFarmer.hat.Value.DisplayName);
                 itemLabels.Add(hatLabel);
-                
+                // Shirt cycle buttons
                 yOffset += 84;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Shirt", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
                 {
@@ -383,7 +341,7 @@ namespace StardewOutfitManager
                 }); ;
                 shirtLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.shirtItem.Value == null ? "None" : _displayFarmer.shirtItem.Value.DisplayName);
                 itemLabels.Add(shirtLabel);
-
+                // Pants cycle buttons
                 yOffset += 84;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Pants", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
                 {
@@ -404,7 +362,8 @@ namespace StardewOutfitManager
                 }); ;
                 pantsLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.pantsItem.Value == null ? "None" : _displayFarmer.pantsItem.Value.DisplayName);
                 itemLabels.Add(pantsLabel);
-
+                
+                // Shoes Buttons
                 yOffset += 84;
                 leftSelectionButtons.Add(new ClickableTextureComponent("Shoes", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
                 {
@@ -426,7 +385,7 @@ namespace StardewOutfitManager
                 shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
                 itemLabels.Add(shoesLabel);
 
-                // Add the option buttons (TODO)
+                // Sidebar Options Buttons (TODO)
                 optionButtons.Add(new ClickableTextureComponent(FIRST_OPTION_BUTTON, new Rectangle(_portraitBox.Right - 130, _portraitBox.Y + yOffset, 32, 32), null, "enabled", null, new Rectangle(0, 0, 15, 15), 2f)
                 {
                     myID = 611,
@@ -452,7 +411,7 @@ namespace StardewOutfitManager
                     downNeighborID = -99998
                 });
 
-                // Add the leftover buttons
+                // Basic UI Functionality Buttons
                 okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
                 {
                     myID = 505,
@@ -462,38 +421,15 @@ namespace StardewOutfitManager
                     downNeighborID = -99998
                 };
             }
+
+            // Handle menu selection clicks
             private void selectionClick(string name, int change)
             {
                 switch (name)
                 {
                     case "Hat":
                         {
-                            //IndexChange(ref hatIndex, ref hatStock, change);
-                            if (hatIndex == -1)
-                            {
-                                _displayFarmer.hat.Set(null);
-                                hatLabel.name = "None";
-                                // If we move from a worn item to nothing, we have to put it back in the dresser 
-                                if (priorItemIndex != hatIndex)
-                                {
-                                    //InventorySwap(null, hatStock[priorItemIndex], Dresser);
-                                }
-                            }
-                            else
-                            {
-                                _displayFarmer.hat.Set(hatStock[hatIndex] as StardewValley.Objects.Hat);
-                                hatLabel.name = _displayFarmer.hat.Value.DisplayName;
-                                if (priorItemIndex == -1)
-                                {
-                                    //InventorySwap(hatStock[hatIndex], null, Dresser);
-                                }
-                                else
-                                {
-                                    //InventorySwap(hatStock[hatIndex], hatStock[priorItemIndex], Dresser);
-                                }
-                            }
-                            _displayFarmer.UpdateClothing();
-                            Game1.playSound("pickUpItem");
+                            ClothingSwap(name, ref hatIndex, ref hatStock, change);
                             break;
                         }                    
                     case "Shirt":
@@ -558,6 +494,7 @@ namespace StardewOutfitManager
                 }
             }
 
+            // Receive left click action
             public override void receiveLeftClick(int x, int y, bool playSound = true)
             {
                 if (leftSelectionButtons.Count > 0)
@@ -601,6 +538,10 @@ namespace StardewOutfitManager
                 }
             }
 
+            // Handle GamePad Buttons
+
+
+            // Draw Wardrobe Menu
             public override void draw(SpriteBatch b)
             {
                 if (Game1.dialogueUp || Game1.IsFading())
