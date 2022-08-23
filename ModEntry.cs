@@ -404,7 +404,7 @@ namespace StardewOutfitManager
                                 // If we move from a worn item to nothing, we have to put it back in the dresser 
                                 if (priorItemIndex != hatIndex)
                                 {
-                                    InventorySwap(null, hatStock[priorItemIndex], Dresser);
+                                    //InventorySwap(null, hatStock[priorItemIndex], Dresser);
                                 }
                             }
                             else
@@ -413,11 +413,11 @@ namespace StardewOutfitManager
                                 hatLabel.name = _displayFarmer.hat.Value.DisplayName;
                                 if (priorItemIndex == -1)
                                 {
-                                    InventorySwap(hatStock[hatIndex], null, Dresser);
+                                    //InventorySwap(hatStock[hatIndex], null, Dresser);
                                 }
                                 else
                                 {
-                                    InventorySwap(hatStock[hatIndex], hatStock[priorItemIndex], Dresser);
+                                    //InventorySwap(hatStock[hatIndex], hatStock[priorItemIndex], Dresser);
                                 }
                             }
                             _displayFarmer.UpdateClothing();
