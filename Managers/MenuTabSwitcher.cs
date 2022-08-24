@@ -98,9 +98,10 @@ namespace StardewOutfitManager.Managers
                     dresserButton.scale -= 0.25f;
                     dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
                     Game1.playSound("shwip");
-                    //IClickableMenu priorMenu = Game1.activeClickableMenu;
+                    IClickableMenu priorMenu = Game1.activeClickableMenu;
                     ShowNewDresserMenu();
-                    //priorMenu.exitThisMenuNoSound();
+                    destroyTopBarButtons();
+                    priorMenu.exitThisMenuNoSound();
                 }
             }
         }
@@ -127,6 +128,11 @@ namespace StardewOutfitManager.Managers
                 topbarButton.draw(b);
             }
 
+        }
+
+        public void destroyTopBarButtons()
+        {
+            topbarButtons.Clear();
         }
     }
 }
