@@ -71,7 +71,6 @@ namespace StardewOutfitManager
             public List<ClickableComponent> leftSelectionButtons = new List<ClickableComponent>();
             public List<ClickableComponent> rightSelectionButtons = new List<ClickableComponent>();
             public List<ClickableComponent> optionButtons = new List<ClickableComponent>();
-            public List<ClickableComponent> featureButtons = new List<ClickableComponent>();
 
             // Additional Buttons
             public ClickableTextureComponent okButton;
@@ -89,6 +88,8 @@ namespace StardewOutfitManager
             public int pantsIndex = -1;
             public int shoesIndex = -1;
             public int priorItemIndex = -1;
+
+            // Character Customization Variables
 
             // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
             private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
@@ -183,6 +184,7 @@ namespace StardewOutfitManager
                     {
                         _displayFarmer.boots.Set(equipThing as StardewValley.Objects.Boots);
                         shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
+                        _displayFarmer.changeShoeColor(_displayFarmer.boots.Value.indexInColorSheet.Value);
                     }
                 }
                 // If no item was taken from the dresser, the player isn't wearing anything in that slot
@@ -207,6 +209,7 @@ namespace StardewOutfitManager
                     {
                         _displayFarmer.boots.Set(null);
                         shoesLabel.name = "None";
+                        _displayFarmer.changeShoeColor(12);
                     }
                 }
                 _displayFarmer.UpdateClothing();
@@ -311,7 +314,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 32, 1, 1), "Hat" ));
+                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 28, 1, 1), "Hat" ));
                 rightSelectionButtons.Add(new ClickableTextureComponent("Hat", new Rectangle(_portraitBox.Right, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
                 {
                     myID = 515,
@@ -320,7 +323,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                hatLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.hat.Value == null ? "None" : _displayFarmer.hat.Value.DisplayName);
+                hatLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 69, 1, 1), _displayFarmer.hat.Value == null ? "None" : _displayFarmer.hat.Value.DisplayName);
                 itemLabels.Add(hatLabel);
                 
                 // Shirt cycle buttons
@@ -333,7 +336,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 32, 1, 1), "Shirt" ));
+                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 28, 1, 1), "Shirt" ));
                 rightSelectionButtons.Add(new ClickableTextureComponent("Shirt", new Rectangle(_portraitBox.Right, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
                 {
                     myID = 517,
@@ -342,7 +345,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                shirtLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.shirtItem.Value == null ? "None" : _displayFarmer.shirtItem.Value.DisplayName);
+                shirtLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 69, 1, 1), _displayFarmer.shirtItem.Value == null ? "None" : _displayFarmer.shirtItem.Value.DisplayName);
                 itemLabels.Add(shirtLabel);
                 
                 // Pants cycle buttons
@@ -355,7 +358,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 32, 1, 1), "Pants"));
+                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 28, 1, 1), "Pants"));
                 rightSelectionButtons.Add(new ClickableTextureComponent("Pants", new Rectangle(_portraitBox.Right, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
                 {
                     myID = 519,
@@ -364,7 +367,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                pantsLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.pantsItem.Value == null ? "None" : _displayFarmer.pantsItem.Value.DisplayName);
+                pantsLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 69, 1, 1), _displayFarmer.pantsItem.Value == null ? "None" : _displayFarmer.pantsItem.Value.DisplayName);
                 itemLabels.Add(pantsLabel);
                 
                 // Shoes Buttons
@@ -377,7 +380,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 32, 1, 1), "Shoes" ));
+                labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 28, 1, 1), "Shoes" ));
                 rightSelectionButtons.Add(new ClickableTextureComponent("Shoes", new Rectangle(_portraitBox.Right, _portraitBox.Y + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
                 {
                     myID = 521,
@@ -386,7 +389,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 64, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
+                shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 69, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
                 itemLabels.Add(shoesLabel);
 
                 // Sidebar Options Buttons (TODO)
@@ -505,6 +508,49 @@ namespace StardewOutfitManager
                     Game1.playSound("coin");
                 }
             }
+
+            // Handle On-Hover and Resetting Button States
+            public override void performHoverAction(int x, int y)
+            {
+                this.hoverText = "";
+                foreach (ClickableTextureComponent c6 in leftSelectionButtons)
+                {
+                    if (c6.containsPoint(x, y))
+                    {
+                        c6.scale = Math.Min(c6.scale + 0.02f, c6.baseScale + 0.1f);
+                    }
+                    else
+                    {
+                        c6.scale = Math.Max(c6.scale - 0.02f, c6.baseScale);
+                    }
+                }
+                foreach (ClickableTextureComponent c5 in rightSelectionButtons)
+                {
+                    if (c5.containsPoint(x, y))
+                    {
+                        c5.scale = Math.Min(c5.scale + 0.02f, c5.baseScale + 0.1f);
+                    }
+                    else
+                    {
+                        c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
+                    }
+                }
+                foreach (ClickableTextureComponent c5 in optionButtons)
+                {
+                    if (c5.containsPoint(x, y))
+                    {
+                        if (c5.hoverText == "disabled")
+                        {
+                            c5.scale = Math.Min(c5.scale + 0.02f, 2.2f);
+                        }
+                    }
+                    else
+                    {
+                        c5.scale = Math.Max(c5.scale - 0.02f, 2f);
+                    }
+                }
+            }
+
 
             // Handle GamePad Trigger Buttons
             public override void receiveGamePadButton(Buttons b)
