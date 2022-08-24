@@ -2,7 +2,7 @@
 using StardewModdingAPI;
 using System.IO;
 
-namespace StardewOutfitManager
+namespace StardewOutfitManager.Managers
 {
     internal class AssetManager
     {
