@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
-using StardewValley.Buildings;
-using StardewValley.Characters;
 using StardewValley.Menus;
 using StardewValley.Objects;
 
@@ -53,10 +49,6 @@ namespace StardewOutfitManager
             private Rectangle _portraitBox;
             private Farmer _displayFarmer;
             private string hoverText = "";
-
-            internal const string FIRST_OPTION_BUTTON = "FirstOption";
-            internal const string SECOND_OPTION_BUTTON = "SecondOption";
-            internal const string THIRD_OPTION_BUTTON = "ThirdOption";
 
             // Item Display Name Labels
             private ClickableComponent descriptionLabel;
@@ -393,7 +385,7 @@ namespace StardewOutfitManager
                 itemLabels.Add(shoesLabel);
 
                 // Sidebar Options Buttons (TODO)
-                optionButtons.Add(new ClickableTextureComponent(FIRST_OPTION_BUTTON, new Rectangle(_portraitBox.Right - 130, _portraitBox.Y + yOffset, 32, 32), null, "enabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                optionButtons.Add(new ClickableTextureComponent("Option1", new Rectangle(_portraitBox.Right - 130, _portraitBox.Y + yOffset, 32, 32), null, "enabled", null, new Rectangle(0, 0, 15, 15), 2f)
                 {
                     myID = 611,
                     upNeighborID = -99998,
@@ -401,7 +393,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                optionButtons.Add(new ClickableTextureComponent(SECOND_OPTION_BUTTON, new Rectangle(_portraitBox.Right - 82, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                optionButtons.Add(new ClickableTextureComponent("Option2", new Rectangle(_portraitBox.Right - 82, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
                 {
                     myID = 612,
                     upNeighborID = -99998,
@@ -409,7 +401,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                optionButtons.Add(new ClickableTextureComponent(THIRD_OPTION_BUTTON, new Rectangle(_portraitBox.Right - 34, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                optionButtons.Add(new ClickableTextureComponent("Option3", new Rectangle(_portraitBox.Right - 34, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
                 {
                     myID = 613,
                     upNeighborID = -99998,
