@@ -3,4 +3,5 @@ A mod for better immersive wardrobe management in Stardew Valley.
 
 ## Attribution
 My sincere thanks to...
-* Floogen for the Fashion Sense mod which guided a lot of my structure (and the mirror asset!)
+* Floogen for the [Fashion Sense mod](https://github.com/Floogen/FashionSense/) which guided my basic structure
+* atraVita, Elizabeth, and many others at the Stardew Valley Discord Modding channel for answering my questions
