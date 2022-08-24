@@ -9,6 +9,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
+using StardewValley.Monsters;
 using StardewValley.Objects;
 
 namespace StardewOutfitManager
@@ -17,6 +18,7 @@ namespace StardewOutfitManager
     {
         // Asset Manager
         internal static AssetManager assetManager;
+        public static IClickableMenu priorShopMenu;
 
         // Mod Entry
         public override void Entry(IModHelper helper)
@@ -25,25 +27,18 @@ namespace StardewOutfitManager
             assetManager = new AssetManager(helper);
 
             // Menu change event
-            helper.Events.Display.MenuChanged += this.OnMenuChanged;
+            //helper.Events.Display.MenuChanged += this.OnMenuChanged;
+            helper.Events.Display.RenderingActiveMenu += this.OnMenuChanged;
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
-        private void OnMenuChanged(object sender, MenuChangedEventArgs e)
+        private void OnMenuChanged(object sender, RenderingActiveMenuEventArgs e)
         {
-            if (e.OldMenu is ShopMenu oldMenu)
+            if (Game1.activeClickableMenu is ShopMenu oldMenu)
             {
                 if (oldMenu.storeContext == "Dresser")
                 {
-                    oldMenu.exitThisMenu();
-                }
-            }
-
-            if (e.NewMenu is ShopMenu newMenu)
-            {
-                // Only modify the store menu when it's for a dresser object
-                if (newMenu.storeContext == "Dresser")
-                {
+                    priorShopMenu = Game1.activeClickableMenu;
                     Game1.activeClickableMenu = new WardrobeMenu();
                 }
             }
@@ -242,7 +237,7 @@ namespace StardewOutfitManager
                     shoesIndex = 0;
                 }
                 // Add the inventory from the base game dresser menu, if any, to wardrobe stock lists
-                dresserMenu = (ShopMenu) Game1.activeClickableMenu;
+                dresserMenu = priorShopMenu as ShopMenu;
                 dresserObject = dresserMenu.source as StorageFurniture;
                 foreach (ISalable key in dresserMenu.itemPriceAndStock.Keys)
                 {
@@ -484,7 +479,6 @@ namespace StardewOutfitManager
                         }
                     }
                 }
-
                 if (rightSelectionButtons.Count > 0)
                 {
                     foreach (ClickableComponent c in rightSelectionButtons)
@@ -500,7 +494,33 @@ namespace StardewOutfitManager
                         }
                     }
                 }
-
+                if (wardrobeButton.containsPoint(x, y))
+                {
+                    if (Game1.activeClickableMenu is WardrobeMenu)
+                        {
+                        wardrobeButton.scale -= 0.25f;
+                        wardrobeButton.scale = Math.Max(0.75f, wardrobeButton.scale);
+                        Game1.playSound("shwip");
+                    }
+                }
+                 if (favoritesButton.containsPoint(x, y))
+                {
+                    if (Game1.activeClickableMenu is WardrobeMenu)
+                        {
+                        favoritesButton.scale -= 0.25f;
+                        favoritesButton.scale = Math.Max(0.75f, favoritesButton.scale);
+                        Game1.playSound("shwip");
+                    }
+                }
+                 if (dresserButton.containsPoint(x, y))
+                {
+                    if (Game1.activeClickableMenu is WardrobeMenu)
+                        {
+                        dresserButton.scale -= 0.25f;
+                        dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
+                        Game1.playSound("shwip");
+                    }
+                }
                 if (okButton.containsPoint(x, y))
                 {
                     okButton.scale -= 0.25f;
