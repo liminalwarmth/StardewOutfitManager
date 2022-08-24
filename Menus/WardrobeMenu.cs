@@ -8,6 +8,7 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
+using StardewOutfitManager.Managers;
 
 namespace StardewOutfitManager.Menus
 {
@@ -35,8 +36,8 @@ namespace StardewOutfitManager.Menus
         public ClickableTextureComponent okButton;
 
         // Menu, Inventory Lists, List Indexes
-        public ShopMenu dresserMenu = (ShopMenu)StardewOutfitManager.priorShopMenu;
-        public StorageFurniture dresserObject = (StorageFurniture)StardewOutfitManager.dresserObject;
+        public ShopMenu dresserMenu = StardewOutfitManager.tabSwitcher.originalDresserMenu;
+        public StorageFurniture dresserObject = StardewOutfitManager.tabSwitcher.dresserObject;
         public List<ISalable> hatStock = new List<ISalable>();
         public List<ISalable> shirtStock = new List<ISalable>();
         public List<ISalable> pantsStock = new List<ISalable>();
@@ -202,8 +203,8 @@ namespace StardewOutfitManager.Menus
                 shoesIndex = 0;
             }
             // Add the inventory from the base game dresser menu, if any, to wardrobe stock lists
-            dresserMenu = StardewOutfitManager.priorShopMenu as ShopMenu;
-            dresserObject = dresserMenu.source as StorageFurniture;
+            //dresserMenu = StardewOutfitManager.priorShopMenu as ShopMenu;
+            //dresserObject = dresserMenu.source as StorageFurniture;
             foreach (ISalable key in dresserMenu.itemPriceAndStock.Keys)
             {
                 if (!(key is Item item))

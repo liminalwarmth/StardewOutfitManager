@@ -16,10 +16,6 @@ namespace StardewOutfitManager
         internal static AssetManager assetManager;
         internal static MenuTabSwitcher tabSwitcher;
 
-        // Original Dresser Menu Reference
-        //internal static ShopMenu priorShopMenu;
-        //internal object dresserObject;
-
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
@@ -38,10 +34,10 @@ namespace StardewOutfitManager
             {
                 if (originalMenu.storeContext == "Dresser" && originalMenu is not NewDresserMenu)
                 {
-                    priorShopMenu = (ShopMenu)Game1.activeClickableMenu;
-                    dresserObject = priorShopMenu.source;
+                    tabSwitcher.originalDresserMenu = (ShopMenu)Game1.activeClickableMenu;
+                    tabSwitcher.dresserObject = (StorageFurniture)tabSwitcher.originalDresserMenu.source;
                     Game1.activeClickableMenu = new WardrobeMenu();
-                    priorShopMenu.exitThisMenuNoSound();
+                    tabSwitcher.originalDresserMenu.exitThisMenuNoSound();
                 }
             }
         }

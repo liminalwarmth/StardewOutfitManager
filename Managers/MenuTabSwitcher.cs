@@ -19,8 +19,8 @@ namespace StardewOutfitManager.Managers
         public ClickableTextureComponent favoritesButton;
         public ClickableTextureComponent dresserButton;
         public List<ClickableComponent> topbarButtons = new List<ClickableComponent>();
-        internal StorageFurniture dresser = (StorageFurniture)StardewOutfitManager.dresserObject;
-
+        public ShopMenu originalDresserMenu;
+        public StorageFurniture dresserObject;
 
         public void includeTopTabButtons(IClickableMenu baseMenu)
         {
@@ -51,22 +51,22 @@ namespace StardewOutfitManager.Managers
             });
         }
 
-        // Trigger new dresser submenu
+        // Trigger new dresser menu
         public void ShowNewDresserMenu()
         {
-            List<Item> list = dresser.heldItems.ToList();
-            list.Sort(dresser.SortItems);
+            List<Item> list = dresserObject.heldItems.ToList();
+            list.Sort(dresserObject.SortItems);
             Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
             foreach (Item item in list)
             {
                 contents[item] = new int[2] { 0, 1 };
             }
-            Game1.activeClickableMenu = new NewDresserMenu(contents, dresser, dresser.onDresserItemWithdrawn, dresser.onDresserItemDeposited, "Dresser")
+            Game1.activeClickableMenu = new NewDresserMenu(contents, dresserObject, dresserObject.onDresserItemWithdrawn, dresserObject.onDresserItemDeposited, "Dresser")
             {
                 behaviorBeforeCleanup = delegate
                 {
-                    dresser.mutex.ReleaseLock();
-                    dresser.OnMenuClose();
+                    dresserObject.mutex.ReleaseLock();
+                    dresserObject.OnMenuClose();
                 }
             };
         }
@@ -98,8 +98,9 @@ namespace StardewOutfitManager.Managers
                     dresserButton.scale -= 0.25f;
                     dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
                     Game1.playSound("shwip");
-                    //Game1.activeClickableMenu.exitThisMenuNoSound();
+                    //IClickableMenu priorMenu = Game1.activeClickableMenu;
                     ShowNewDresserMenu();
+                    //priorMenu.exitThisMenuNoSound();
                 }
             }
         }
