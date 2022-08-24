@@ -15,9 +15,15 @@ namespace StardewOutfitManager
 {
     public class StardewOutfitManager : Mod
     {
+        // Asset Manager
+        internal static AssetManager assetManager;
+
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
+            // Set up asset manager
+            assetManager = new AssetManager(helper);
+
             // Menu change event
             helper.Events.Display.MenuChanged += this.OnMenuChanged;
         }
@@ -62,10 +68,13 @@ namespace StardewOutfitManager
             public List<ClickableComponent> itemLabels = new List<ClickableComponent>();
             public List<ClickableComponent> leftSelectionButtons = new List<ClickableComponent>();
             public List<ClickableComponent> rightSelectionButtons = new List<ClickableComponent>();
-            public List<ClickableComponent> optionButtons = new List<ClickableComponent>();
+            public List<ClickableComponent> sidebarButtons = new List<ClickableComponent>();
 
             // Additional Buttons
             public ClickableTextureComponent okButton;
+            public ClickableTextureComponent wardrobeButton;
+            public ClickableTextureComponent favoritesButton;
+            public ClickableTextureComponent dresserButton;
 
             // Menu, Inventory Lists, List Indexes
             public ShopMenu dresserMenu;
@@ -384,8 +393,8 @@ namespace StardewOutfitManager
                 shoesLabel = new ClickableComponent(new Rectangle(_portraitBox.Right - 86, _portraitBox.Y + yOffset + 69, 1, 1), _displayFarmer.boots.Value == null ? "None" : _displayFarmer.boots.Value.DisplayName);
                 itemLabels.Add(shoesLabel);
 
-                // Sidebar Options Buttons (TODO)
-                optionButtons.Add(new ClickableTextureComponent("Option1", new Rectangle(_portraitBox.Right - 130, _portraitBox.Y + yOffset, 32, 32), null, "enabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                // Right Sidebar Buttons
+                sidebarButtons.Add(wardrobeButton = new ClickableTextureComponent("Wardrobe", new Rectangle(base.xPositionOnScreen + base.width + IClickableMenu.spaceToClearSideBorder - 16, base.yPositionOnScreen + IClickableMenu.spaceToClearTopBorder - 64, 64, 64), null, null, assetManager.wardrobeTabTexture, new Rectangle(0, 0, 16, 16), 4f)
                 {
                     myID = 611,
                     upNeighborID = -99998,
@@ -393,7 +402,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                optionButtons.Add(new ClickableTextureComponent("Option2", new Rectangle(_portraitBox.Right - 82, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                sidebarButtons.Add(favoritesButton = new ClickableTextureComponent("Favorites", new Rectangle(wardrobeButton.bounds.X, wardrobeButton.bounds.Y + 64, 64, 64), null, null, assetManager.favoritesTabTexture, new Rectangle(0, 0, 16, 16), 4f)
                 {
                     myID = 612,
                     upNeighborID = -99998,
@@ -401,7 +410,7 @@ namespace StardewOutfitManager
                     rightNeighborID = -99998,
                     downNeighborID = -99998
                 });
-                optionButtons.Add(new ClickableTextureComponent("Option3", new Rectangle(_portraitBox.Right - 34, _portraitBox.Y + yOffset, 32, 32), null, "disabled", null, new Rectangle(0, 0, 15, 15), 2f)
+                sidebarButtons.Add(dresserButton = new ClickableTextureComponent("Dresser", new Rectangle(wardrobeButton.bounds.X, wardrobeButton.bounds.Y + 128, 64, 64), null, null, assetManager.dresserTabTexture, new Rectangle(0, 0, 16, 16), 4f)
                 {
                     myID = 613,
                     upNeighborID = -99998,
@@ -527,19 +536,24 @@ namespace StardewOutfitManager
                         c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
                     }
                 }
-                foreach (ClickableTextureComponent c5 in optionButtons)
+                foreach (ClickableTextureComponent c5 in sidebarButtons)
                 {
                     if (c5.containsPoint(x, y))
                     {
-                        if (c5.hoverText == "disabled")
-                        {
-                            c5.scale = Math.Min(c5.scale + 0.02f, 2.2f);
-                        }
+                        c5.scale = Math.Min(c5.scale + 0.02f, 4.1f);
                     }
                     else
                     {
-                        c5.scale = Math.Max(c5.scale - 0.02f, 2f);
+                        c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
                     }
+                }
+                if (okButton.containsPoint(x, y))
+                {
+                    okButton.scale = Math.Min(okButton.scale + 0.02f, okButton.baseScale + 0.1f);
+                }
+                else
+                {
+                    okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
                 }
             }
 
@@ -591,14 +605,10 @@ namespace StardewOutfitManager
                 {
                     rightSelectionButton.draw(b);
                 }
-
-                // Draw the top side bar
-                var sideBarPosition = new Vector2(base.xPositionOnScreen + width - IClickableMenu.spaceToClearSideBorder + 12, base.yPositionOnScreen + 24);
-                b.Draw(Game1.mouseCursors, sideBarPosition, new Rectangle(316, 361, 13, 8), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.75f);
-
-                // Draw the bottom side bar
-                sideBarPosition.Y += 8 * 4;
-                b.Draw(Game1.mouseCursors, sideBarPosition, new Rectangle(316, 377, 13, 6), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.75f);
+                foreach (ClickableTextureComponent sidebarButton in sidebarButtons)
+                {
+                    sidebarButton.draw(b);
+                }
 
                 // Draw the buttons
                 okButton.draw(b);
