@@ -8,7 +8,6 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
-using StardewOutfitManager.Managers;
 
 namespace StardewOutfitManager.Menus
 {
@@ -203,8 +202,6 @@ namespace StardewOutfitManager.Menus
                 shoesIndex = 0;
             }
             // Add the inventory from the base game dresser menu, if any, to wardrobe stock lists
-            //dresserMenu = StardewOutfitManager.priorShopMenu as ShopMenu;
-            //dresserObject = dresserMenu.source as StorageFurniture;
             foreach (ISalable key in dresserMenu.itemPriceAndStock.Keys)
             {
                 if (!(key is Item item))

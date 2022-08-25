@@ -37,6 +37,8 @@ namespace StardewOutfitManager
                     tabSwitcher.originalDresserMenu = (ShopMenu)Game1.activeClickableMenu;
                     tabSwitcher.dresserObject = (StorageFurniture)tabSwitcher.originalDresserMenu.source;
                     Game1.activeClickableMenu = new WardrobeMenu();
+                    Game1.playSound("dwoop");
+                    tabSwitcher.positionActiveTab(0);
                     tabSwitcher.originalDresserMenu.exitThisMenuNoSound();
                 }
             }

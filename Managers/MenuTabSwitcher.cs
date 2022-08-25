@@ -21,11 +21,14 @@ namespace StardewOutfitManager.Managers
         public List<ClickableComponent> topbarButtons = new List<ClickableComponent>();
         public ShopMenu originalDresserMenu;
         public StorageFurniture dresserObject;
+        internal int tabYPosition;
 
         public void includeTopTabButtons(IClickableMenu baseMenu)
         {
+            // Set Default Y Position
+            tabYPosition = baseMenu.yPositionOnScreen - IClickableMenu.spaceToClearTopBorder + 32;
             // Right Sidebar Buttons
-            topbarButtons.Add(wardrobeButton = new ClickableTextureComponent("Wardrobe", new Rectangle(baseMenu.xPositionOnScreen + baseMenu.width - IClickableMenu.spaceToClearSideBorder - 192, baseMenu.yPositionOnScreen - IClickableMenu.spaceToClearTopBorder + 48, 64, 64), null, null, StardewOutfitManager.assetManager.wardrobeTabTexture, new Rectangle(0, 0, 16, 16), 4f)
+            topbarButtons.Add(wardrobeButton = new ClickableTextureComponent("Wardrobe", new Rectangle(baseMenu.xPositionOnScreen + baseMenu.width - IClickableMenu.spaceToClearSideBorder - 192, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.wardrobeTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
                 myID = 611,
                 upNeighborID = -99998,
@@ -33,7 +36,7 @@ namespace StardewOutfitManager.Managers
                 rightNeighborID = -99998,
                 downNeighborID = -99998
             });
-            topbarButtons.Add(favoritesButton = new ClickableTextureComponent("Favorites", new Rectangle(wardrobeButton.bounds.X + 64, wardrobeButton.bounds.Y, 64, 64), null, null, StardewOutfitManager.assetManager.favoritesTabTexture, new Rectangle(0, 0, 16, 16), 4f)
+            topbarButtons.Add(favoritesButton = new ClickableTextureComponent("Favorites", new Rectangle(wardrobeButton.bounds.X + 64, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.favoritesTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
                 myID = 612,
                 upNeighborID = -99998,
@@ -41,7 +44,7 @@ namespace StardewOutfitManager.Managers
                 rightNeighborID = -99998,
                 downNeighborID = -99998
             });
-            topbarButtons.Add(dresserButton = new ClickableTextureComponent("Dresser", new Rectangle(wardrobeButton.bounds.X + 128, wardrobeButton.bounds.Y, 64, 64), null, null, StardewOutfitManager.assetManager.dresserTabTexture, new Rectangle(0, 0, 16, 16), 4f)
+            topbarButtons.Add(dresserButton = new ClickableTextureComponent("Dresser", new Rectangle(wardrobeButton.bounds.X + 128, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.dresserTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
                 myID = 613,
                 upNeighborID = -99998,
@@ -80,6 +83,11 @@ namespace StardewOutfitManager.Managers
                     wardrobeButton.scale -= 0.25f;
                     wardrobeButton.scale = Math.Max(0.75f, wardrobeButton.scale);
                     Game1.playSound("shwip");
+                    IClickableMenu priorMenu = Game1.activeClickableMenu;
+                    topbarButtons.Clear();
+                    //ShowWardrobeMenu();
+                    positionActiveTab(0);
+                    priorMenu.exitThisMenuNoSound();
                 }
             }
             if (favoritesButton.containsPoint(x, y))
@@ -89,6 +97,11 @@ namespace StardewOutfitManager.Managers
                     favoritesButton.scale -= 0.25f;
                     favoritesButton.scale = Math.Max(0.75f, favoritesButton.scale);
                     Game1.playSound("shwip");
+                    IClickableMenu priorMenu = Game1.activeClickableMenu;
+                    topbarButtons.Clear();
+                    //ShowFavoritesMenu();
+                    positionActiveTab(1);
+                    priorMenu.exitThisMenuNoSound();
                 }
             }
             if (dresserButton.containsPoint(x, y))
@@ -99,8 +112,9 @@ namespace StardewOutfitManager.Managers
                     dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
+                    topbarButtons.Clear();
                     ShowNewDresserMenu();
-                    destroyTopBarButtons();
+                    positionActiveTab(2);
                     priorMenu.exitThisMenuNoSound();
                 }
             }
@@ -108,17 +122,7 @@ namespace StardewOutfitManager.Managers
 
         public void handleTopBarOnHover(int x, int y)
         {
-            foreach (ClickableTextureComponent c5 in topbarButtons)
-            {
-                if (c5.containsPoint(x, y))
-                {
-                    c5.scale = Math.Min(c5.scale + 0.02f, 4.1f);
-                }
-                else
-                {
-                    c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
-                }
-            }
+            // Add hover text
         }
 
         public void drawTopBar(SpriteBatch b)
@@ -130,9 +134,23 @@ namespace StardewOutfitManager.Managers
 
         }
 
-        public void destroyTopBarButtons()
+        public void positionActiveTab(int currentTab)
         {
-            topbarButtons.Clear();
+            for (int i = 0; i < this.topbarButtons.Count; i++)
+            {
+                if (i == currentTab)
+                {
+                    topbarButtons[i].bounds.Y = tabYPosition + 8;
+                    topbarButtons[i].scale = 4.1f;
+                }
+                else
+                {
+                    topbarButtons[i].bounds.Y = tabYPosition;
+                    topbarButtons[i].scale = 4f;
+                }
+            }
         }
+
+        // Add on exit function to clear tab list
     }
 }
