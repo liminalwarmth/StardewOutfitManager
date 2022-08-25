@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using StardewValley.Menus;
-using StardewValley;
 using StardewOutfitManager.Menus;
+using StardewValley;
+using StardewValley.Menus;
 using StardewValley.Objects;
-using Microsoft.Xna.Framework.Input;
-using StardewValley.BellsAndWhistles;
 
 namespace StardewOutfitManager.Managers
 {
@@ -65,6 +62,7 @@ namespace StardewOutfitManager.Managers
             {
                 contents[item] = new int[2] { 0, 1 };
             }
+            // This isn't working because it checks for a shopMenu and this isn't one anymore
             Game1.activeClickableMenu = new NewDresserMenu(contents, 0, null, dresserObject.onDresserItemWithdrawn, dresserObject.onDresserItemDeposited, "Dresser")
             {
                 source = dresserObject,

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using StardewModdingAPI;
+﻿using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewOutfitManager.Managers;
+using StardewOutfitManager.Menus;
 using StardewValley;
 using StardewValley.Menus;
-using StardewOutfitManager.Menus;
-using StardewOutfitManager.Managers;
 using StardewValley.Objects;
 
 namespace StardewOutfitManager
