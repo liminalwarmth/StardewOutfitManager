@@ -54,8 +54,20 @@ namespace StardewOutfitManager.Managers
                 downNeighborID = -99998
             });
         }
+        
+        // Switch to Wardrobe Menu
+        public void ShowWardrobeMenu()
+        {
+            Game1.activeClickableMenu = new WardrobeMenu();
+        }
+        
+        // Switch to Favorites Menu
+        public void ShowFavoritesMenu()
+        {
+            Game1.activeClickableMenu = new FavoritesMenu();
+        }
 
-        // Trigger New Dresser menu
+        // Switch to New Dresser Menu
         public void ShowNewDresserMenu()
         {
             List<Item> list = dresserObject.heldItems.ToList();
@@ -85,9 +97,9 @@ namespace StardewOutfitManager.Managers
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
-                    //ShowWardrobeMenu();
+                    ShowWardrobeMenu();
                     positionActiveTab(0);
-                    //priorMenu.exitThisMenuNoSound();
+                    priorMenu.exitThisMenuNoSound();
                 }
             }
             if (favoritesButton.containsPoint(x, y))
@@ -97,9 +109,9 @@ namespace StardewOutfitManager.Managers
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
-                    //ShowFavoritesMenu();
+                    ShowFavoritesMenu();
                     positionActiveTab(1);
-                    //priorMenu.exitThisMenuNoSound();
+                    priorMenu.exitThisMenuNoSound();
                 }
             }
             if (dresserButton.containsPoint(x, y))

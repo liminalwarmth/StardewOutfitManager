@@ -1707,6 +1707,10 @@ namespace StardewOutfitManager.Menus
             {
                 b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             }
+            // Added a title to match the others
+            SpriteText.drawStringWithScrollCenteredAt(b, "Dresser", base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
+            //
             Texture2D purchase_texture = Game1.mouseCursors;
             Rectangle purchase_window_border = new Rectangle(384, 373, 18, 18);
             Rectangle purchase_item_rect = new Rectangle(384, 396, 15, 15);
