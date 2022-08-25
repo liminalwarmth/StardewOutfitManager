@@ -10,6 +10,8 @@ using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
 using StardewValley.Locations;
+using StardewOutfitManager.Managers;
+using StardewModdingAPI;
 
 namespace StardewOutfitManager.Menus
 {
@@ -17,8 +19,8 @@ namespace StardewOutfitManager.Menus
     /* This is an extremely hacky port of the game's internal ShopMenu I had to do for silly technical reasons related to how ShopMenu can't be extended without
      * losing functionality. It's ugly, don't mess with it.
      * 
-     * Major changes are basically the rename to a new class, the insertion of my top tap switcher code, removing the close button, and some refactoring out 
-     * contexts that don't apply when it's always going to be the dresser.
+     * Major changes are basically the rename to a new class, the insertion of my top tap switcher code, removing the close button, some refactoring out 
+     * contexts that don't apply when it's always going to be the dresser, and adding in the variables StorageFurniture usually passes to the constructor for the same reason.
      * 
      * Otherwise this works just like the base dresser from decompiled SDV v1.5.6.
      */
@@ -120,8 +122,45 @@ namespace StardewOutfitManager.Menus
 
         public Dictionary<ISalable, ISalable> buyBackItemsToResellTomorrow = new Dictionary<ISalable, ISalable>();
 
-        public NewDresserMenu(Dictionary<ISalable, int[]> itemPriceAndStock, int currency = 0, string who = null, Func<ISalable, Farmer, int, bool> on_purchase = null, Func<ISalable, bool> on_sell = null, string context = null)
-            : this(itemPriceAndStock.Keys.ToList(), currency, who, on_purchase, on_sell, context)
+        // Dumping these custom functions here because I don't wanna look at them and this is the object that uses them
+        // Custom dresser functions needed for new dresser
+        public virtual bool onDresserItemDeposited(ISalable deposited_salable)
+        {
+            if (deposited_salable is Item)
+            {
+                StardewOutfitManager.tabSwitcher.dresserObject.heldItems.Add(deposited_salable as Item);
+                if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is NewDresserMenu)
+                {
+                    Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
+                    List<Item> list = StardewOutfitManager.tabSwitcher.dresserObject.heldItems.ToList();
+                    list.Sort(StardewOutfitManager.tabSwitcher.dresserObject.SortItems);
+                    foreach (Item item in list)
+                    {
+                        contents[item] = new int[2] { 0, 1 };
+                    }
+                    (Game1.activeClickableMenu as NewDresserMenu).setItemPriceAndStock(contents);
+                    Game1.playSound("dwop");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public virtual bool onDresserItemWithdrawn(ISalable salable, Farmer who, int amount)
+        {
+            if (salable is Item)
+            {
+                StardewOutfitManager.tabSwitcher.dresserObject.heldItems.Remove(salable as Item);
+                Game1.playSound("stoneStep");
+            }
+            return false;
+        }
+
+
+        // Begin jank OG code mess
+
+        public NewDresserMenu(Dictionary<ISalable, int[]> itemPriceAndStock, int currency = 0, string who = null)
+            : this(itemPriceAndStock.Keys.ToList(), currency, who)
         {
             this.itemPriceAndStock = itemPriceAndStock;
             if (this.potraitPersonDialogue == null)
@@ -130,7 +169,7 @@ namespace StardewOutfitManager.Menus
             }
         }
 
-        public NewDresserMenu(List<ISalable> itemsForSale, int currency = 0, string who = null, Func<ISalable, Farmer, int, bool> on_purchase = null, Func<ISalable, bool> on_sell = null, string context = null)
+        public NewDresserMenu(List<ISalable> itemsForSale, int currency = 0, string who = null)
             : base(Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2, Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2, 1000 + IClickableMenu.borderWidth * 2, 600 + IClickableMenu.borderWidth * 2, showUpperRightCloseButton: true)
         {
             foreach (ISalable j in itemsForSale)
@@ -156,8 +195,11 @@ namespace StardewOutfitManager.Menus
             }
             this.updatePosition();
             this.currency = currency;
-            this.onPurchase = on_purchase;
-            this.onSell = on_sell;
+            // Inserting these as given in the constructor so I don't have to set them in MenuTabManager
+            this.onPurchase = onDresserItemWithdrawn;
+            this.onSell = onDresserItemDeposited;
+            this.storeContext = "Dresser";
+            //
             Game1.player.forceCanMove();
             this.inventory = new InventoryMenu(base.xPositionOnScreen + base.width, base.yPositionOnScreen + IClickableMenu.spaceToClearTopBorder + IClickableMenu.borderWidth + 320 + 40, playerInventory: false, null, highlightItemToSell)
             {
@@ -189,11 +231,6 @@ namespace StardewOutfitManager.Menus
                 });
             }
             this.updateSaleButtonNeighbors();
-            if (context == null)
-            {
-                context = Game1.currentLocation.Name;
-            }
-            this.storeContext = context;
             this.setUpStoreForContext();
             if (this.tabButtons.Count > 0)
             {
