@@ -103,6 +103,7 @@ namespace StardewOutfitManager.Managers
             if (salable is Item)
             {
                 dresserObject.heldItems.Remove(salable as Item);
+                Game1.playSound("stoneStep");
             }
             return false;
         }
@@ -178,7 +179,15 @@ namespace StardewOutfitManager.Managers
             }
             currentTab = activeTab;
         }
-
-        // Add on exit function to clear tab list
     }
 }
+
+        // Add on exit function to clear tab list
+
+        // Consider using this function to clear/exit menu with keypress or click outside bounds (don't forget to override or remove keypress in menus). Also consider adding red X.
+        /*
+        if (this.readyToClose() && (x< base.xPositionOnScreen - 64 || y< base.yPositionOnScreen - 64 || x> base.xPositionOnScreen + base.width + 128 || y> base.yPositionOnScreen + base.height + 64))
+        {
+            base.exitThisMenu();
+        }
+        */

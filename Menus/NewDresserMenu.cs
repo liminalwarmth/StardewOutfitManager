@@ -14,6 +14,14 @@ using StardewValley.Locations;
 namespace StardewOutfitManager.Menus
 {
     // Initialize a custom original dresser menu (basically had to clone the ShopMenu implementation because there are too many privates to extend correctly)
+    /* This is an extremely hacky port of the game's internal ShopMenu I had to do for silly technical reasons related to how ShopMenu can't be extended without
+     * losing functionality. It's ugly, don't mess with it.
+     * 
+     * Major changes are basically the rename to a new class, the insertion of my top tap switcher code, removing the close button, and some refactoring out 
+     * contexts that don't apply when it's always going to be the dresser.
+     * 
+     * Otherwise this works just like the base dresser from decompiled SDV v1.5.6.
+     */
     internal class NewDresserMenu : IClickableMenu
     {
         public const int region_shopButtonModifier = 3546;
@@ -120,7 +128,6 @@ namespace StardewOutfitManager.Menus
             {
                 this.setUpShopOwner(who);
             }
-            this.source = source;
         }
 
         public NewDresserMenu(List<ISalable> itemsForSale, int currency = 0, string who = null, Func<ISalable, Farmer, int, bool> on_purchase = null, Func<ISalable, bool> on_sell = null, string context = null)
@@ -152,10 +159,6 @@ namespace StardewOutfitManager.Menus
             this.onPurchase = on_purchase;
             this.onSell = on_sell;
             Game1.player.forceCanMove();
-            if (context == null || !context.Equals("QiGemShop"))
-            {
-                Game1.playSound("dwop");
-            }
             this.inventory = new InventoryMenu(base.xPositionOnScreen + base.width, base.yPositionOnScreen + IClickableMenu.spaceToClearTopBorder + IClickableMenu.borderWidth + 320 + 40, playerInventory: false, null, highlightItemToSell)
             {
                 showGrayedOutSlots = true
@@ -705,7 +708,6 @@ namespace StardewOutfitManager.Menus
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
-            base.receiveLeftClick(x, y);
             if (Game1.activeClickableMenu == null)
             {
                 return;
@@ -862,10 +864,6 @@ namespace StardewOutfitManager.Menus
                 this.updateSaleButtonNeighbors();
                 this.setScrollBarToCurrentIndex();
                 return;
-            }
-            if (this.readyToClose() && (x < base.xPositionOnScreen - 64 || y < base.yPositionOnScreen - 64 || x > base.xPositionOnScreen + base.width + 128 || y > base.yPositionOnScreen + base.height + 64))
-            {
-                base.exitThisMenu();
             }
         }
 
@@ -1801,7 +1799,6 @@ namespace StardewOutfitManager.Menus
             {
                 this.heldItem.drawInMenu(b, new Vector2(Game1.getOldMouseX() + 8, Game1.getOldMouseY() + 8), 1f, 1f, 0.9f, StackDrawType.Draw, Color.White, drawShadow: true);
             }
-            base.draw(b);
             int portrait_draw_position = base.xPositionOnScreen - 320;
             if (portrait_draw_position > 0 && Game1.options.showMerchantPortraits)
             {
