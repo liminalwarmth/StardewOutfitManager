@@ -22,6 +22,7 @@ namespace StardewOutfitManager.Managers
         public ShopMenu originalDresserMenu;
         public StorageFurniture dresserObject;
         internal int tabYPosition;
+        internal int currentTab = 0;
 
         public void includeTopTabButtons(IClickableMenu baseMenu)
         {
@@ -78,38 +79,38 @@ namespace StardewOutfitManager.Managers
         {
             if (wardrobeButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu is WardrobeMenu)
+                if (Game1.activeClickableMenu != null && currentTab != 0)
                 {
-                    wardrobeButton.scale -= 0.25f;
-                    wardrobeButton.scale = Math.Max(0.75f, wardrobeButton.scale);
+                    //wardrobeButton.scale -= 0.25f;
+                    //wardrobeButton.scale = Math.Max(0.75f, wardrobeButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
                     //ShowWardrobeMenu();
                     positionActiveTab(0);
-                    priorMenu.exitThisMenuNoSound();
+                    //priorMenu.exitThisMenuNoSound();
                 }
             }
             if (favoritesButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu is WardrobeMenu)
+                if (Game1.activeClickableMenu != null && currentTab != 1)
                 {
-                    favoritesButton.scale -= 0.25f;
-                    favoritesButton.scale = Math.Max(0.75f, favoritesButton.scale);
+                    //favoritesButton.scale -= 0.25f;
+                    //favoritesButton.scale = Math.Max(0.75f, favoritesButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
                     //ShowFavoritesMenu();
                     positionActiveTab(1);
-                    priorMenu.exitThisMenuNoSound();
+                    //priorMenu.exitThisMenuNoSound();
                 }
             }
             if (dresserButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu is WardrobeMenu)
+                if (Game1.activeClickableMenu != null && currentTab != 2)
                 {
-                    dresserButton.scale -= 0.25f;
-                    dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
+                    //dresserButton.scale -= 0.25f;
+                    //dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
