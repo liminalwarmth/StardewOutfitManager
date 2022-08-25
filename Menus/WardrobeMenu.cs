@@ -48,133 +48,16 @@ namespace StardewOutfitManager.Menus
         public int shoesIndex = -1;
         public int priorItemIndex = -1;
 
+        // Equipment Display
+        public const int region_hat = 101;
+        public const int region_ring1 = 102;
+        public const int region_ring2 = 103;
+        public const int region_boots = 104;
+        public const int region_shirt = 108;
+        public const int region_pants = 109;
+        public List<ClickableComponent> equipmentIcons = new List<ClickableComponent>();
+
         // Character Customization Variables
-
-        // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
-        private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
-        {
-            ISalable removeFromDresser = null;
-            ISalable addToDresser = null;
-
-            // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
-            priorItemIndex = itemIndex;
-            int listSize = stockList.Count;
-            if (listSize > 0)
-            {
-                itemIndex += change;
-                if (itemIndex >= listSize) itemIndex = -1;
-                else if (itemIndex < -1) itemIndex = listSize - 1;
-            }
-            else
-            {
-                itemIndex = -1;
-            }
-            // Calculate clothing items to be swapped between dresser and player, if any
-            if (itemIndex == -1)
-            {
-                // Case: Moving to or staying on no item equipped, possible prior item
-                removeFromDresser = null;
-                // Case: Moving from equipped item to no item equipped
-                if (priorItemIndex != itemIndex)
-                {
-                    addToDresser = stockList[priorItemIndex];
-                }
-            }
-            else
-            {
-                // Case: Moving from no item equipped to an item equipped
-                if (priorItemIndex == -1)
-                {
-                    removeFromDresser = stockList[itemIndex];
-                    addToDresser = null;
-                }
-                // Case: Moving from an equipped item to another equipped item
-                else
-                {
-                    removeFromDresser = stockList[itemIndex];
-                    addToDresser = stockList[priorItemIndex];
-                }
-            }
-
-            // Swap dresser inventory and player equipped items
-            if (addToDresser != null)
-            {
-                if (addToDresser is Item)
-                {
-                    dresserObject.heldItems.Add(addToDresser as Item);
-                    if (dresserMenu != null && dresserMenu is ShopMenu)
-                    {
-                        Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
-                        List<Item> list = dresserObject.heldItems.ToList();
-                        list.Sort(dresserObject.SortItems);
-                        foreach (Item item in list)
-                        {
-                            contents[item] = new int[2] { 0, 1 };
-                        }
-                        (dresserMenu as ShopMenu).setItemPriceAndStock(contents);
-                    }
-                }
-            }
-            // If an item is being taken from the dresser, we need to equip it on the player
-            if (removeFromDresser != null)
-            {
-                // Remove from dresser storage
-                dresserObject.heldItems.Remove(removeFromDresser as Item);
-                dresserMenu.forSale.Remove(removeFromDresser);
-                dresserMenu.itemPriceAndStock.Remove(removeFromDresser);
-                // Equip on player
-                Item equipThing = removeFromDresser as Item;
-                if (equipThing.Category == -95)
-                {
-                    _displayFarmer.hat.Set(equipThing as StardewValley.Objects.Hat);
-                    hatLabel.name = _displayFarmer.hat.Value.DisplayName;
-                }
-                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 0)
-                {
-                    _displayFarmer.shirtItem.Set(equipThing as StardewValley.Objects.Clothing);
-                    shirtLabel.name = _displayFarmer.shirtItem.Value.DisplayName;
-                }
-                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 1)
-                {
-                    _displayFarmer.pantsItem.Set(equipThing as StardewValley.Objects.Clothing);
-                    pantsLabel.name = _displayFarmer.pantsItem.Value.DisplayName;
-                }
-                else if (equipThing.Category == -97)
-                {
-                    _displayFarmer.boots.Set(equipThing as StardewValley.Objects.Boots);
-                    shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
-                    _displayFarmer.changeShoeColor(_displayFarmer.boots.Value.indexInColorSheet.Value);
-                }
-            }
-            // If no item was taken from the dresser, the player isn't wearing anything in that slot
-            else
-            {
-                if (itemCategory == "Hat")
-                {
-                    _displayFarmer.hat.Set(null);
-                    hatLabel.name = "None";
-                }
-                else if (itemCategory == "Shirt")
-                {
-                    _displayFarmer.shirtItem.Set(null);
-                    shirtLabel.name = "None";
-                }
-                else if (itemCategory == "Pants")
-                {
-                    _displayFarmer.pantsItem.Set(null);
-                    pantsLabel.name = "None";
-                }
-                else if (itemCategory == "Shoes")
-                {
-                    _displayFarmer.boots.Set(null);
-                    shoesLabel.name = "None";
-                    _displayFarmer.changeShoeColor(12);
-                }
-            }
-            _displayFarmer.UpdateClothing();
-            _displayFarmer.completelyStopAnimatingOrDoingAction();
-            Game1.playSound("pickUpItem");
-        }
 
         // Main Wardrobe Menu Functionality
         public WardrobeMenu() : base(Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2, Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2, 1000 + IClickableMenu.borderWidth * 2, 600 + IClickableMenu.borderWidth * 2, showUpperRightCloseButton: true)
@@ -242,6 +125,59 @@ namespace StardewOutfitManager.Menus
             _displayFarmer = Game1.player;
             _displayFarmer.faceDirection(2);
             _displayFarmer.FarmerSprite.StopAnimation();
+
+            // Equipment slot displays
+            int eqIconXOffset = base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56 - 128;
+            int eqIconYOffset = base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28 - 128 - 16;
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat")
+            {
+                myID = 101,
+                leftNeighborID = 102,
+                downNeighborID = 108,
+                upNeighborID = 101,
+                rightNeighborID = 105,
+                fullyImmutable = true
+            });
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt")
+            {
+                myID = 108,
+                upNeighborID = 101,
+                downNeighborID = 109,
+                rightNeighborID = 105,
+                leftNeighborID = 103,
+                fullyImmutable = true
+            });
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants")
+            {
+                myID = 109,
+                upNeighborID = 108,
+                rightNeighborID = 105,
+                leftNeighborID = 104,
+                fullyImmutable = true
+            });
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots")
+            {
+                myID = 104,
+                upNeighborID = 103,
+                rightNeighborID = 109,
+                fullyImmutable = true
+            });
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring")
+            {
+                myID = 102,
+                downNeighborID = 103,
+                upNeighborID = 102,
+                rightNeighborID = 101,
+                fullyImmutable = true
+            });
+            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring")
+            {
+                myID = 103,
+                upNeighborID = 102,
+                downNeighborID = 104,
+                rightNeighborID = 108,
+                fullyImmutable = true
+            });
 
             // Player display window movement buttons
             int yOffset = 160;
@@ -520,6 +456,80 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.FarmerRenderer.draw(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 32, _portraitBox.Bottom - 160), Vector2.Zero, 0.8f, Color.White, 0f, 1f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;
 
+            // Draw equipment icons
+            foreach (ClickableComponent c in this.equipmentIcons)
+            {
+                switch (c.name)
+                {
+                    case "Hat":
+                        if (Game1.player.hat.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.hat.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 42), Color.White);
+                        }
+                        break;
+                    case "Right Ring":
+                        if (Game1.player.rightRing.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.rightRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
+                        }
+                        break;
+                    case "Left Ring":
+                        if (Game1.player.leftRing.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.leftRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
+                        }
+                        break;
+                    case "Boots":
+                        if (Game1.player.boots.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.boots.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 40), Color.White);
+                        }
+                        break;
+                    case "Shirt":
+                        if (Game1.player.shirtItem.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.shirtItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 69), Color.White);
+                        }
+                        break;
+                    case "Pants":
+                        if (Game1.player.pantsItem.Value != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            Game1.player.pantsItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 68), Color.White);
+                        }
+                        break;
+                }
+            }
+
             // Draw buttons
             foreach (ClickableTextureComponent leftSelectionButton in leftSelectionButtons)
             {
@@ -571,6 +581,132 @@ namespace StardewOutfitManager.Menus
 
             Game1.mouseCursorTransparency = 1f;
             base.drawMouse(b);
+        }
+
+        // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
+        private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<ISalable> stockList, int change)
+        {
+            ISalable removeFromDresser = null;
+            ISalable addToDresser = null;
+
+            // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
+            priorItemIndex = itemIndex;
+            int listSize = stockList.Count;
+            if (listSize > 0)
+            {
+                itemIndex += change;
+                if (itemIndex >= listSize) itemIndex = -1;
+                else if (itemIndex < -1) itemIndex = listSize - 1;
+            }
+            else
+            {
+                itemIndex = -1;
+            }
+            // Calculate clothing items to be swapped between dresser and player, if any
+            if (itemIndex == -1)
+            {
+                // Case: Moving to or staying on no item equipped, possible prior item
+                removeFromDresser = null;
+                // Case: Moving from equipped item to no item equipped
+                if (priorItemIndex != itemIndex)
+                {
+                    addToDresser = stockList[priorItemIndex];
+                }
+            }
+            else
+            {
+                // Case: Moving from no item equipped to an item equipped
+                if (priorItemIndex == -1)
+                {
+                    removeFromDresser = stockList[itemIndex];
+                    addToDresser = null;
+                }
+                // Case: Moving from an equipped item to another equipped item
+                else
+                {
+                    removeFromDresser = stockList[itemIndex];
+                    addToDresser = stockList[priorItemIndex];
+                }
+            }
+
+            // Swap dresser inventory and player equipped items
+            if (addToDresser != null)
+            {
+                if (addToDresser is Item)
+                {
+                    dresserObject.heldItems.Add(addToDresser as Item);
+                    if (dresserMenu != null && dresserMenu is ShopMenu)
+                    {
+                        Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
+                        List<Item> list = dresserObject.heldItems.ToList();
+                        list.Sort(dresserObject.SortItems);
+                        foreach (Item item in list)
+                        {
+                            contents[item] = new int[2] { 0, 1 };
+                        }
+                        (dresserMenu as ShopMenu).setItemPriceAndStock(contents);
+                    }
+                }
+            }
+            // If an item is being taken from the dresser, we need to equip it on the player
+            if (removeFromDresser != null)
+            {
+                // Remove from dresser storage
+                dresserObject.heldItems.Remove(removeFromDresser as Item);
+                dresserMenu.forSale.Remove(removeFromDresser);
+                dresserMenu.itemPriceAndStock.Remove(removeFromDresser);
+                // Equip on player
+                Item equipThing = removeFromDresser as Item;
+                if (equipThing.Category == -95)
+                {
+                    _displayFarmer.hat.Set(equipThing as StardewValley.Objects.Hat);
+                    hatLabel.name = _displayFarmer.hat.Value.DisplayName;
+                }
+                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 0)
+                {
+                    _displayFarmer.shirtItem.Set(equipThing as StardewValley.Objects.Clothing);
+                    shirtLabel.name = _displayFarmer.shirtItem.Value.DisplayName;
+                }
+                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 1)
+                {
+                    _displayFarmer.pantsItem.Set(equipThing as StardewValley.Objects.Clothing);
+                    pantsLabel.name = _displayFarmer.pantsItem.Value.DisplayName;
+                }
+                else if (equipThing.Category == -97)
+                {
+                    _displayFarmer.boots.Set(equipThing as StardewValley.Objects.Boots);
+                    shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
+                    _displayFarmer.changeShoeColor(_displayFarmer.boots.Value.indexInColorSheet.Value);
+                }
+            }
+            // If no item was taken from the dresser, the player isn't wearing anything in that slot
+            else
+            {
+                if (itemCategory == "Hat")
+                {
+                    _displayFarmer.hat.Set(null);
+                    hatLabel.name = "None";
+                }
+                else if (itemCategory == "Shirt")
+                {
+                    _displayFarmer.shirtItem.Set(null);
+                    shirtLabel.name = "None";
+                }
+                else if (itemCategory == "Pants")
+                {
+                    _displayFarmer.pantsItem.Set(null);
+                    pantsLabel.name = "None";
+                }
+                else if (itemCategory == "Shoes")
+                {
+                    _displayFarmer.boots.Set(null);
+                    shoesLabel.name = "None";
+                    _displayFarmer.changeShoeColor(12);
+                }
+            }
+            _displayFarmer.UpdateClothing();
+            _displayFarmer.completelyStopAnimatingOrDoingAction();
+            Game1.playSound("pickUpItem");
         }
     }
 }
