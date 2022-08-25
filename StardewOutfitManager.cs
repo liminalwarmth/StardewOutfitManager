@@ -32,7 +32,7 @@ namespace StardewOutfitManager
         {
             if (Game1.activeClickableMenu is ShopMenu originalMenu)
             {
-                if (originalMenu.storeContext == "Dresser" && originalMenu is not NewDresserMenu)
+                if (originalMenu.storeContext == "Dresser")
                 {
                     tabSwitcher.originalDresserMenu = (ShopMenu)Game1.activeClickableMenu;
                     tabSwitcher.dresserObject = (StorageFurniture)tabSwitcher.originalDresserMenu.source;

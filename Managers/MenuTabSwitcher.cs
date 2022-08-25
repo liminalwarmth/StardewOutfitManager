@@ -65,8 +65,9 @@ namespace StardewOutfitManager.Managers
             {
                 contents[item] = new int[2] { 0, 1 };
             }
-            Game1.activeClickableMenu = new NewDresserMenu(contents, dresserObject, dresserObject.onDresserItemWithdrawn, dresserObject.onDresserItemDeposited, "Dresser")
+            Game1.activeClickableMenu = new NewDresserMenu(contents, 0, null, dresserObject.onDresserItemWithdrawn, dresserObject.onDresserItemDeposited, "Dresser")
             {
+                source = dresserObject,
                 behaviorBeforeCleanup = delegate
                 {
                     dresserObject.mutex.ReleaseLock();
@@ -81,8 +82,6 @@ namespace StardewOutfitManager.Managers
             {
                 if (Game1.activeClickableMenu != null && currentTab != 0)
                 {
-                    //wardrobeButton.scale -= 0.25f;
-                    //wardrobeButton.scale = Math.Max(0.75f, wardrobeButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
@@ -95,8 +94,6 @@ namespace StardewOutfitManager.Managers
             {
                 if (Game1.activeClickableMenu != null && currentTab != 1)
                 {
-                    //favoritesButton.scale -= 0.25f;
-                    //favoritesButton.scale = Math.Max(0.75f, favoritesButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
@@ -109,8 +106,6 @@ namespace StardewOutfitManager.Managers
             {
                 if (Game1.activeClickableMenu != null && currentTab != 2)
                 {
-                    //dresserButton.scale -= 0.25f;
-                    //dresserButton.scale = Math.Max(0.75f, dresserButton.scale);
                     Game1.playSound("shwip");
                     IClickableMenu priorMenu = Game1.activeClickableMenu;
                     topbarButtons.Clear();
@@ -135,11 +130,11 @@ namespace StardewOutfitManager.Managers
 
         }
 
-        public void positionActiveTab(int currentTab)
+        public void positionActiveTab(int activeTab)
         {
             for (int i = 0; i < this.topbarButtons.Count; i++)
             {
-                if (i == currentTab)
+                if (i == activeTab)
                 {
                     topbarButtons[i].bounds.Y = tabYPosition + 8;
                     topbarButtons[i].scale = 4.1f;
@@ -150,6 +145,7 @@ namespace StardewOutfitManager.Managers
                     topbarButtons[i].scale = 4f;
                 }
             }
+            currentTab = activeTab;
         }
 
         // Add on exit function to clear tab list
