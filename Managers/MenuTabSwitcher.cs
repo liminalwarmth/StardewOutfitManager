@@ -55,7 +55,7 @@ namespace StardewOutfitManager.Managers
             });
         }
 
-        // Trigger new dresser menu
+        // Trigger New Dresser menu
         public void ShowNewDresserMenu()
         {
             List<Item> list = dresserObject.heldItems.ToList();
@@ -65,7 +65,7 @@ namespace StardewOutfitManager.Managers
             {
                 contents[item] = new int[2] { 0, 1 };
             }
-            Game1.activeClickableMenu = new NewDresserMenu(contents, 0, null, dresserObject.onDresserItemWithdrawn, dresserObject.onDresserItemDeposited, "Dresser")
+            Game1.activeClickableMenu = new NewDresserMenu(contents, 0, null, onDresserItemWithdrawn, onDresserItemDeposited, "Dresser")
             {
                 source = dresserObject,
                 behaviorBeforeCleanup = delegate
@@ -74,6 +74,37 @@ namespace StardewOutfitManager.Managers
                     dresserObject.OnMenuClose();
                 }
             };
+        }
+        // Custom dresser functions needed for new dresser
+        public virtual bool onDresserItemDeposited(ISalable deposited_salable)
+        {
+            if (deposited_salable is Item)
+            {
+                dresserObject.heldItems.Add(deposited_salable as Item);
+                if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is NewDresserMenu)
+                {
+                    Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
+                    List<Item> list = dresserObject.heldItems.ToList();
+                    list.Sort(dresserObject.SortItems);
+                    foreach (Item item in list)
+                    {
+                        contents[item] = new int[2] { 0, 1 };
+                    }
+                    (Game1.activeClickableMenu as NewDresserMenu).setItemPriceAndStock(contents);
+                    Game1.playSound("dwop");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public virtual bool onDresserItemWithdrawn(ISalable salable, Farmer who, int amount)
+        {
+            if (salable is Item)
+            {
+                dresserObject.heldItems.Remove(salable as Item);
+            }
+            return false;
         }
 
         public void handleTopBarLeftClick(int x, int y, bool Playsound = true)
