@@ -1,6 +1,6 @@
-﻿using System.IO;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using System.IO;
 
 namespace StardewOutfitManager.Managers
 {
