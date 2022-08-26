@@ -18,6 +18,9 @@ namespace StardewOutfitManager
         internal static AssetManager assetManager;
         internal static MenuTabSwitcher tabSwitcher;
 
+        // Holds dresser object for menu switching between OG dresser and Wardrobe menus
+        public StorageFurniture activeDresserObject;
+
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
@@ -52,12 +55,6 @@ namespace StardewOutfitManager
         }
 
         // Testing new Tab Switcher functionality
-        private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
-        {
-            if (Game1.activeClickableMenu is WardrobeMenu)
-            {
-
-            } 
-        }
+        //private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
     }
 }
