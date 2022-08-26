@@ -31,6 +31,7 @@ namespace StardewOutfitManager
 
             // Menu change event
             helper.Events.Display.RenderingActiveMenu += this.OnMenuChanged;
+            //helper.Events.Display.RenderedActiveMenu += this.MenuFinishedRendering;
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
@@ -48,6 +49,15 @@ namespace StardewOutfitManager
                     tabSwitcher.originalDresserMenu.exitThisMenuNoSound();
                 }
             }
+        }
+
+        // Testing new Tab Switcher functionality
+        private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
+        {
+            if (Game1.activeClickableMenu is WardrobeMenu)
+            {
+
+            } 
         }
     }
 }

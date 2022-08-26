@@ -9,6 +9,8 @@ using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
 using StardewOutfitManager.Utils;
+using StardewOutfitManager.Managers;
+using System.Xml.Linq;
 
 namespace StardewOutfitManager.Menus
 {
@@ -313,12 +315,12 @@ namespace StardewOutfitManager.Menus
                 rightNeighborID = -99998,
                 downNeighborID = -99998
             });
-            hairLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), (_displayFarmer.hair.Value + 1).ToString());
+            hairLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), GetHairOrAccessoryName("Hair", _displayFarmer.hair.Value));
             itemLabels.Add(hairLabel);
 
             // Accessories Buttons
             yOffset += yBtnSpacing;
-            leftSelectionButtons.Add(new ClickableTextureComponent("Acc.", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
+            leftSelectionButtons.Add(new ClickableTextureComponent("Accessory", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
             {
                 myID = 524,
                 upNeighborID = -99998,
@@ -326,8 +328,8 @@ namespace StardewOutfitManager.Menus
                 rightNeighborID = -99998,
                 downNeighborID = -99998
             });
-            labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 28, 1, 1), "Acc."));
-            rightSelectionButtons.Add(new ClickableTextureComponent("Acc.", new Rectangle(selectorBtnsX + 128, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
+            labels.Add(descriptionLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 28, 1, 1), "Accessory"));
+            rightSelectionButtons.Add(new ClickableTextureComponent("Accessory", new Rectangle(selectorBtnsX + 128, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f)
             {
                 myID = 525,
                 upNeighborID = -99998,
@@ -335,7 +337,7 @@ namespace StardewOutfitManager.Menus
                 rightNeighborID = -99998,
                 downNeighborID = -99998
             });
-            accLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), (_displayFarmer.accessory.Value + 1).ToString());
+            accLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), GetHairOrAccessoryName("Accessory", _displayFarmer.accessory.Value));
             itemLabels.Add(accLabel);
 
             // Basic UI Functionality Buttons
@@ -389,7 +391,7 @@ namespace StardewOutfitManager.Menus
                         HairSwap(name, change);
                         break;
                     }
-                case "Acc.":
+                case "Accessory":
                     {
                         AccessorySwap(name, change);
                         break;
@@ -658,7 +660,7 @@ namespace StardewOutfitManager.Menus
                 current_index = all_hairs.Count() - 1;
             }
             _displayFarmer.changeHairStyle(all_hairs[current_index]);
-            hairLabel.name = (_displayFarmer.hair.Value + 1).ToString();
+            hairLabel.name = GetHairOrAccessoryName(name, current_index);
             Game1.playSound("grassyStep");
         }
         
@@ -670,7 +672,7 @@ namespace StardewOutfitManager.Menus
             // Taking out beards (0-6) and the duckbill (18) for now
             if (newAccValue < 6)
             {
-                if (change == -1) { newAccValue = newAccValue == -1 ? 17 : -1; } // Hop down to 0 from 6 and then loop around if we're going left
+                if (change == -1) { newAccValue = newAccValue < -1 ? 17 : -1; } // Hop down to 0 from 6 and then loop around if we're going left
                 else { newAccValue = 6; } // Else hop up to 6 if right
             }
             if (newAccValue >= -1)
@@ -681,8 +683,25 @@ namespace StardewOutfitManager.Menus
                 }
                 _displayFarmer.accessory.Set(newAccValue);
             }
-            accLabel.name = (_displayFarmer.accessory.Value + 1).ToString();
+            accLabel.name = GetHairOrAccessoryName(name, newAccValue);
             Game1.playSound("purchase");
+        }
+
+        // Gets Name of Hair or Accessory if Defined in a JSON Asset
+        private string GetHairOrAccessoryName(string stringType, int value)
+        {
+            value++;
+            string valueString = value.ToString();
+            IDictionary<string, string> dictToCheck = (stringType == "Hair") ? StardewOutfitManager.assetManager.hairJSON : StardewOutfitManager.assetManager.accessoryJSON;
+            if (dictToCheck.ContainsKey(valueString))
+            {
+                return dictToCheck[valueString];
+            }
+            else
+            {
+                string prefix = (stringType == "Hair") ? "Hair " : "Accessory ";
+                return prefix + valueString;
+            }
         }
 
         // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
