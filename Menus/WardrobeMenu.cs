@@ -10,7 +10,7 @@ using StardewValley.Objects;
 using StardewValley;
 using StardewOutfitManager.Utils;
 
-namespace StardewOutfitManager.Menusd
+namespace StardewOutfitManager.Menus
 {
     // This class defines the new Wardrobe customization menu
     internal class WardrobeMenu : IClickableMenu
@@ -122,7 +122,6 @@ namespace StardewOutfitManager.Menusd
 
             // Set up portrait and farmer
             topLeft = Utility.getTopLeftPositionForCenteringOnScreen(128, 192);
-            //_portraitBox = new Rectangle((int)topLeft.X, base.yPositionOnScreen + 64, 128, 192);
             _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
             _displayFarmer = Game1.player;
             _displayFarmer.faceDirection(2);
@@ -182,9 +181,6 @@ namespace StardewOutfitManager.Menusd
             });
 
             // Player display window movement buttons
-            int selectorBtnsX = (int)topLeft.X;
-            int selectorBtnsY = base.yPositionOnScreen + 64;
-            int yOffset = 160;
             leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f)
             {
                 myID = 522,
@@ -204,7 +200,10 @@ namespace StardewOutfitManager.Menusd
             });
 
             // Hat cycle buttons
-            yOffset += 40;
+            int selectorBtnsX = _portraitBox.Right + 128;
+            int selectorBtnsY = _portraitBox.Y - 32;
+            int yOffset = 0;
+            int yBtnSpacing = 96;
             leftSelectionButtons.Add(new ClickableTextureComponent("Hat", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
             {
                 myID = 514,
@@ -226,7 +225,7 @@ namespace StardewOutfitManager.Menusd
             itemLabels.Add(hatLabel);
 
             // Shirt cycle buttons
-            yOffset += 84;
+            yOffset += yBtnSpacing;
             leftSelectionButtons.Add(new ClickableTextureComponent("Shirt", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
             {
                 myID = 516,
@@ -248,7 +247,7 @@ namespace StardewOutfitManager.Menusd
             itemLabels.Add(shirtLabel);
 
             // Pants cycle buttons
-            yOffset += 84;
+            yOffset += yBtnSpacing;
             leftSelectionButtons.Add(new ClickableTextureComponent("Pants", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
             {
                 myID = 518,
@@ -270,7 +269,7 @@ namespace StardewOutfitManager.Menusd
             itemLabels.Add(pantsLabel);
 
             // Shoes Buttons
-            yOffset += 84;
+            yOffset += yBtnSpacing;
             leftSelectionButtons.Add(new ClickableTextureComponent("Shoes", new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1f)
             {
                 myID = 520,
@@ -455,8 +454,7 @@ namespace StardewOutfitManager.Menusd
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
 
             // Farmer portrait
-            //b.Draw(Game1.daybg, new Vector2(_portraitBox.X, _portraitBox.Y), Color.White);
-            b.Draw(Game1.daybg, _portraitBox, Color.White);
+            b.Draw(StardewOutfitManager.assetManager.wardrobeBackgroundTexture, _portraitBox, Color.White);
             FarmerRenderer.isDrawingForUI = true;
             CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;

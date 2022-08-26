@@ -12,6 +12,7 @@ namespace StardewOutfitManager.Managers
         internal readonly Texture2D wardrobeTabTexture;
         internal readonly Texture2D favoritesTabTexture;
         internal readonly Texture2D dresserTabTexture;
+        internal readonly Texture2D wardrobeBackgroundTexture;
 
 
         public AssetManager(IModHelper helper)
@@ -23,6 +24,7 @@ namespace StardewOutfitManager.Managers
             wardrobeTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "wardrobeTab.png"));
             favoritesTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "favoritesTab.png"));
             dresserTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "dresserTab.png"));
+            wardrobeBackgroundTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "wardrobeBG.png"));
         }
     }
 }
