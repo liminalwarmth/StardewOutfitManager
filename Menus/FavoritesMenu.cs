@@ -11,6 +11,8 @@ using StardewValley;
 
 namespace StardewOutfitManager.Menus
 {
+    // Reference how GetDressed did this once upon a time: https://github.com/AdvizeGH/GetDressed/blob/master/GetDressed/Framework/CharacterCustomizationMenu.cs
+
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {
