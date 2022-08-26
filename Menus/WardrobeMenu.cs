@@ -8,6 +8,7 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
+using StardewOutfitManager.Utils;
 
 namespace StardewOutfitManager.Menus
 {
@@ -457,8 +458,7 @@ namespace StardewOutfitManager.Menus
             //b.Draw(Game1.daybg, new Vector2(_portraitBox.X, _portraitBox.Y), Color.White);
             b.Draw(Game1.daybg, _portraitBox, Color.White);
             FarmerRenderer.isDrawingForUI = true;
-            //_displayFarmer.FarmerRenderer.draw(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 32, _portraitBox.Bottom - 160), Vector2.Zero, 0.8f, Color.White, 0f, 1f, _displayFarmer);
-            _displayFarmer.FarmerRenderer.draw(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Vector2.Zero, 0.8f, Color.White, 0f, 2f, _displayFarmer);
+            CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;
 
             // Draw equipment icons

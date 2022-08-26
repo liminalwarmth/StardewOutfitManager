@@ -6,7 +6,9 @@ using StardewValley;
 using StardewValley.Menus;
 using StardewOutfitManager.Menus;
 using StardewOutfitManager.Managers;
+using StardewOutfitManager.Utils;
 using StardewValley.Objects;
+using HarmonyLib;
 
 namespace StardewOutfitManager
 {
@@ -22,6 +24,10 @@ namespace StardewOutfitManager
             // Set up manager functions
             assetManager = new AssetManager(helper);
             tabSwitcher = new MenuTabSwitcher();
+
+            // Enable Harmony patches
+            var harmony = new Harmony(ModManifest.UniqueID);
+            harmony.PatchAll();
 
             // Menu change event
             helper.Events.Display.RenderingActiveMenu += this.OnMenuChanged;
