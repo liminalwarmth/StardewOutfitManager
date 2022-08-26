@@ -10,7 +10,7 @@ using StardewValley.Objects;
 using StardewValley;
 using StardewOutfitManager.Utils;
 
-namespace StardewOutfitManager.Menus
+namespace StardewOutfitManager.Menusd
 {
     // This class defines the new Wardrobe customization menu
     internal class WardrobeMenu : IClickableMenu
