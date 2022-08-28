@@ -29,10 +29,11 @@ namespace StardewOutfitManager.Managers
         internal int tabYPosition;
         internal int currentTab;
         
-        public void handleTopBarInput(SButton button)
+        public void handleTopBarInput(SButton button, int cursorX, int cursorY)
         {   
             switch (button)
             {
+                // Controller Functions
                 case SButton.RightTrigger:
                     SwitchMenuTab(Math.Clamp(currentTab + 1, 0, 2));
                     break;
@@ -41,12 +42,20 @@ namespace StardewOutfitManager.Managers
                     SwitchMenuTab(Math.Clamp(currentTab - 1, 0, 2));
                     break;
 
-
+                // Mouse and Keyboard Functions
+                case SButton.MouseLeft:
+                    handleTopBarLeftClick(cursorX, cursorY);
+                    break;
 
                 default:
                     break;
-                
             }
+        }
+
+        // Close the menu and perform cleanup functions
+        public void cleanExit()
+        {
+
         }
 
         public void includeTopTabButtons(IClickableMenu baseMenu)
