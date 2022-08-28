@@ -9,128 +9,148 @@ using StardewOutfitManager.Menus;
 using StardewValley.Objects;
 using Microsoft.Xna.Framework.Input;
 using StardewValley.BellsAndWhistles;
+using StardewModdingAPI;
 
 namespace StardewOutfitManager.Managers
 {
     // This class defines the methods which are used to universally insert tob bar tab menu switcher functionality to all custom menus in the mod
     internal class MenuTabSwitcher
     {
+        // Holds dresser object for interaction with all menus
+        public StorageFurniture dresserObject;
+
+        // Tab buttons
         public ClickableTextureComponent wardrobeButton;
         public ClickableTextureComponent favoritesButton;
         public ClickableTextureComponent dresserButton;
         public List<ClickableComponent> topbarButtons = new List<ClickableComponent>();
-        public ShopMenu originalDresserMenu;
-        public StorageFurniture dresserObject;
+
+        // Active tab visualization
         internal int tabYPosition;
-        internal int currentTab = 0;
+        internal int currentTab;
+        
+        public void handleTopBarInput(SButton button)
+        {   
+            switch (button)
+            {
+                case SButton.RightTrigger:
+                    SwitchMenuTab(Math.Clamp(currentTab + 1, 0, 2));
+                    break;
+
+                case SButton.LeftTrigger:
+                    SwitchMenuTab(Math.Clamp(currentTab - 1, 0, 2));
+                    break;
+
+
+
+                default:
+                    break;
+                
+            }
+        }
 
         public void includeTopTabButtons(IClickableMenu baseMenu)
         {
             // Set Default Y Position
             tabYPosition = baseMenu.yPositionOnScreen - IClickableMenu.spaceToClearTopBorder + 32;
-            // Right Sidebar Buttons
+            // Top Bar Buttons
             topbarButtons.Add(wardrobeButton = new ClickableTextureComponent("Wardrobe", new Rectangle(baseMenu.xPositionOnScreen + baseMenu.width - IClickableMenu.spaceToClearSideBorder - 192, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.wardrobeTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
-                myID = 611,
-                upNeighborID = -99998,
-                leftNeighborID = -99998,
-                rightNeighborID = -99998,
-                downNeighborID = -99998
+                myID = 2000,
+                rightNeighborID = 2001
             });
             topbarButtons.Add(favoritesButton = new ClickableTextureComponent("Favorites", new Rectangle(wardrobeButton.bounds.X + 64, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.favoritesTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
-                myID = 612,
-                upNeighborID = -99998,
-                leftNeighborID = -99998,
-                rightNeighborID = -99998,
-                downNeighborID = -99998
+                myID = 2001,
+                leftNeighborID = 2000,
+                rightNeighborID = 2002
             });
             topbarButtons.Add(dresserButton = new ClickableTextureComponent("Dresser", new Rectangle(wardrobeButton.bounds.X + 128, tabYPosition, 64, 64), null, null, StardewOutfitManager.assetManager.dresserTabTexture, new Rectangle(0, 0, 16, 16), 4f)
             {
-                myID = 613,
-                upNeighborID = -99998,
-                leftNeighborID = -99998,
-                rightNeighborID = -99998,
-                downNeighborID = -99998
+                myID = 2002,
+                leftNeighborID = 2001
             });
         }
         
-        // Switch to Wardrobe Menu
-        public void ShowWardrobeMenu()
+        // Switch Menu Tab
+        public void SwitchMenuTab(int tabNumber)
         {
-            Game1.activeClickableMenu = new WardrobeMenu();
-        }
-        
-        // Switch to Favorites Menu
-        public void ShowFavoritesMenu()
-        {
-            Game1.activeClickableMenu = new FavoritesMenu();
-        }
-
-        // Switch to New Dresser Menu
-        public void ShowNewDresserMenu()
-        {
-            List<Item> list = dresserObject.heldItems.ToList();
-            list.Sort(dresserObject.SortItems);
-            Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
-            foreach (Item item in list)
-            {
-                contents[item] = new int[2] { 0, 1 };
-            }
-            Game1.activeClickableMenu = new NewDresserMenu(contents)
-            {
-                source = dresserObject,
-                behaviorBeforeCleanup = delegate
+            // Only do something if the player has clicked a tab that they're not already on
+            if (tabNumber != currentTab) {
+                Game1.activeClickableMenu.exitThisMenuNoSound();
+                Game1.playSound("shwip");
+                topbarButtons.Clear();
+                switch (tabNumber)
                 {
-                    dresserObject.mutex.ReleaseLock();
-                    dresserObject.OnMenuClose();
+                    // Switch to Wardrobe Menu
+                    case 0:
+                        {
+                            Game1.activeClickableMenu = new WardrobeMenu();
+                            break;
+                        }
+                    // Switch to Favorites Menu
+                    case 1:
+                        {
+                            Game1.activeClickableMenu = new FavoritesMenu();
+                            break;
+                        }
+                    // Switch to New Dresser Menu
+                    case 2:
+                        {
+                            List<Item> list = dresserObject.heldItems.ToList();
+                            list.Sort(dresserObject.SortItems);
+                            Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
+                            foreach (Item item in list)
+                            {
+                                contents[item] = new int[2] { 0, 1 };
+                            }
+                            Game1.activeClickableMenu = new NewDresserMenu(contents)
+                            {
+                                source = dresserObject,
+                                behaviorBeforeCleanup = delegate
+                                {
+                                    dresserObject.mutex.ReleaseLock();
+                                    dresserObject.OnMenuClose();
+                                    StardewOutfitManager.tabSwitcher.onMenuCloseCleanupBehavior();
+                                }
+                            };
+                            break;
+                        }
                 }
-            };
+                positionActiveTab(tabNumber);
+            }
         }
 
         public void handleTopBarLeftClick(int x, int y, bool Playsound = true)
         {
             if (wardrobeButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu != null && currentTab != 0)
-                {
-                    Game1.playSound("shwip");
-                    IClickableMenu priorMenu = Game1.activeClickableMenu;
-                    topbarButtons.Clear();
-                    ShowWardrobeMenu();
-                    positionActiveTab(0);
-                    priorMenu.exitThisMenuNoSound();
-                }
+                SwitchMenuTab(0);
             }
             if (favoritesButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu != null && currentTab != 1)
-                {
-                    Game1.playSound("shwip");
-                    IClickableMenu priorMenu = Game1.activeClickableMenu;
-                    topbarButtons.Clear();
-                    ShowFavoritesMenu();
-                    positionActiveTab(1);
-                    priorMenu.exitThisMenuNoSound();
-                }
+                SwitchMenuTab(1);
             }
             if (dresserButton.containsPoint(x, y))
             {
-                if (Game1.activeClickableMenu != null && currentTab != 2)
-                {
-                    Game1.playSound("shwip");
-                    IClickableMenu priorMenu = Game1.activeClickableMenu;
-                    topbarButtons.Clear();
-                    ShowNewDresserMenu();
-                    positionActiveTab(2);
-                    priorMenu.exitThisMenuNoSound();
-                }
+                SwitchMenuTab(2);
             }
         }
 
-        public void handleTopBarOnHover(int x, int y)
+        public void handleTopBarOnHover(int x, int y, ref string hoverTextField)
         {
-            // Add hover text
+            if (wardrobeButton.containsPoint(x, y))
+            {
+                hoverTextField = "Wardrobe";
+            }
+            else if (favoritesButton.containsPoint(x, y))
+            {
+                hoverTextField = "Favorites";
+            }
+            else if (dresserButton.containsPoint(x, y))
+            {
+                hoverTextField = "Dresser";
+            }
         }
 
         public void drawTopBar(SpriteBatch b)
@@ -159,15 +179,13 @@ namespace StardewOutfitManager.Managers
             }
             currentTab = activeTab;
         }
+
+        // Universal Menu Controls
+
+        // Set up this cleanup behavior in the menus so that the top tabs are always cleared
+        public void onMenuCloseCleanupBehavior()
+        {
+            topbarButtons.Clear();
+        }
     }
 }
-
-        // Add on exit function to clear tab list
-
-        // Consider using this function to clear/exit menu with keypress or click outside bounds (don't forget to override or remove keypress in menus). Also consider adding red X.
-        /*
-        if (this.readyToClose() && (x< base.xPositionOnScreen - 64 || y< base.yPositionOnScreen - 64 || x> base.xPositionOnScreen + base.width + 128 || y> base.yPositionOnScreen + base.height + 64))
-        {
-            base.exitThisMenu();
-        }
-        */

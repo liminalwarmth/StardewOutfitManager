@@ -158,7 +158,6 @@ namespace StardewOutfitManager.Menus
 
 
         // Begin jank OG code mess
-
         public NewDresserMenu(Dictionary<ISalable, int[]> itemPriceAndStock, int currency = 0, string who = null)
             : this(itemPriceAndStock.Keys.ToList(), currency, who)
         {
@@ -1555,7 +1554,7 @@ namespace StardewOutfitManager.Menus
                 }
                 this.hoverPrice = (int)((j is StardewValley.Object) ? ((float)(j as StardewValley.Object).sellToStorePrice(-1L) * this.sellPercentage) : ((float)(j.salePrice() / 2) * this.sellPercentage)) * j.Stack;
             }
-            StardewOutfitManager.tabSwitcher.handleTopBarOnHover(x, y);
+            StardewOutfitManager.tabSwitcher.handleTopBarOnHover(x, y, ref hoverText);
         }
 
         public override void update(GameTime time)

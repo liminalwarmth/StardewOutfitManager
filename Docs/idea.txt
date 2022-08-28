@@ -1,0 +1,46 @@
+﻿To-Do:
+- Up and down labels cycle around to top or bottom
+- Buttons to display controller buttons if gamepad is enabled
+- Press A to go to okay, B from there to go back
+- Favorites system implemented
+- Heart on a portrait if it's already a favorite
+
+
+
+Tracking Stuff I Want to Add:
+- More Dresser Options
+- Controller Support
+- Shoe Redesigns and Additions for Different Feet Styles
+-- https://www.nexusmods.com/stardewvalley/mods/6108 (male shoe redesign)
+-- Female Shoes (https://www.nexusmods.com/stardewvalley/mods/331)
+- Nothing Equipped Texture Redesign for Farmer Underwear
+- Swimsuit Items to Wear Swimsuit
+- Support for Auto-Itemizing Fashion Sense Packs (Take FS CP and turn into items automatically)
+- Include Clothes Mouse (https://www.nexusmods.com/stardewvalley/mods/4798) (Consider Adding a Hat Mouse Tab instead)
+- More Accessories (check Get Glam)
+- Noncombat rings
+
+Remap Gamepad (Game1)
+Harmony postfix this and change it after GameLaunched via a config file
+
+     public static Keys mapGamePadButtonToKey(Buttons b)
+        {
+            return b switch
+            {
+                Buttons.A => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.actionButton),
+                Buttons.X => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.useToolButton),
+                Buttons.B => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.menuButton),
+                Buttons.Back => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.journalButton),
+                Buttons.Start => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.menuButton),
+                Buttons.Y => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.menuButton),
+                Buttons.DPadUp => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveUpButton),
+                Buttons.DPadRight => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveRightButton),
+                Buttons.DPadDown => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveDownButton),
+                Buttons.DPadLeft => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveLeftButton),
+                Buttons.LeftThumbstickUp => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveUpButton),
+                Buttons.LeftThumbstickRight => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveRightButton),
+                Buttons.LeftThumbstickDown => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveDownButton),
+                Buttons.LeftThumbstickLeft => Game1.options.getFirstKeyboardKeyFromInputButtonList(Game1.options.moveLeftButton),
+                _ => Keys.None,
+            };
+        }

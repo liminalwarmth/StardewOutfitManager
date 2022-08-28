@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -9,6 +10,7 @@ using StardewOutfitManager.Managers;
 using StardewOutfitManager.Utils;
 using StardewValley.Objects;
 using HarmonyLib;
+using Microsoft.Xna.Framework.Input;
 
 namespace StardewOutfitManager
 {
@@ -17,9 +19,6 @@ namespace StardewOutfitManager
         // Managers
         internal static AssetManager assetManager;
         internal static MenuTabSwitcher tabSwitcher;
-
-        // Holds dresser object for menu switching between OG dresser and Wardrobe menus
-        public StorageFurniture activeDresserObject;
 
         // Mod Entry
         public override void Entry(IModHelper helper)
@@ -33,28 +32,66 @@ namespace StardewOutfitManager
             harmony.PatchAll();
 
             // Menu change event
-            helper.Events.Display.RenderingActiveMenu += this.OnMenuChanged;
-            //helper.Events.Display.RenderedActiveMenu += this.MenuFinishedRendering;
+            helper.Events.Display.RenderingActiveMenu += this.OnMenuRender;
+            helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
+            helper.Events.Display.RenderedActiveMenu += this.MenuFinishedRendering;
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
-        private void OnMenuChanged(object sender, RenderingActiveMenuEventArgs e)
+        private void OnMenuRender(object sender, RenderingActiveMenuEventArgs e)
         {
-            if (Game1.activeClickableMenu is ShopMenu originalMenu)
+            // Our opening event where we store the dresser object only triggers when it's both a ShopMenu AND a Dresser
+            if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.storeContext == "Dresser")
             {
-                if (originalMenu.storeContext == "Dresser")
+                // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being opened
+                tabSwitcher.dresserObject = (StorageFurniture)originalMenu.source;
+                // Close the OG dresser menu before it opens
+                Game1.activeClickableMenu.exitThisMenuNoSound();
+                // Open a new instance of the primary menu
+                Game1.activeClickableMenu = new WardrobeMenu();
+                tabSwitcher.positionActiveTab(0);
+                Game1.playSound("bigSelect");
+            } 
+        }
+
+        // Draw our topbar navigation tabs on top of the menus we're opening
+        private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
+        {
+
+        }
+
+        // Handle player input outside of the ICLickable Menu framework
+        private void OnButtonsChanged(object sender, ButtonsChangedEventArgs e)
+        {
+            if (Game1.activeClickableMenu is WardrobeMenu || Game1.activeClickableMenu is NewDresserMenu || Game1.activeClickableMenu is FavoritesMenu)
+            {
+                if (e.Pressed.Contains(Buttons.RightTrigger.ToSButton())) {
+                    tabSwitcher.handleTopBarInput(Buttons.RightTrigger.ToSButton());
+                }
+                if (e.Pressed.Contains(Buttons.LeftTrigger.ToSButton())) {
+                    tabSwitcher.handleTopBarInput(Buttons.LeftTrigger.ToSButton());
+                }
+                if (e.Pressed.Contains(Buttons.RightShoulder.ToSButton()))
                 {
-                    tabSwitcher.originalDresserMenu = (ShopMenu)Game1.activeClickableMenu;
-                    tabSwitcher.dresserObject = (StorageFurniture)tabSwitcher.originalDresserMenu.source;
-                    Game1.activeClickableMenu = new WardrobeMenu();
-                    Game1.playSound("dwoop");
-                    tabSwitcher.positionActiveTab(0);
-                    tabSwitcher.originalDresserMenu.exitThisMenuNoSound();
+                    tabSwitcher.handleTopBarInput(Buttons.RightShoulder.ToSButton());
+                }
+                if (e.Pressed.Contains(Buttons.LeftShoulder.ToSButton()))
+                {
+                    tabSwitcher.handleTopBarInput(Buttons.LeftShoulder.ToSButton());
+                }
+                // Hijack all cancel and menu buttons to perform clean exit
+                foreach (SButton btn in e.Pressed)
+                {
+                    if (Game1.options.cancelButton.Any((InputButton p) => p.ToSButton() == btn) ||
+                        Game1.options.menuButton.Any((InputButton p) => p.ToSButton() == btn) ||
+                        btn == Buttons.Y.ToSButton() || btn == Buttons.Start.ToSButton() || 
+                        btn == Buttons.Back.ToSButton() || btn == Buttons.B.ToSButton())
+                    {
+                        Helper.Input.Suppress(btn);
+                        tabSwitcher.cle
+                    }
                 }
             }
         }
-
-        // Testing new Tab Switcher functionality
-        //private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
     }
 }
