@@ -10,6 +10,7 @@ using StardewValley.Objects;
 using StardewValley;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Managers;
+using StardewOutfitManager.Data;
 using System.Xml.Linq;
 
 namespace StardewOutfitManager.Menus
@@ -783,6 +784,18 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.UpdateClothing();
             _displayFarmer.completelyStopAnimatingOrDoingAction();
             Game1.playSound("pickUpItem");
+        }
+
+        // Create and save a new favorite outfit given the player's current selections
+        private void CreateNewFavoriteOutfit(Farmer player, string category, string name)
+        {
+            // Create the favorite from what the player is currently wearing
+            FavoriteOutfit newFave = new FavoriteOutfit(player, category, name);
+            // Add it to the list of favorite outfits for this player
+
+            // Save the updated list to the local JSON favorites file
+
+                // This needs to be stored in a way uniquely identifiable to the player/farmhand, with separate JSON files loaded based on player name
         }
     }
 }

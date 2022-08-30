@@ -15,11 +15,12 @@ Tracking Stuff I Want to Add:
 -- https://www.nexusmods.com/stardewvalley/mods/6108 (male shoe redesign)
 -- Female Shoes (https://www.nexusmods.com/stardewvalley/mods/331)
 - Nothing Equipped Texture Redesign for Farmer Underwear
+- Dye rework OR different colored dye as a craftable/purchased item for easier stacking OR both (extract recipe with item + component to make 2-3 dye?)
 - Swimsuit Items to Wear Swimsuit
 - Support for Auto-Itemizing Fashion Sense Packs (Take FS CP and turn into items automatically)
 - Include Clothes Mouse (https://www.nexusmods.com/stardewvalley/mods/4798) (Consider Adding a Hat Mouse Tab instead)
 - More Accessories (check Get Glam)
-- Noncombat rings
+- Noncombat rings (Ring of friendship with interaction bonuses? Speed boost? Energy boost to consumed food?)
 
 Remap Gamepad (Game1)
 Harmony postfix this and change it after GameLaunched via a config file

@@ -24,9 +24,11 @@ namespace StardewOutfitManager
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
+            // NOTE: This only gets called once, so I likely need a separate manager set for each player if they interact differently--menu and saving managers but not asset?
+            // Probably I should call a menu manager instance and load favorites on SaveLoaded event and again on PeerConnected events
+
             // Set up manager functions
             assetManager = new AssetManager(helper);
-            menuManager = new MenuManager();
 
             // Enable Harmony patches
             var harmony = new Harmony(ModManifest.UniqueID);
@@ -35,7 +37,7 @@ namespace StardewOutfitManager
             // Checked events
             helper.Events.Display.RenderingActiveMenu += this.OnMenuRender;
             helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
-            //helper.Events.Display.RenderedActiveMenu += this.MenuFinishedRendering; - may not need this at all
+
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
@@ -44,6 +46,10 @@ namespace StardewOutfitManager
             // Our opening event where we store the dresser object only triggers when it's both a ShopMenu AND a Dresser AND we aren't yet managing that menu
             if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.storeContext == "Dresser" && menuManager.activeManagedMenu == null)
             {
+                // Spawn a new instance of menuManager for the active player
+                menuManager = new MenuManager();
+                // Load the favorites data for the active player
+
                 // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being opened
                 menuManager.dresserObject = (StorageFurniture)originalMenu.source;
                 // Close the OG dresser menu before it opens
@@ -83,15 +89,6 @@ namespace StardewOutfitManager
                         else { menuManager.handleTopBarInput(btn, (int)cursorPos.X, (int)cursorPos.Y); }
                     }
                 }
-            }
-        }
-        
-        // Draw anything else that we want over the top of other items
-        private void MenuFinishedRendering(object sender, RenderedActiveMenuEventArgs e)
-        {
-            if (menuManager.activeManagedMenu != null)
-            {
-                //
             }
         }
     }
