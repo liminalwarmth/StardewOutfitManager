@@ -18,7 +18,7 @@ namespace StardewOutfitManager.Menus
     internal class WardrobeMenu : IClickableMenu
     {
         // Reference Dresser Object
-        internal StorageFurniture dresserObject = StardewOutfitManager.tabSwitcher.dresserObject;
+        internal StorageFurniture dresserObject = StardewOutfitManager.menuManager.dresserObject;
         
         // Display Farmer and PortraitBox
         private Rectangle _portraitBox;
@@ -126,7 +126,6 @@ namespace StardewOutfitManager.Menus
             base.yPositionOnScreen = (int)topLeft.Y;
 
             // Set up portrait and farmer
-            topLeft = Utility.getTopLeftPositionForCenteringOnScreen(128, 192);
             _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
             _displayFarmer = Game1.player;
             _displayFarmer.faceDirection(2);
@@ -147,7 +146,7 @@ namespace StardewOutfitManager.Menus
             rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
 
             //int selectorBtnsX = _portraitBox.Right + 128;   // Xpos of button block
-            int selectorBtnsX = (int)topLeft.X - 64;        // Xpos of button block
+            int selectorBtnsX = xPositionOnScreen + width/2 + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder - 120;        // Xpos of button block
             int selectorBtnsY = _portraitBox.Y - 32;        // Ypos of button block
             int yOffset = 0;                                // Additional Y offset
             int yBtnSpacing = 96;                           // Vertical space between each button set
@@ -160,7 +159,7 @@ namespace StardewOutfitManager.Menus
             {
                 myID = 1000,
                 downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
+                upNeighborID = 2000, // first top tab
                 leftNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 rightNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 region = LABELS
@@ -259,16 +258,16 @@ namespace StardewOutfitManager.Menus
 
             // Top Bar Tab Switcher Buttons
             populateClickableComponentList();
-            StardewOutfitManager.tabSwitcher.includeTopTabButtons(this);
+            StardewOutfitManager.menuManager.includeTopTabButtons(this);
 
             // Cleanup Behavior
             behaviorBeforeCleanup = delegate
             {
-                StardewOutfitManager.tabSwitcher.onMenuCloseCleanupBehavior();
+                StardewOutfitManager.menuManager.onMenuCloseCleanupBehavior();
             };
 
             // Default snap
-            if (Game1.options.SnappyMenus) {
+            if (Game1.options.SnappyMenus && Game1.options.gamepadControls) {
                 snapToDefaultClickableComponent();
             }
         }
@@ -278,13 +277,14 @@ namespace StardewOutfitManager.Menus
         // Default Snap
         public override void snapToDefaultClickableComponent()
         {
-            snapToClickableComponentWithID(1000);
+            setCurrentlySnappedComponentTo(1000);
+            snapCursorToCurrentSnappedComponent();
         }
 
         // Custom Snap Behavior
         protected override void customSnapBehavior(int direction, int oldRegion, int oldID)
         {
-            switch (oldRegion)
+            switch (getCurrentlySnappedComponent().region)
             {
                 // Label List
                 case LABELS:
@@ -295,34 +295,11 @@ namespace StardewOutfitManager.Menus
                     {
                         selectionClick(getCurrentlySnappedComponent().name, change);
                     }
-                    // Going Up from the Top of the List Goes to the Tab Selectors
-                    else if (oldID == 1000 & direction == 0)
-                    {
-                        snapToClickableComponent(StardewOutfitManager.tabSwitcher.topbarButtons[0]);
-                    }
-                    break;
-
-                // Okay Button
-                case 9999:
                     break;
 
                 default:
                     break;
             }
-        }
-
-        // Snap to Clickable Object
-        public void snapToClickableComponent(ClickableComponent cmp)
-        {
-            currentlySnappedComponent = cmp;
-            snapCursorToCurrentSnappedComponent();
-        }
-
-        // Snap to Button ID
-        public void snapToClickableComponentWithID(int ID)
-        {
-            currentlySnappedComponent = getComponentWithID(ID);
-            snapCursorToCurrentSnappedComponent();
         }
 
         // Key Press
@@ -342,6 +319,12 @@ namespace StardewOutfitManager.Menus
             else if (b == Buttons.LeftShoulder)
             {
                 selectionClick("Direction", -1);
+            }
+            if (b == Buttons.A && getCurrentlySnappedComponent().region == LABELS)
+            {
+                setCurrentlySnappedComponentTo(9999);
+                snapCursorToCurrentSnappedComponent();
+                Game1.playSound("smallSelect");
             }
         }
 
@@ -382,10 +365,9 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale -= 0.25f;
                 okButton.scale = Math.Max(0.75f, okButton.scale);
-                exitThisMenu();
-                Game1.playSound("coin");
+                StardewOutfitManager.menuManager.cleanExit();
             }
-            StardewOutfitManager.tabSwitcher.handleTopBarLeftClick(x, y);
+            StardewOutfitManager.menuManager.handleTopBarLeftClick(x, y);
         }
 
         // Handle On-Hover and Resetting Button States
@@ -422,7 +404,7 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
-            StardewOutfitManager.tabSwitcher.handleTopBarOnHover(x, y, ref hoverText);
+            StardewOutfitManager.menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
         // Game Window Resize
@@ -538,8 +520,10 @@ namespace StardewOutfitManager.Menus
             {
                 rightSelectionButton.draw(b);
             }
-            StardewOutfitManager.tabSwitcher.drawTopBar(b);
             okButton.draw(b);
+
+            // Draw TopBar
+            StardewOutfitManager.menuManager.drawTopBar(b);
 
             // Draw labels
             foreach (ClickableComponent c in labels)
@@ -688,6 +672,7 @@ namespace StardewOutfitManager.Menus
             }
         }
 
+        // CONSIDER MOVING THESE INTO MENUmenuManager FOR FAVORITES ACCESS
         // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
         private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<Item> stockList, int change)
         {

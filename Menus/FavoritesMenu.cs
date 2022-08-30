@@ -38,7 +38,7 @@ namespace StardewOutfitManager.Menus
         public ClickableTextureComponent okButton;
 
         // Menu, Inventory Lists, List Indexes
-        public StorageFurniture dresserObject = StardewOutfitManager.tabSwitcher.dresserObject;
+        public StorageFurniture dresserObject = StardewOutfitManager.menuManager.dresserObject;
         public List<ISalable> hatStock = new List<ISalable>();
         public List<ISalable> shirtStock = new List<ISalable>();
         public List<ISalable> pantsStock = new List<ISalable>();
@@ -97,13 +97,13 @@ namespace StardewOutfitManager.Menus
             itemLabels.Add(shoesLabel);
 
             // Top Bar Tab Switcher Buttons
-            StardewOutfitManager.tabSwitcher.includeTopTabButtons(this);
+            StardewOutfitManager.menuManager.includeTopTabButtons(this);
 
             // Basic UI Functionality Buttons
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f);
             behaviorBeforeCleanup = delegate
             {
-                StardewOutfitManager.tabSwitcher.onMenuCloseCleanupBehavior();
+                StardewOutfitManager.menuManager.onMenuCloseCleanupBehavior();
             };
         }
 
@@ -163,7 +163,7 @@ namespace StardewOutfitManager.Menus
                 exitThisMenu();
                 Game1.playSound("coin");
             }
-            StardewOutfitManager.tabSwitcher.handleTopBarLeftClick(x, y);
+            StardewOutfitManager.menuManager.handleTopBarLeftClick(x, y);
         }
 
         // Handle On-Hover and Resetting Button States
@@ -200,7 +200,7 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
-            StardewOutfitManager.tabSwitcher.handleTopBarOnHover(x, y, ref hoverText);
+            StardewOutfitManager.menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
 
@@ -251,7 +251,7 @@ namespace StardewOutfitManager.Menus
             {
                 rightSelectionButton.draw(b);
             }
-            StardewOutfitManager.tabSwitcher.drawTopBar(b);
+            StardewOutfitManager.menuManager.drawTopBar(b);
             okButton.draw(b);
 
             // Draw labels
