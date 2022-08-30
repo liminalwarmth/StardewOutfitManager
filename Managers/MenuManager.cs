@@ -10,11 +10,12 @@ using StardewValley.Objects;
 using Microsoft.Xna.Framework.Input;
 using StardewValley.BellsAndWhistles;
 using StardewModdingAPI;
+using StardewOutfitManager;
 
 namespace StardewOutfitManager.Managers
 {
     // This class defines the top bar tabs which are inserted into all menus and the cross-menu equipping and list management functionality
-    internal class MenuManager
+    public class MenuManager
     {
         // Holds dresser object for interaction with all menus
         public StorageFurniture dresserObject;
@@ -31,7 +32,7 @@ namespace StardewOutfitManager.Managers
 
         // Hang onto the menu we are currently working with until we perform a CleanExit
         internal IClickableMenu activeManagedMenu;
-        
+
         public void handleTopBarInput(SButton button, int cursorX, int cursorY)
         {
             if (activeManagedMenu != null)
@@ -64,6 +65,8 @@ namespace StardewOutfitManager.Managers
                 onMenuCloseCleanupBehavior();
                 // Set the actively managed menu to null
                 activeManagedMenu = null;
+                // Close the menu manager instance for this player
+                
             }
         }
 

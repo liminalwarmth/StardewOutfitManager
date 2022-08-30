@@ -29,10 +29,6 @@ namespace StardewOutfitManager.Managers
         // Accessory Names
         internal readonly IDictionary<string, string> accessoryJSON;
 
-        // Favorites Data - NOTE: This may be the wrong place to put this since I need to access it per-player
-        public FavoritesData favoritesData;
-
-
         public AssetManager(IModHelper helper)
         {
 
@@ -59,7 +55,7 @@ namespace StardewOutfitManager.Managers
 
             // Load in player favorite outfits list (specific to the save file and local player) from save data
             string playerID = Game1.player.Name;
-            favoritesData = helper.Data.ReadJsonFile<FavoritesData>(Path.Combine(Constants.CurrentSavePath, $"{playerID}_FavoriteOutfits.json")) ?? new FavoritesData(playerID);
+            //favoritesData = helper.Data.ReadJsonFile<FavoritesData>(Path.Combine(Constants.CurrentSavePath, $"{playerID}_FavoriteOutfits.json")) ?? new FavoritesData(playerID);
         }
 
         // Save favorites data to local save storage
