@@ -10,7 +10,7 @@ using StardewValley.Objects;
 using Microsoft.Xna.Framework.Input;
 using StardewValley.BellsAndWhistles;
 using StardewModdingAPI;
-using StardewOutfitManager;
+using StardewOutfitManager.Managers;
 
 namespace StardewOutfitManager.Managers
 {
@@ -51,22 +51,6 @@ namespace StardewOutfitManager.Managers
                     default:
                         break;
                 }
-            }
-        }
-
-        // Close the menu and perform cleanup functions
-        public void cleanExit(bool playSound = true)
-        {
-            if (activeManagedMenu != null)
-            {
-                // Close whichever menu is currently active
-                activeManagedMenu.exitThisMenu(playSound);
-                // Clear the top tab list
-                onMenuCloseCleanupBehavior();
-                // Set the actively managed menu to null
-                activeManagedMenu = null;
-                // Close the menu manager instance for this player
-                
             }
         }
 
@@ -162,12 +146,7 @@ namespace StardewOutfitManager.Managers
                                 // Open the shopMenu the same way the dresser does
                                 Game1.activeClickableMenu = new NewDresserMenu(contents)
                                 {
-                                    source = dresserObject,
-                                    behaviorBeforeCleanup = delegate
-                                    {
-                                        dresserObject.mutex.ReleaseLock();
-                                        dresserObject.OnMenuClose();
-                                    },
+                                    source = dresserObject
                                 };
                                 break;
                             }

@@ -14,6 +14,8 @@ using HarmonyLib;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI.Utilities;
+using System.Threading;
+using static StardewValley.Menus.CharacterCustomization;
 
 namespace StardewOutfitManager
 {
@@ -23,15 +25,14 @@ namespace StardewOutfitManager
         internal static AssetManager assetManager;
 
         // Set up managers for each local player (per-screen handles local co-op)
-        private PerScreen<MenuManager> playerMenuManager;
-        private PerScreen<FavoritesData> playerFavoritesData;
+        internal static PlayerManager playerManager;
 
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
             // Set up global manager functions
             assetManager = new AssetManager(helper);
-            playerMenuManager = new PerScreen<MenuManager>();
+            playerManager = new PlayerManager();
 
             // Enable Harmony patches
             var harmony = new Harmony(ModManifest.UniqueID);
@@ -41,12 +42,6 @@ namespace StardewOutfitManager
             helper.Events.Display.RenderingActiveMenu += this.OnMenuRender;
             helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
             helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
-        }
-
-        // Clean exit when the menus close for the active player
-        public void OnMenuClosed()
-        {
-            playerMenuManager.Value = null;
         }
 
         // Create a new local player context each time a save is loaded
@@ -59,27 +54,35 @@ namespace StardewOutfitManager
         private void OnMenuRender(object sender, RenderingActiveMenuEventArgs e)
         {
             // Our opening event where we store the dresser object only triggers when it's both a ShopMenu AND a Dresser AND we aren't yet managing that menu
-            if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.storeContext == "Dresser" && playerMenuManager.Value == null)
+            if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.storeContext == "Dresser" && playerManager.menuManager.Value == null)
             {
-                // Create a new menu manager instance for the active player
-                playerMenuManager.Value = new MenuManager();
-                // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being opened
-                playerMenuManager.Value.dresserObject = (StorageFurniture)originalMenu.source;
+                // Get a reference to the dresser
+                StorageFurniture originalDresser = (StorageFurniture)originalMenu.source;
                 // Close the OG dresser menu before it opens
                 Game1.activeClickableMenu.exitThisMenuNoSound();
-                // Open a new instance of the primary menu
-                Game1.activeClickableMenu = new WardrobeMenu();
-                // Start managing the menu we just opened
-                playerMenuManager.Value.activeManagedMenu = Game1.activeClickableMenu;
-                playerMenuManager.Value.positionActiveTab(0);
-                Game1.playSound("bigSelect");
+                // Check if this particular dresser is locked for use by another player before opening the interaction menu
+                if (!originalDresser.mutex.IsLocked())
+                {
+                    // Lock the dresser so other players can't use it
+                    originalDresser.mutex.RequestLock(delegate { });
+                    // Create a new menu manager instance for the active player
+                    playerManager.menuManager.Value = new MenuManager();
+                    // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being closed
+                    playerManager.menuManager.Value.dresserObject = originalDresser;
+                    // Open a new instance of the primary Wardrobe menu
+                    Game1.activeClickableMenu = new WardrobeMenu();
+                    // Start managing the menu we just opened
+                    playerManager.menuManager.Value.activeManagedMenu = Game1.activeClickableMenu;
+                    playerManager.menuManager.Value.positionActiveTab(0);
+                    Game1.playSound("bigSelect");
+                }
             }
         }
 
         // Handle player input outside of the ICLickable Menu framework
         private void OnButtonsChanged(object sender, ButtonsChangedEventArgs e)
         {
-            MenuManager menuManager = playerMenuManager.Value;
+            MenuManager menuManager = playerManager.menuManager.Value;
             if (menuManager != null)
             {
                 Vector2 cursorPos = Utility.ModifyCoordinatesForUIScale(e.Cursor.ScreenPixels);
@@ -97,7 +100,7 @@ namespace StardewOutfitManager
                         {
                             // Supress the key and perform clean exit of all menus
                             Helper.Input.Suppress(btn);
-                            menuManager.cleanExit();
+                            playerManager.cleanMenuExit();
                         }
                         // Else pass the buttons on to the menuManager to process its own button press events (alongside the active menu)
                         else { menuManager.handleTopBarInput(btn, (int)cursorPos.X, (int)cursorPos.Y); }

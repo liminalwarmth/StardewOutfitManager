@@ -19,8 +19,10 @@ namespace StardewOutfitManager.Menus
     internal class WardrobeMenu : IClickableMenu
     {
         // Reference Dresser Object
-        internal StorageFurniture dresserObject = StardewOutfitManager.menuManager.dresserObject;
-        
+        internal StorageFurniture dresserObject = StardewOutfitManager.playerManager.menuManager.Value.dresserObject;
+        // Reference Top Tab Menu Manager
+        internal MenuManager menuManager = StardewOutfitManager.playerManager.menuManager.Value;
+
         // Display Farmer and PortraitBox
         private Rectangle _portraitBox;
         private Farmer _displayFarmer;
@@ -259,12 +261,12 @@ namespace StardewOutfitManager.Menus
 
             // Top Bar Tab Switcher Buttons
             populateClickableComponentList();
-            StardewOutfitManager.menuManager.includeTopTabButtons(this);
+            menuManager.includeTopTabButtons(this);
 
             // Cleanup Behavior
             behaviorBeforeCleanup = delegate
             {
-                StardewOutfitManager.menuManager.onMenuCloseCleanupBehavior();
+                menuManager.onMenuCloseCleanupBehavior();
             };
 
             // Default snap
@@ -366,9 +368,9 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale -= 0.25f;
                 okButton.scale = Math.Max(0.75f, okButton.scale);
-                StardewOutfitManager.menuManager.cleanExit();
+                StardewOutfitManager.playerManager.cleanMenuExit();
             }
-            StardewOutfitManager.menuManager.handleTopBarLeftClick(x, y);
+            menuManager.handleTopBarLeftClick(x, y);
         }
 
         // Handle On-Hover and Resetting Button States
@@ -405,7 +407,7 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
-            StardewOutfitManager.menuManager.handleTopBarOnHover(x, y, ref hoverText);
+            menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
         // Game Window Resize
@@ -524,7 +526,7 @@ namespace StardewOutfitManager.Menus
             okButton.draw(b);
 
             // Draw TopBar
-            StardewOutfitManager.menuManager.drawTopBar(b);
+            menuManager.drawTopBar(b);
 
             // Draw labels
             foreach (ClickableComponent c in labels)

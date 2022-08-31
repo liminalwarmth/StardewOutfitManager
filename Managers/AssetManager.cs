@@ -12,7 +12,6 @@ namespace StardewOutfitManager.Managers
     {
         internal string assetFolderPath;
         
-
         // UI textures
         internal readonly Texture2D wardrobeTabTexture;
         internal readonly Texture2D favoritesTabTexture;
@@ -31,7 +30,6 @@ namespace StardewOutfitManager.Managers
 
         public AssetManager(IModHelper helper)
         {
-
             // Get the asset folder path
             assetFolderPath = helper.ModContent.GetInternalAssetName(Path.Combine("Assets")).Name;
 
@@ -54,7 +52,7 @@ namespace StardewOutfitManager.Managers
             // TODO NOTE: ModEntry fires only once, so there's one instance of this--I need to figure out how to manage separate player data on two screens (maybe a per-screen save manager?)
 
             // Load in player favorite outfits list (specific to the save file and local player) from save data
-            string playerID = Game1.player.Name;
+            //string playerID = Game1.player.Name;
             //favoritesData = helper.Data.ReadJsonFile<FavoritesData>(Path.Combine(Constants.CurrentSavePath, $"{playerID}_FavoriteOutfits.json")) ?? new FavoritesData(playerID);
         }
 

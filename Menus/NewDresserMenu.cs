@@ -122,18 +122,22 @@ namespace StardewOutfitManager.Menus
 
         public Dictionary<ISalable, ISalable> buyBackItemsToResellTomorrow = new Dictionary<ISalable, ISalable>();
 
+        // My vars
+        // Reference Top Tab Menu Manager
+        internal MenuManager menuManager = StardewOutfitManager.playerManager.menuManager.Value;
+
         // Dumping these custom functions here because I don't wanna look at them and this is the object that uses them
         // Custom dresser functions needed for new dresser
         public virtual bool onDresserItemDeposited(ISalable deposited_salable)
         {
             if (deposited_salable is Item)
             {
-                StardewOutfitManager.menuManager.dresserObject.heldItems.Add(deposited_salable as Item);
+                menuManager.dresserObject.heldItems.Add(deposited_salable as Item);
                 if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is NewDresserMenu)
                 {
                     Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
-                    List<Item> list = StardewOutfitManager.menuManager.dresserObject.heldItems.ToList();
-                    list.Sort(StardewOutfitManager.menuManager.dresserObject.SortItems);
+                    List<Item> list = menuManager.dresserObject.heldItems.ToList();
+                    list.Sort(menuManager.dresserObject.SortItems);
                     foreach (Item item in list)
                     {
                         contents[item] = new int[2] { 0, 1 };
@@ -150,7 +154,7 @@ namespace StardewOutfitManager.Menus
         {
             if (salable is Item)
             {
-                StardewOutfitManager.menuManager.dresserObject.heldItems.Remove(salable as Item);
+                menuManager.dresserObject.heldItems.Remove(salable as Item);
                 Game1.playSound("stoneStep");
             }
             return false;
@@ -333,7 +337,7 @@ namespace StardewOutfitManager.Menus
                 rightNeighborID = 3546
             };
             this.tabButtons.Add(tab3);
-            StardewOutfitManager.menuManager.includeTopTabButtons(this);
+            menuManager.includeTopTabButtons(this);
             this.repositionTabs();
             this.purchaseSound = null;
             this.purchaseRepeatSound = null;
@@ -749,7 +753,7 @@ namespace StardewOutfitManager.Menus
                 return;
             }
             Vector2 snappedPosition = this.inventory.snapToClickableComponent(x, y);
-            StardewOutfitManager.menuManager.handleTopBarLeftClick(x, y);
+            menuManager.handleTopBarLeftClick(x, y);
             if (this.downArrow.containsPoint(x, y) && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
             {
                 this.downArrowPressed();
@@ -1554,7 +1558,7 @@ namespace StardewOutfitManager.Menus
                 }
                 this.hoverPrice = (int)((j is StardewValley.Object) ? ((float)(j as StardewValley.Object).sellToStorePrice(-1L) * this.sellPercentage) : ((float)(j.salePrice() / 2) * this.sellPercentage)) * j.Stack;
             }
-            StardewOutfitManager.menuManager.handleTopBarOnHover(x, y, ref hoverText);
+            menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
         public override void update(GameTime time)
@@ -1818,7 +1822,7 @@ namespace StardewOutfitManager.Menus
             {
                 this.tabButtons[i].draw(b);
             }
-            StardewOutfitManager.menuManager.drawTopBar(b);
+            menuManager.drawTopBar(b);
             if (this.forSale.Count > 4)
             {
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
