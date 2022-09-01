@@ -15,6 +15,8 @@ namespace StardewOutfitManager.Menus
     // This whole file needs to be gutted and reworked once Wardrobe Menu is fleshed out a bit more
     // Reference how GetDressed did this once upon a time: https://github.com/AdvizeGH/GetDressed/blob/master/GetDressed/Framework/CharacterCustomizationMenu.cs
 
+    // Look into public Farmer CreateFakeEventFarmer()
+
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {

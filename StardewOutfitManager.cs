@@ -15,7 +15,6 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI.Utilities;
 using System.Threading;
-using static StardewValley.Menus.CharacterCustomization;
 
 namespace StardewOutfitManager
 {
@@ -32,7 +31,7 @@ namespace StardewOutfitManager
         {
             // Set up global manager functions
             assetManager = new AssetManager(helper);
-            playerManager = new PlayerManager();
+            playerManager = new PlayerManager(helper);
 
             // Enable Harmony patches
             var harmony = new Harmony(ModManifest.UniqueID);
@@ -41,13 +40,6 @@ namespace StardewOutfitManager
             // Checked events
             helper.Events.Display.RenderingActiveMenu += this.OnMenuRender;
             helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
-            helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
-        }
-
-        // Create a new local player context each time a save is loaded
-        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
-        {
-            //playerFavoritesData.Value = new FavoritesData("test");
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
@@ -65,6 +57,8 @@ namespace StardewOutfitManager
                 {
                     // Lock the dresser so other players can't use it
                     originalDresser.mutex.RequestLock(delegate { });
+                    // Load the favorites data (or create a new favorites data object if no file exists) if we haven't yet
+                    if (playerManager.favoritesData.Value == null) { playerManager.loadFavoritesDataFromFile(); }
                     // Create a new menu manager instance for the active player
                     playerManager.menuManager.Value = new MenuManager();
                     // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being closed
@@ -92,6 +86,7 @@ namespace StardewOutfitManager
                     // Double check a prior button didn't already close the menu
                     if (menuManager.activeManagedMenu != null)
                     {
+                        // TODO: Suppressing this might not be necessary once I rewrite the new DresserMenu class since I can route close actions directly to cleanup
                         // Suppress the menu/cancel buttons and keys so that I can control menu exit and handle cleanup
                         if (Game1.options.cancelButton.Any((InputButton p) => p.ToSButton() == btn) ||
                         Game1.options.menuButton.Any((InputButton p) => p.ToSButton() == btn) ||

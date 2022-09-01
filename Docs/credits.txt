@@ -1,5 +1,6 @@
 ﻿Credit to:
 - Jinxiewinxie and Advize for the Get Dressed Mod which inspired this one!
 - Elizabeth at the Stardew Valley Discord for base game hair name list
-- Minakie for the Get Dressed dresser retextures and new models (https://www.nexusmods.com/stardewvalley/mods/648)
-- Zilchaz for their permission to use their beautiful Seasonal Display Backgrounds
+- Minakie for the Get Dressed dresser retextures (https://www.nexusmods.com/stardewvalley/mods/648)
+- Zilchaz for their permission to use their beautiful Seasonal Display Backgrounds on the favorites tab
+- Atravita, Pathoschild, and all of the other helpful modders at the SDV modding discord community for answering questions and sharing code examples during development!

@@ -10,15 +10,72 @@ namespace StardewOutfitManager.Data
     // Defines the data structure for a list of favorite outfits for a player
     public class FavoritesData
     {
-        // TODO: Since this is basically key/value pair I should probably just change this to a single IDict
-        public string playerID { get; set; } //this shouldn't be an int, it should be something that can ID the player (possibly save file?) 
         public List<FavoriteOutfit> Favorites { get; set; }
 
         // Construct a new favorite outfits list for the player
-        public FavoritesData(string name)
+        public FavoritesData()
         {
-            playerID = name;
             Favorites = new();
+        }
+
+        // Create a new favorite outfit in the data model
+        public void SaveNewOutfit(Farmer player, string category, string name)
+        {
+            Favorites.Add(new FavoriteOutfit(player, category, name));
+        }
+
+        // Given an outfit, delete it from the data model
+        public void DeleteOutfit(FavoriteOutfit outfit)
+        {
+            Favorites.Remove(outfit);
+        }
+
+        // Sort a given list of outfits by different criteria and return sorted list
+        public List<FavoriteOutfit> SortOutfitList(List<FavoriteOutfit> list, string sortType)
+        {   
+            List<FavoriteOutfit> sorted = new List<FavoriteOutfit>();
+            foreach (FavoriteOutfit outfit in list)
+            {
+                switch (sortType)
+                {
+                    // Sort by when the player last wore the outfit
+                    case "lastWorn":
+                        // some sorting code to compare wear dates
+                            // insert
+                        break;
+
+                    // Sort by the outfit's primary category
+                    case "category":
+                        // some sorting code to compare categories
+                            // insert
+                        break;
+                }
+            }
+            return sorted;
+        }
+
+        // Filter a list of outfits by different criteria and return filtered list
+        public List<FavoriteOutfit> FilterOutfitList(List<FavoriteOutfit> list, string filterType, string categoryType = null)
+        {
+            List<FavoriteOutfit> filtered = new List<FavoriteOutfit>();
+            foreach (FavoriteOutfit outfit in list)
+            {
+                switch (filterType)
+                {
+                    case "category":
+                        if (categoryType == outfit.Category) { filtered.Add(outfit); }
+                        break;
+
+                    case "favorites":
+                        if (outfit.isFavorite) { filtered.Add(outfit); }
+                        break;
+
+                    case "notFavorites":
+                        if (!outfit.isFavorite) { filtered.Add(outfit); }
+                        break;
+                }
+            }
+            return filtered;
         }
     }
 
@@ -33,9 +90,6 @@ namespace StardewOutfitManager.Data
        
         // The Category the outfit applies to ("Spring"/"Summer"/"Fall"/"Winter"/"Special1"/"Special2")
         public string Category { get; set; }
-
-        // All items required to wear this outfit
-        internal List<Item> NeededItemList { get; set; }
 
         // The in-game item references the outfit contains
         public Item Hat { get; set; }
@@ -69,14 +123,12 @@ namespace StardewOutfitManager.Data
             Category = category;
 
             // Set the values for this outfit loadout from the given player
-            NeededItemList = new();
             Hat = player.hat.Value;
             Shirt = player.shirtItem.Value;
             Pants = player.pantsItem.Value;
             Boots = player.boots.Value;
             LeftRing = player.leftRing.Value;
             RightRing = player.rightRing.Value;
-            NeededItemList.AddRange(new List<Item>() { Hat,Shirt,Pants,Boots,LeftRing,RightRing });
 
             // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
             Hair = player.hair.Value;
@@ -92,7 +144,7 @@ namespace StardewOutfitManager.Data
         public bool isAvailable(List<Item> playerOwnedItems)
         {   
             // Check all items on the needed item list against the list of possible items the player could wear
-            foreach (Item item in NeededItemList)
+            foreach (Item item in getNeededItemsList())
             {
                 // Only check for slots that have an item stored in that slot
                 if (item != null)
@@ -118,7 +170,7 @@ namespace StardewOutfitManager.Data
             Dictionary<Item, bool> outfitItemDict = new();
 
             // Check all items on the needed item list against the list of possible items the player could wear
-            foreach (Item item in NeededItemList)
+            foreach (Item item in getNeededItemsList())
             {
                 // Only check for slots that have an item stored in that slot
                 if (item != null)
@@ -135,6 +187,12 @@ namespace StardewOutfitManager.Data
             }
             // Return the outfit item and availability dictionary
             return outfitItemDict;
+        }
+
+        // Assemble equippable items needed for outfit
+        internal List<Item> getNeededItemsList()
+        {
+            return new List<Item>() { Hat, Shirt, Pants, Boots, LeftRing, RightRing };
         }
     }
 }
