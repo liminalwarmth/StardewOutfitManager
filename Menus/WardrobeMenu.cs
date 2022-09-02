@@ -22,6 +22,8 @@ namespace StardewOutfitManager.Menus
         internal StorageFurniture dresserObject = StardewOutfitManager.playerManager.menuManager.Value.dresserObject;
         // Reference Top Tab Menu Manager
         internal MenuManager menuManager = StardewOutfitManager.playerManager.menuManager.Value;
+        // Reference Favorites Data
+        internal FavoritesData favoritesData = StardewOutfitManager.playerManager.favoritesData.Value;
 
         // Display Farmer and PortraitBox
         private Rectangle _portraitBox;
@@ -49,6 +51,7 @@ namespace StardewOutfitManager.Menus
 
         // Additional Buttons
         public ClickableTextureComponent okButton;
+        public ClickableTextureComponent saveFavoriteButton;
 
         // Menu, Inventory Lists, List Indexes
         public List<Item> hatStock = new();
@@ -233,7 +236,7 @@ namespace StardewOutfitManager.Menus
                 region = LABELS
             });
             rightSelectionButtons.Add(new ClickableTextureComponent("Hair", new Rectangle(selectorBtnsX + 128, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f));
-            hairLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), GetHairOrAccessoryName("Hair", _displayFarmer.hair.Value));
+            hairLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), this.GetHairOrAccessoryName("Hair", _displayFarmer.hair.Value));
             itemLabels.Add(hairLabel);
 
             // Accessories Buttons
@@ -248,15 +251,24 @@ namespace StardewOutfitManager.Menus
                 region = LABELS
             });
             rightSelectionButtons.Add(new ClickableTextureComponent("Accessory", new Rectangle(selectorBtnsX + 128, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1f));
-            accLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), GetHairOrAccessoryName("Accessory", _displayFarmer.accessory.Value));
+            accLabel = new ClickableComponent(new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1), this.GetHairOrAccessoryName("Accessory", _displayFarmer.accessory.Value));
             itemLabels.Add(accLabel);
 
-            // Basic UI Functionality Buttons
+            // Confirm Button
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
             {
                 myID = 9999,
                 upNeighborID = 1005,
-                leftNeighborID = 1005
+                leftNeighborID = 9998
+            };
+
+            // Save as Favorite Button
+            saveFavoriteButton = new ClickableTextureComponent("SaveFavorite", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56 - 74, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47), 1f)
+            {
+                myID = 9998,
+                upNeighborID = 1005,
+                leftNeighborID = 1005,
+                rightNeighborID = 9999
             };
 
             // Top Bar Tab Switcher Buttons
@@ -370,6 +382,13 @@ namespace StardewOutfitManager.Menus
                 okButton.scale = Math.Max(0.75f, okButton.scale);
                 StardewOutfitManager.playerManager.cleanMenuExit();
             }
+            if (saveFavoriteButton.containsPoint(x, y))
+            {
+                saveFavoriteButton.scale -= 0.25f;
+                saveFavoriteButton.scale = Math.Max(0.75f, okButton.scale);
+                favoritesData.SaveNewOutfit(_displayFarmer, "TEMP_CAT", "TEMP_NAME");
+                Game1.playSound("dwop");
+            }
             menuManager.handleTopBarLeftClick(x, y);
         }
 
@@ -407,10 +426,18 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
+            if (saveFavoriteButton.containsPoint(x, y))
+            {
+                saveFavoriteButton.scale = Math.Min(saveFavoriteButton.scale + 0.02f, saveFavoriteButton.baseScale + 0.1f);
+            }
+            else
+            {
+                saveFavoriteButton.scale = Math.Max(saveFavoriteButton.scale - 0.02f, saveFavoriteButton.baseScale);
+            }
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
-        // Game Window Resize
+        // Game Window Resize - TODO
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             base.gameWindowSizeChanged(oldBounds, newBounds);
@@ -524,6 +551,7 @@ namespace StardewOutfitManager.Menus
                 rightSelectionButton.draw(b);
             }
             okButton.draw(b);
+            saveFavoriteButton.draw(b);
 
             // Draw TopBar
             menuManager.drawTopBar(b);
@@ -569,7 +597,6 @@ namespace StardewOutfitManager.Menus
             base.drawMouse(b);
         }
 
-        // FUNCTIONALITY
         // Handle menu selection clicks
         private void selectionClick(string name, int change)
         {
@@ -577,22 +604,22 @@ namespace StardewOutfitManager.Menus
             {
                 case "Hat":
                     {
-                        ClothingSwap(name, ref hatIndex, ref hatStock, change);
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref hatIndex, ref hatStock, change), hatLabel);
                         break;
                     }
                 case "Shirt":
                     {
-                        ClothingSwap(name, ref shirtIndex, ref shirtStock, change);
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shirtIndex, ref shirtStock, change), shirtLabel);
                         break;
                     }
                 case "Pants":
                     {
-                        ClothingSwap(name, ref pantsIndex, ref pantsStock, change);
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref pantsIndex, ref pantsStock, change), pantsLabel);
                         break;
                     }
                 case "Shoes":
                     {
-                        ClothingSwap(name, ref shoesIndex, ref shoesStock, change);
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shoesIndex, ref shoesStock, change), shoesLabel);
                         break;
                     }
                 case "Direction":
@@ -605,87 +632,21 @@ namespace StardewOutfitManager.Menus
                     }
                 case "Hair":
                     {
-                        HairSwap(name, change);
+                        this.HairSwap(name, change, _displayFarmer, hairLabel);
                         break;
                     }
                 case "Accessory":
                     {
-                        AccessorySwap(name, change);
+                        this.AccessorySwap(name, change, _displayFarmer, accLabel);
                         break;
                     }
             }
         }
-
-        // Change and save the player hair
-        private void HairSwap(string name, int change)
-        {
-            List<int> all_hairs = Farmer.GetAllHairstyleIndices();
-            int current_index = all_hairs.IndexOf(_displayFarmer.hair.Value);
-            current_index += change;
-            if (current_index >= all_hairs.Count)
-            {
-                current_index = 0;
-            }
-            else if (current_index < 0)
-            {
-                current_index = all_hairs.Count() - 1;
-            }
-            _displayFarmer.changeHairStyle(all_hairs[current_index]);
-            hairLabel.name = GetHairOrAccessoryName(name, current_index);
-            Game1.playSound("grassyStep");
-        }
         
-        // Change and save the player active accessory
-        private void AccessorySwap(string name, int change)
+        // Returns the item in the index which is referenced by the directional change
+        private Item ClothingSwap(ref int itemIndex, ref List<Item> stockList, int change)
         {
-            int newAccValue = (int)_displayFarmer.accessory.Value + change;
-            // Taken from the game hardcoding -- these should be made dynamic if I want to add more or exclude beards
-            // Taking out beards (0-6) and the duckbill (18) for now
-            if (newAccValue < 6)
-            {
-                if (change == -1) { newAccValue = newAccValue < -1 ? 17 : -1; } // Hop down to 0 from 6 and then loop around if we're going left
-                else { newAccValue = 6; } // Else hop up to 6 if right
-            }
-            if (newAccValue >= -1)
-            {
-                if (newAccValue >= 18)
-                {
-                    newAccValue = -1;
-                }
-                _displayFarmer.accessory.Set(newAccValue);
-            }
-            accLabel.name = GetHairOrAccessoryName(name, newAccValue);
-            Game1.playSound("purchase");
-        }
-
-        // Gets Name of Hair or Accessory if Defined in a JSON Asset
-        private string GetHairOrAccessoryName(string stringType, int value)
-        {
-            value++;
-            string valueString = value.ToString();
-            IDictionary<string, string> dictToCheck = (stringType == "Hair") ? StardewOutfitManager.assetManager.hairJSON : StardewOutfitManager.assetManager.accessoryJSON;
-            if (dictToCheck.ContainsKey(valueString))
-            {
-                return dictToCheck[valueString];
-            }
-            else
-            {
-                string prefix = (stringType == "Hair") ? "Hair " : "Accessory ";
-                return prefix + valueString;
-            }
-        }
-
-        // CONSIDER MOVING THESE INTO MENUmenuManager FOR FAVORITES ACCESS
-        // Clothing Swap keeps the dresser inventory, stock lists, and player in sync and equips items shown in the display menu on the player
-        private void ClothingSwap(string itemCategory, ref int itemIndex, ref List<Item> stockList, int change)
-        {
-            // Item, if any, that will be taken out of the dresser and put on the player
-            Item removeFromDresser = null;
-            // Item, if any, that will be taken off of the player and put into the dresser
-            Item addToDresser = null;
-
             // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
-            int priorItemIndex = itemIndex;
             int listSize = stockList.Count;
             if (listSize > 0)
             {
@@ -697,107 +658,8 @@ namespace StardewOutfitManager.Menus
             {
                 itemIndex = -1;
             }
-            // Calculate clothing items to be swapped between dresser and player, if any
-            if (itemIndex == -1)
-            {
-                // Case: Moving to or staying on no item equipped, possible prior item
-                removeFromDresser = null;
-                // Case: Moving from equipped item to no item equipped
-                if (priorItemIndex != itemIndex)
-                {
-                    addToDresser = stockList[priorItemIndex];
-                }
-            }
-            else
-            {
-                // Case: Moving from no item equipped to an item equipped
-                if (priorItemIndex == -1)
-                {
-                    removeFromDresser = stockList[itemIndex];
-                    addToDresser = null;
-                }
-                // Case: Moving from an equipped item to another equipped item
-                else
-                {
-                    removeFromDresser = stockList[itemIndex];
-                    addToDresser = stockList[priorItemIndex];
-                }
-            }
-
-            // Add back to the dresser any item that we're taking off the player by moving position
-            if (addToDresser != null)
-            {
-                dresserObject.heldItems.Add(addToDresser);
-            }
-            // If an item is being taken from the dresser, we need to equip it on the player
-            if (removeFromDresser != null)
-            {
-                // Remove from dresser storage
-                dresserObject.heldItems.Remove(removeFromDresser);
-                // Equip on player
-                Item equipThing = removeFromDresser;
-                if (equipThing.Category == -95)
-                {
-                    _displayFarmer.hat.Set(equipThing as Hat);
-                    hatLabel.name = _displayFarmer.hat.Value.DisplayName;
-                }
-                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 0)
-                {
-                    _displayFarmer.shirtItem.Set(equipThing as Clothing);
-                    shirtLabel.name = _displayFarmer.shirtItem.Value.DisplayName;
-                }
-                else if (equipThing is Clothing && (equipThing as Clothing).clothesType.Value == 1)
-                {
-                    _displayFarmer.pantsItem.Set(equipThing as Clothing);
-                    pantsLabel.name = _displayFarmer.pantsItem.Value.DisplayName;
-                }
-                else if (equipThing.Category == -97)
-                {
-                    _displayFarmer.boots.Set(equipThing as Boots);
-                    shoesLabel.name = _displayFarmer.boots.Value.DisplayName;
-                    _displayFarmer.changeShoeColor(_displayFarmer.boots.Value.indexInColorSheet.Value);
-                }
-            }
-            // If no item was taken from the dresser, the player isn't wearing anything in that slot
-            else
-            {
-                if (itemCategory == "Hat")
-                {
-                    _displayFarmer.hat.Set(null);
-                    hatLabel.name = "None";
-                }
-                else if (itemCategory == "Shirt")
-                {
-                    _displayFarmer.shirtItem.Set(null);
-                    shirtLabel.name = "None";
-                }
-                else if (itemCategory == "Pants")
-                {
-                    _displayFarmer.pantsItem.Set(null);
-                    pantsLabel.name = "None";
-                }
-                else if (itemCategory == "Shoes")
-                {
-                    _displayFarmer.boots.Set(null);
-                    shoesLabel.name = "None";
-                    _displayFarmer.changeShoeColor(12);
-                }
-            }
-            _displayFarmer.UpdateClothing();
-            _displayFarmer.completelyStopAnimatingOrDoingAction();
-            Game1.playSound("pickUpItem");
-        }
-
-        // Create and save a new favorite outfit given the player's current selections
-        private void CreateNewFavoriteOutfit(Farmer player, string category, string name)
-        {
-            // Create the favorite from what the player is currently wearing
-            FavoriteOutfit newFave = new FavoriteOutfit(player, category, name);
-            // Add it to the list of favorite outfits for this player
-
-            // Save the updated list to the local JSON favorites file
-
-                // This needs to be stored in a way uniquely identifiable to the player/farmhand, with separate JSON files loaded based on player name
+            // Return null (no item if -1), otherwise return the item
+            return (itemIndex == -1) ? null : stockList[itemIndex];
         }
     }
 }
