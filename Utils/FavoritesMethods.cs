@@ -138,6 +138,7 @@ namespace StardewOutfitManager.Utils
     //Extension methods to FavoriteOutfit data model for Outfit management
     public static class FavoriteOutfitMethods
     {
+        // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
         // Given a list of possible items to check against, returns true if all pieces of this outfit are present
         public static bool isAvailable(this FavoriteOutfit f, List<Item> playerOwnedItems)
         {
@@ -152,7 +153,6 @@ namespace StardewOutfitManager.Utils
                     if ( foundItem == null) { return false; }
                 }
             }
-            // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
 
             // If all items in the outfit were found, return true
             return true;

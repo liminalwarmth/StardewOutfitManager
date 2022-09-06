@@ -1,4 +1,5 @@
 ﻿To-Do:
+- Move saving favorites to data file to the end of day save action
 - Up and down labels cycle around to top or bottom
 - Buttons to display controller buttons if gamepad is enabled
 - Press A to go to okay, B from there to go back

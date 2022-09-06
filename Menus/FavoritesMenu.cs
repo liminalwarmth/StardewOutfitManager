@@ -12,6 +12,7 @@ using StardewOutfitManager.Managers;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Data;
 using System.Reflection.Metadata.Ecma335;
+using static StardewValley.Menus.LoadGameMenu;
 
 namespace StardewOutfitManager.Menus
 {
@@ -21,6 +22,25 @@ namespace StardewOutfitManager.Menus
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {
+        // Outfit button slot definition
+        public abstract class OutfitSlot : IDisposable
+        {
+            protected FavoritesMenu menu;
+
+            public OutfitSlot(FavoritesMenu menu)
+            {
+                this.menu = menu;
+            }
+
+            public abstract void Activate();
+
+            public abstract void Draw(SpriteBatch b, int i);
+
+            public virtual void Dispose()
+            {
+            }
+        }
+
         // Reference Dresser Object
         internal StorageFurniture dresserObject = StardewOutfitManager.playerManager.menuManager.Value.dresserObject;
         // Reference Top Tab Menu Manager
@@ -39,6 +59,18 @@ namespace StardewOutfitManager.Menus
         public List<ClickableComponent> leftSelectionButtons = new();
         public List<ClickableComponent> rightSelectionButtons = new();
 
+        // Outfit buttons
+        public List<ClickableComponent> outfitButtons = new();
+        private int currentOutfitIndex = 0;
+
+        // Scroll bar and controls
+        public ClickableTextureComponent upArrow;
+        public ClickableTextureComponent downArrow;
+        public ClickableTextureComponent scrollBar;
+        private Rectangle scrollBarRunner;
+        private bool scrolling;
+
+        // Available items for outfits
         public List<Item> playerOwnedItems = new();
 
         // Snap Regions
@@ -142,7 +174,40 @@ namespace StardewOutfitManager.Menus
                     playerOwnedItems.Add(item);
                 }
             }
+
+            // Generate outfit navigation scroll
+            upArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + 16, 44, 48), Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f)
+            {
+                myID = 97865,
+                downNeighborID = 106,
+                leftNeighborID = 3546
+            };
+            downArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + base.height - 64, 44, 48), Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f)
+            {
+                myID = 106,
+                upNeighborID = 97865,
+                leftNeighborID = 3546
+            };
+            scrollBar = new ClickableTextureComponent(new Rectangle(this.upArrow.bounds.X + 12, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
+            scrollBarRunner = new Rectangle(this.scrollBar.bounds.X, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, this.scrollBar.bounds.Width, base.height - 64 - this.upArrow.bounds.Height - 28);
+
+
+            // Generate scrollable outfit buttons
+            int outfitsXoffset = IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder + 256 + 96;
+            int outfitsYoffset = 64;
+            for (int i = 0; i < 4; i++)
+            {
+                outfitButtons.Add(new ClickableComponent(new Rectangle(xPositionOnScreen + outfitsXoffset, yPositionOnScreen + 16 + i * ((height - 256) / 4) + outfitsYoffset, width - 32 - outfitsXoffset, (height - 256) / 4 + 4), i.ToString() ?? "")
+                {
+                    myID = i + 3546,
+                    rightNeighborID = 97865,
+                    fullyImmutable = true
+                });
+            }
         }
+
+        // OUTFIT DISPLAY
+        // Create list of favorite outfits as scrollable tabs
 
         // CONTROLS
 
@@ -233,6 +298,32 @@ namespace StardewOutfitManager.Menus
                     }
                 }
             }
+            // Scrollbar arrows
+            //if (this.downArrow.containsPoint(x, y) && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
+            if (this.downArrow.containsPoint(x, y))
+            {
+                this.downArrowPressed();
+                Game1.playSound("shwip");
+            }
+            //else if (this.upArrow.containsPoint(x, y) && this.currentItemIndex > 0)
+            else if (this.upArrow.containsPoint(x, y))
+            {
+                this.upArrowPressed();
+                Game1.playSound("shwip");
+            }
+            else if (this.scrollBar.containsPoint(x, y))
+            {
+                this.scrolling = true;
+            }
+            else if (!this.downArrow.containsPoint(x, y) && x > base.xPositionOnScreen + base.width && x < base.xPositionOnScreen + base.width + 128 && y > base.yPositionOnScreen && y < base.yPositionOnScreen + base.height)
+            {
+                this.scrolling = true;
+                this.leftClickHeld(x, y);
+                this.releaseLeftClick(x, y);
+            }
+            // currentItemIndex = Math.Max(0, Math.Min(this.forSale.Count - 4, this.currentItemIndex));
+
+            // ok button
             if (okButton.containsPoint(x, y))
             {
                 okButton.scale -= 0.25f;
@@ -293,14 +384,106 @@ namespace StardewOutfitManager.Menus
             // TODO: Reposition tabs?
         }
 
+        // Handle menu selection clicks
+        private void selectionClick(string name, int change)
+        {
+            switch (name)
+            {
+                case "Direction":
+                    {
+                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
+                        _displayFarmer.FarmerSprite.StopAnimation();
+                        _displayFarmer.completelyStopAnimatingOrDoingAction();
+                        Game1.playSound("stoneStep");
+                        break;
+                    }
+            }
+        }
+
+        // Handle scrolling
+        public override void leftClickHeld(int x, int y)
+        {
+            base.leftClickHeld(x, y);
+            if (this.scrolling)
+            {
+                int y2 = this.scrollBar.bounds.Y;
+                this.scrollBar.bounds.Y = Math.Min(base.yPositionOnScreen + base.height - 64 - 12 - this.scrollBar.bounds.Height, Math.Max(y, base.yPositionOnScreen + this.upArrow.bounds.Height + 20));
+                float percentage = (float)(y - this.scrollBarRunner.Y) / (float)this.scrollBarRunner.Height;
+                //this.currentItemIndex = Math.Min(Math.Max(0, this.forSale.Count - 4), Math.Max(0, (int)((float)this.forSale.Count * percentage)));
+                //this.setScrollBarToCurrentIndex();
+                //this.updateSaleButtonNeighbors();
+                if (y2 != this.scrollBar.bounds.Y)
+                {
+                    Game1.playSound("shiny4");
+                }
+            }
+        }
+
+        public override void releaseLeftClick(int x, int y)
+        {
+            base.releaseLeftClick(x, y);
+            this.scrolling = false;
+        }
+
+        /*
+        private void setScrollBarToCurrentIndex()
+        {
+            if (this.forSale.Count > 0)
+            {
+                this.scrollBar.bounds.Y = this.scrollBarRunner.Height / Math.Max(1, this.forSale.Count - 4 + 1) * this.currentItemIndex + this.upArrow.bounds.Bottom + 4;
+                if (this.currentItemIndex == this.forSale.Count - 4)
+                {
+                    this.scrollBar.bounds.Y = this.downArrow.bounds.Y - this.scrollBar.bounds.Height - 4;
+                }
+            }
+        }
+
+        public override void receiveScrollWheelAction(int direction)
+        {
+            base.receiveScrollWheelAction(direction);
+            if (direction > 0 && this.currentItemIndex > 0)
+            {
+                this.upArrowPressed();
+                Game1.playSound("shiny4");
+            }
+            else if (direction < 0 && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
+            {
+                this.downArrowPressed();
+                Game1.playSound("shiny4");
+            }
+        }
+        */
+
+        private void downArrowPressed()
+        {
+            this.downArrow.scale = this.downArrow.baseScale;
+            //this.currentItemIndex++;
+            //this.setScrollBarToCurrentIndex();
+            //this.updateSaleButtonNeighbors();
+        }
+
+        private void upArrowPressed()
+        {
+            this.upArrow.scale = this.upArrow.baseScale;
+            //this.currentItemIndex--;
+            //this.setScrollBarToCurrentIndex();
+            //this.updateSaleButtonNeighbors();
+        }
+
         // DRAW
+
+        //protected virtual void drawSlotBackground(SpriteBatch b, int i, OutfitSlot slot)
+        protected virtual void drawSlotBackground(SpriteBatch b, int i)
+        {
+            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 396, 15, 15), this.outfitButtons[i].bounds.X, this.outfitButtons[i].bounds.Y, this.outfitButtons[i].bounds.Width, this.outfitButtons[i].bounds.Height, Color.Wheat, 4f, drawShadow: false);
+        }
+
         public override void draw(SpriteBatch b)
         {
             if (Game1.dialogueUp || Game1.IsFading())
             {
                 return;
             }
-
             // General UI (title, background)
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             SpriteText.drawStringWithScrollCenteredAt(b, "Favorite Outfits", base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
@@ -322,6 +505,24 @@ namespace StardewOutfitManager.Menus
                 rightSelectionButton.draw(b);
             }
             okButton.draw(b);
+
+            // stolen from load menu
+            for (int i = 0; i < outfitButtons.Count; i++)
+            {
+                if (currentOutfitIndex + i < outfitButtons.Count)
+                {
+                    drawSlotBackground(b, i);
+                    //outfitButtons[currentOutfitIndex + i].Draw(b,i);
+                }
+            }
+
+            // Draw navigation
+            // TODO: gate the scrollbar on if enough items are present for scrolling
+            drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
+            scrollBar.draw(b);
+            
+            upArrow.draw(b);
+            downArrow.draw(b);
 
             // Draw TopBar
             menuManager.drawTopBar(b);
@@ -348,22 +549,6 @@ namespace StardewOutfitManager.Menus
 
             Game1.mouseCursorTransparency = 1f;
             base.drawMouse(b);
-        }
-
-        // Handle menu selection clicks
-        private void selectionClick(string name, int change)
-        {
-            switch (name)
-            {
-                case "Direction":
-                    {
-                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
-                        _displayFarmer.FarmerSprite.StopAnimation();
-                        _displayFarmer.completelyStopAnimatingOrDoingAction();
-                        Game1.playSound("stoneStep");
-                        break;
-                    }
-            }
         }
     }
 }

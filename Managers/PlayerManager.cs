@@ -32,7 +32,7 @@ namespace StardewOutfitManager.Managers
         {
             if (menuManager.Value.activeManagedMenu != null)
             {
-                // Save updated favorites data model to local json file
+                // Save updated favorites data model to local json file [[TODO: Change this to end of day]]
                 saveFavoritesDataToFile();
                 // Unlock the dresser for other players to use
                 menuManager.Value.dresserObject.mutex.ReleaseLock();

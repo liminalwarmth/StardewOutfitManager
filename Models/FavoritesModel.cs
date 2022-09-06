@@ -1,18 +1,6 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using StardewModdingAPI;
-using System;
+﻿using StardewModdingAPI;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using StardewValley.BellsAndWhistles;
-using StardewValley.Menus;
-using StardewValley.Objects;
-using StardewValley;
-using StardewOutfitManager.Utils;
-using StardewOutfitManager.Managers;
-using StardewOutfitManager.Data;
-using System.Xml.Linq;
+
 
 namespace StardewOutfitManager.Data
 {
@@ -55,31 +43,5 @@ namespace StardewOutfitManager.Data
 
         public FavoriteOutfit() { }
 
-            // TODO re-examine method for constructing new outfits
-
-            // Define constructor for building a new favorite outfit object
-            /*
-            public FavoriteOutfit()
-            {
-                /*
-                // Default to not a favorite favorite outfit
-                isFavorite = false;
-
-                // Name & Category
-                Name = "";
-                Category = "";
-
-                // Set the string outfit tag values for this outfit loadout from the given player
-                Items = new Dictionary<string, string>();
-
-                // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
-                Hair = 0;
-                HairIndex = "";
-                Accessory = 0;
-                AccessoryIndex = "";
-
-                LastWorn = 0;
-            }
-            */
-        }
+    }
 }

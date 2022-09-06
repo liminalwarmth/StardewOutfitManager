@@ -95,10 +95,6 @@ namespace StardewOutfitManager.Utils
             // Play the item pickup sound
             if (playSound) Game1.playSound("pickUpItem");
         }
-    
-        /* stopping point, known bugs:
-         * - If the game crashes or the player quits without saving, items won't have the mod tags they're supposed to (gotta save favorites at night with everything else)
-         */
 
         // Equips a favorite outfit, if available, onto the player
         public static void WearFavoriteOutfit(this IClickableMenu m, StorageFurniture dresserObject, Farmer farmer, FavoriteOutfit outfit, List<Item> playerOwnedItems)
@@ -117,7 +113,9 @@ namespace StardewOutfitManager.Utils
                         ItemExchange(m, dresserObject, farmer, itemSlot, equippingItem, null, false);
                     }
                 }
-                // TODO: Update hair and accessory too
+                // Change hair and accessory to match outfit settings
+                farmer.changeHairStyle(outfit.Hair);
+                farmer.accessory.Set(outfit.Accessory);
             }
         }
 
