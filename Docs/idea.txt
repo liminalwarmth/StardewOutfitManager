@@ -5,6 +5,9 @@
 - Favorites system implemented
 - Heart on a portrait if it's already a favorite
 
+edit csproj
+	// https://discord.com/channels/137344473976799233/156109690059751424/1015366511084441600
+	// https://discord.com/channels/137344473976799233/156109690059751424/1015352756204228638
 
 
 Tracking Stuff I Want to Add:

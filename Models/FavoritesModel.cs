@@ -32,54 +32,54 @@ namespace StardewOutfitManager.Data
     public class FavoriteOutfit
     {
         // The favorite outfit itself can be a favorite within a list of favorites for positioning at the top of the list
-        public bool isFavorite { get; set; }
+        public bool isFavorite { get; set; } = false;
 
         // The string name of the outfit
-        public string Name { get; set; }
-       
-        // The Category the outfit applies to ("Spring"/"Summer"/"Fall"/"Winter"/"Special1"/"Special2")
-        public string Category { get; set; }
+        public string Name { get; set; } = "";
 
-        public Dictionary<string, string> Items { get; set; }
+        // The Category the outfit applies to ("Spring"/"Summer"/"Fall"/"Winter"/"Special1"/"Special2")
+        public string Category { get; set; } = "";
+
+        public Dictionary<string, string> Items { get; set; } = new Dictionary<string, string>();
 
         // The index and index position of the hair (index will come into play if there are multiple reference indexes)
-        public string HairIndex { get; set; }
-        public int Hair { get; set; }
+        public string HairIndex { get; set; } = "";
+        public int Hair { get; set; } = 0;
        
         // The index and index position of the accessory (index will come into play if there are multiple reference indexes)
-        public string AccessoryIndex { get; set; }
-        public int Accessory { get; set; }
+        public string AccessoryIndex { get; set; } = "";
+        public int Accessory { get; set; } = 0;
 
         // The time/day the player last equipped this outfit (for sorting by recency/usage)
-        public int LastWorn { get; set; }
+        public int LastWorn { get; set; } = 0;
 
-        // Define constructor for building a new favorite outfit object
-        public FavoriteOutfit(Farmer player, string category = null, string name = null)
-        {
-            // Default to not a favorite favorite outfit
-            isFavorite = false;
+        public FavoriteOutfit() { }
 
-            // Name & Category
-            Name = name;
-            Category = category;
+            // TODO re-examine method for constructing new outfits
 
-            // Set the string outfit tag values for this outfit loadout from the given player
-            Items = new Dictionary<string, string>();
-            Items.Add("Hat", this.tagItemAsFavorite(player.hat.Value));
-            Items.Add("Shirt", this.tagItemAsFavorite(player.shirtItem.Value));
-            Items.Add("Pants", this.tagItemAsFavorite(player.pantsItem.Value));
-            Items.Add("Shoes", this.tagItemAsFavorite(player.boots.Value));
-            Items.Add("LeftRing", this.tagItemAsFavorite(player.leftRing.Value));
-            Items.Add("RightRing", this.tagItemAsFavorite(player.rightRing.Value));
+            // Define constructor for building a new favorite outfit object
+            /*
+            public FavoriteOutfit()
+            {
+                /*
+                // Default to not a favorite favorite outfit
+                isFavorite = false;
 
-            // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
-            Hair = player.hair.Value;
-            HairIndex = "";
-            Accessory = player.accessory.Value;
-            AccessoryIndex = "";
+                // Name & Category
+                Name = "";
+                Category = "";
 
-            // Set last worn to now | TODO: update this when I know how I'm gonna track this
-            LastWorn = 0;
+                // Set the string outfit tag values for this outfit loadout from the given player
+                Items = new Dictionary<string, string>();
+
+                // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
+                Hair = 0;
+                HairIndex = "";
+                Accessory = 0;
+                AccessoryIndex = "";
+
+                LastWorn = 0;
+            }
+            */
         }
-    }
 }

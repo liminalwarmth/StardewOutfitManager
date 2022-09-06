@@ -21,7 +21,27 @@ namespace StardewOutfitManager.Utils
         // Create a new favorite outfit in the data model--returns false if this outfit already exists
         public static bool SaveNewOutfit(this FavoritesData f, Farmer player, string category, string name)
         {
-            FavoriteOutfit outfit = new FavoriteOutfit(player, category, name);
+            // Create outfit object
+            FavoriteOutfit outfit = new FavoriteOutfit();
+
+            // Name & Category
+            outfit.Name = name;
+            outfit.Category = category;
+
+            // Set the string outfit tag values for this outfit loadout from the given player
+            outfit.Items.Add("Hat", outfit.tagItemAsFavorite(player.hat.Value));
+            outfit.Items.Add("Shirt", outfit.tagItemAsFavorite(player.shirtItem.Value));
+            outfit.Items.Add("Pants", outfit.tagItemAsFavorite(player.pantsItem.Value));
+            outfit.Items.Add("Shoes", outfit.tagItemAsFavorite(player.boots.Value));
+            outfit.Items.Add("LeftRing", outfit.tagItemAsFavorite(player.leftRing.Value));
+            outfit.Items.Add("RightRing", outfit.tagItemAsFavorite(player.rightRing.Value));
+
+            // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
+            outfit.Hair = player.hair.Value;
+            outfit.HairIndex = "";
+            outfit.Accessory = player.accessory.Value;
+            outfit.AccessoryIndex = "";
+
             if (!outfitExistsInFavorites(f, outfit)) {
                 f.Favorites.Add(outfit);
                 return true;
@@ -127,8 +147,9 @@ namespace StardewOutfitManager.Utils
                 // Only check for slots that have an item reference stored in that slot
                 if (itemID != null)
                 {
+                    Item foundItem = GetItemByReferenceID(f, itemID, playerOwnedItems);
                     // If they're missing an item from this outfit, the ensemble is unavailable
-                    if (GetItemByReferenceID(f, itemID, playerOwnedItems) == null) { return false; }
+                    if ( foundItem == null) { return false; }
                 }
             }
             // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
@@ -137,14 +158,16 @@ namespace StardewOutfitManager.Utils
             return true;
         }
 
-        // Looks up the actual item in the player's items which contains this outfit reference ID
-        public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, List<Item> playerOwnedItems)
+        // Looks up the actual item in a list of item objects which contains the given item tag reference ID (or null if not found
+        public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, List<Item> itemListToCheck)
         {
-            foreach (Item item in playerOwnedItems)
+            foreach (Item item in itemListToCheck)
             {
                 if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
                 {
-                   if (item.modData["StardewOutfitManagerFavoriteItem"] == id) { return item; }
+                   if (item.modData["StardewOutfitManagerFavoriteItem"] == id) { 
+                        return item; 
+                   }
                 }
             }
             return null;
@@ -169,6 +192,52 @@ namespace StardewOutfitManager.Utils
                 }
             }
             else return null;
+        }
+
+        // Check if a given farmer is currently wearing an item with the given tag
+        public static bool isWearingThis(this FavoriteOutfit f, string category, string itemTag, Farmer farmer)
+        {
+            if (category == "Hat")
+            {
+                if (favoriteItemTagMatches(f, farmer.hat.Value, itemTag)) { return true; }
+            }
+            else if (category == "Shirt")
+            {
+                if (favoriteItemTagMatches(f, farmer.shirtItem.Value, itemTag)) { return true; }
+            }
+            else if (category == "Pants")
+            {
+                if (favoriteItemTagMatches(f, farmer.pantsItem.Value, itemTag)) { return true; }
+            }
+            else if (category == "Shoes")
+            {
+                if (favoriteItemTagMatches(f, farmer.boots.Value, itemTag)) { return true; }
+            }
+            else if (category == "LeftRing")
+            {
+                if (favoriteItemTagMatches(f, farmer.leftRing.Value, itemTag)) { return true; }
+            }
+            else if (category == "RightRing")
+            {
+                if (favoriteItemTagMatches(f, farmer.rightRing.Value, itemTag)) { return true; }
+            }
+            return false;
+        }
+
+        // Compare two given items and return true only if they both have moddata outfit tags and those tags are the same
+        internal static bool favoriteItemTagMatches(this FavoriteOutfit f, Item item, string itemTag)
+        {
+            if (item != null && item is Item)
+            {
+                if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
+                {
+                    if (item.modData["StardewOutfitManagerFavoriteItem"] == itemTag)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

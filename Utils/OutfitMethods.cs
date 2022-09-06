@@ -13,6 +13,7 @@ using StardewOutfitManager.Managers;
 using StardewOutfitManager.Data;
 using System.Xml.Linq;
 using StardewOutfitManager.Menus;
+using StardewModdingAPI;
 
 namespace StardewOutfitManager.Utils
 {
@@ -96,8 +97,6 @@ namespace StardewOutfitManager.Utils
         }
     
         /* stopping point, known bugs:
-         * - Some dupe weirdness, possibly with identifying an item the player is already wearing (look at the item exchange script and isWearingThis)
-         * - Favorites data isn't getting loaded correctly, throws errors
          * - If the game crashes or the player quits without saving, items won't have the mod tags they're supposed to (gotta save favorites at night with everything else)
          */
 
@@ -109,46 +108,20 @@ namespace StardewOutfitManager.Utils
                 // Check each item slot that the outfit should equip
                 foreach (string itemSlot in outfit.Items.Keys)
                 {
-                    // Get the reference to the actual item we want from the player's existing items
-                    Item equippingItem = outfit.GetItemByReferenceID(outfit.Items[itemSlot], playerOwnedItems);
                     // Need to check if the player is currently wearing this item (if so, no action required)
-                    if (!isWearingThis(outfit.Items[itemSlot], equippingItem, farmer))
+                    if (!outfit.isWearingThis(itemSlot, outfit.Items[itemSlot], farmer))
                     {
-                        // If not, perform the necessary swap to wear the right item for this outfit (and don't play the sound)
+                        // If not, get the reference to the actual item we want from the player's existing items in the dresser or on their person (TODO: rings issue)
+                        Item equippingItem = outfit.GetItemByReferenceID(outfit.Items[itemSlot], playerOwnedItems);
+                        // Perform the necessary swap to wear the right item for this outfit (and don't play the sound)
                         ItemExchange(m, dresserObject, farmer, itemSlot, equippingItem, null, false);
                     }
                 }
+                // TODO: Update hair and accessory too
             }
         }
 
-        internal static bool isWearingThis(string category, Item item, Farmer farmer)
-        {
-            if (category == "Hat")
-            {
-                if (farmer.hat.Value == item) { return true; }
-            }
-            else if (category == "Shirt")
-            {
-                if (farmer.shirtItem.Value == item) { return true; }
-            }
-            else if (category == "Pants")
-            {
-                if (farmer.pantsItem.Value == item) { return true; }
-            }
-            else if (category == "Shoes")
-            {
-                if (farmer.boots.Value == item) { return true; }
-            }
-            else if (category == "LeftRing")
-            {
-                if (farmer.leftRing.Value == item) { return true; }
-            }
-            else if (category == "RightRing")
-            {
-                if (farmer.rightRing.Value == item) { return true; }
-            }
-            return false;
-        }
+
     }
     
     // Extension methods to IClickableMenu for farmer hair and accessory management
