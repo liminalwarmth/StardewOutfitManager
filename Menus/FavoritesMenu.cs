@@ -16,28 +16,234 @@ using static StardewValley.Menus.LoadGameMenu;
 
 namespace StardewOutfitManager.Menus
 {
-
-    // Look into public Farmer CreateFakeEventFarmer()
-
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {
-        // Outfit button slot definition
-        public abstract class OutfitSlot : IDisposable
+        // Outfit button slot definition (jacked from load menu, reference it)
+        public class OutfitSlot
         {
-            protected FavoritesMenu menu;
+            // Base variables
+            internal FavoritesMenu menu;
+            internal bool isAvailable;
+            internal bool isFavorite;
+            internal bool isSelected;
+            public Dictionary<string, Item> outfitAvailabileItems;
+            public Farmer modelFarmer;
+            public FavoriteOutfit modelOutfit;
+            public Texture2D bgSprite;
+            public Rectangle bgBox;
 
-            public OutfitSlot(FavoritesMenu menu)
+            // Hover attributes
+            internal bool isHovered = false;
+            internal Rectangle hoverBox = new Rectangle(0, 256, 60, 60);
+            internal string outfitName;
+            internal string lastWorn;
+            internal List<ClickableComponent> itemAvailabilityIcons = new();
+
+            public OutfitSlot(FavoritesMenu menu, Farmer player, FavoriteOutfit outfit, List<Item> playerOwnedItems)
             {
+                // Set up background and fake model farmer
                 this.menu = menu;
+                modelOutfit = outfit;
+                bgBox = new Rectangle(menu.xPositionOnScreen, menu.yPositionOnScreen, 128, 192);
+                bgSprite = GetCategoryBackground(modelOutfit);
+                modelFarmer = CreateFakeEventFarmer(player);
+
+                // Establish equipment availability and dress the display farmer in what's available
+                outfitAvailabileItems = modelOutfit.GetOutfitItemAvailability(playerOwnedItems);
+                modelOutfit.dressDisplayFarmerWithAvailableOutfitPieces(modelFarmer, outfitAvailabileItems);
+                // Set outfit slot to unavailable if any necessary items are missing
+                isAvailable = outfitAvailabileItems.ContainsValue(null) ? false : true;
+
+                // Set the on-hover attributes and outfit item availability displays
+                outfitName = modelOutfit.Name;
+                lastWorn = modelOutfit.LastWorn.ToString();
+                int eqIconXOffset = hoverBox.X;
+                int eqIconYOffset = hoverBox.Y;
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat"));
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt"));
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants"));
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots"));
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
+                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
             }
 
-            public abstract void Activate();
-
-            public abstract void Draw(SpriteBatch b, int i);
-
-            public virtual void Dispose()
+            // Activate the outfit slot and display the model outfit
+            public void Activate()
             {
+                // Change this outfit box to selected and all others to unselected
+                isSelected = true;
+                // Set the display background to match the outfit background
+                menu.outFitDisplayBG = bgSprite;
+                // Dress the main display farmer in the favorites menu in this outfit
+
+                // Set the queued outfit for equipping the player
+            }
+
+            // Draw the outfit box
+            public void Draw(SpriteBatch b, int i)
+            {
+                // Draw selection indicator if this outfit is currently being displayed
+                if (isSelected)
+                {
+                    b.Draw(Game1.staminaRect, new Rectangle(bgBox.X - 4, bgBox.Y - 4, 128 + 8, 192 + 8), Color.White);
+                }
+
+                // Draw background
+                b.Draw(bgSprite, new Vector2(bgBox.X, bgBox.Y), Color.White);
+                
+                // Draw farmer within background box bounds
+                FarmerRenderer.isDrawingForUI = true;
+                modelFarmer.FarmerRenderer.draw(b, modelFarmer.FarmerSprite.CurrentAnimationFrame, modelFarmer.FarmerSprite.CurrentFrame, modelFarmer.FarmerSprite.SourceRect, new Vector2(bgBox.Center.X - 32, bgBox.Bottom - 160), Vector2.Zero, 0.8f, Color.White, 0f, 1f, modelFarmer);
+                FarmerRenderer.isDrawingForUI = false;
+                
+                // Draw shadow and warning cancel icon if unavailable
+                if (!isAvailable)
+                {
+                    // Shadow box
+                    b.Draw(Game1.staminaRect, new Rectangle(bgBox.X, bgBox.Y, 128, 192), Color.Black * .5f);
+                    // Cancel icon
+                    b.Draw(Game1.mouseCursors, new Rectangle(bgBox.X + bgBox.Width - 38, bgBox.Y + 14, 24, 24), new Rectangle(322, 498, 12, 12), Color.White);
+                }
+
+                // Draw heart if favorited
+                if (isFavorite)
+                {
+                    b.Draw(Game1.menuTexture, new Rectangle(bgBox.X + 14, bgBox.Y + 14, 28, 28), new Rectangle(63, 772, 28, 28), Color.White);
+                }
+
+                // Draw infobox if hovered on (or snapped to)
+                if (isHovered)
+                {
+                    // Draw box
+                    
+                    // Draw outfit name
+
+                    // Draw last worn text
+
+                    // Draw item availability
+                    foreach (ClickableComponent c in itemAvailabilityIcons)
+                    {
+                        switch (c.name)
+                        {
+                            case "Hat":
+                                if (Game1.player.hat.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.hat.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 42), Color.White);
+                                }
+                                break;
+                            case "Right Ring":
+                                if (Game1.player.rightRing.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.rightRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
+                                }
+                                break;
+                            case "Left Ring":
+                                if (Game1.player.leftRing.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.leftRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
+                                }
+                                break;
+                            case "Boots":
+                                if (Game1.player.boots.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.boots.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 40), Color.White);
+                                }
+                                break;
+                            case "Shirt":
+                                if (Game1.player.shirtItem.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.shirtItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 69), Color.White);
+                                }
+                                break;
+                            case "Pants":
+                                if (Game1.player.pantsItem.Value != null)
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                                    Game1.player.pantsItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
+                                }
+                                else
+                                {
+                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 68), Color.White);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+            }
+
+            // Create outfit model
+            public Farmer CreateFakeEventFarmer(Farmer player)
+            {
+                Farmer farmer = new Farmer(new FarmerSprite(player.FarmerSprite.textureName.Value), new Vector2(192f, 192f), 1, "", new List<Item>(), player.IsMale);
+                farmer.Name = player.Name;
+                farmer.displayName = player.displayName;
+                farmer.isFakeEventActor = true;
+                farmer.changeGender(player.IsMale);
+                farmer.changeHairStyle(player.hair.Value);
+                farmer.UniqueMultiplayerID = player.UniqueMultiplayerID;
+                farmer.shirtItem.Set(player.shirtItem.Value);
+                farmer.pantsItem.Set(player.pantsItem.Value);
+                farmer.shirt.Set(player.shirt.Value);
+                farmer.pants.Set(player.pants.Value);
+                farmer.changeShoeColor(player.shoes.Value);
+                farmer.boots.Set(player.boots.Value);
+                farmer.leftRing.Set(player.leftRing.Value);
+                farmer.rightRing.Set(player.rightRing.Value);
+                farmer.hat.Set(player.hat.Value);
+                farmer.shirtColor = player.shirtColor;
+                farmer.pantsColor.Set(player.pantsColor.Value);
+                farmer.changeHairColor(player.hairstyleColor.Value);
+                farmer.changeSkinColor(player.skin.Value);
+                farmer.accessory.Set(player.accessory.Value);
+                farmer.changeEyeColor(player.newEyeColor.Value);
+                farmer.UpdateClothing();
+                farmer.faceDirection(2);
+                farmer.FarmerSprite.StopAnimation();
+                return farmer;
+            }
+
+            // Get outfit category background
+            public Texture2D GetCategoryBackground(FavoriteOutfit outfit)
+            {
+                Texture2D background = StardewOutfitManager.assetManager.wardrobeBackgroundTexture;
+                // Check category and return appropriate background
+                switch (outfit.Category)
+                {
+                    case "Spring":
+                        background = StardewOutfitManager.assetManager.bgTextureSpring;
+                        break;
+                }
+                return background;
             }
         }
 
@@ -61,7 +267,7 @@ namespace StardewOutfitManager.Menus
 
         // Outfit buttons
         public List<ClickableComponent> outfitButtons = new();
-        private int currentOutfitIndex = 0;
+        public List<OutfitSlot> outfitSlots = new();
 
         // Scroll bar and controls
         public ClickableTextureComponent upArrow;
@@ -86,8 +292,8 @@ namespace StardewOutfitManager.Menus
             /// FAVORITES MENU
             // Set up menu structure
             Vector2 topLeft = Utility.getTopLeftPositionForCenteringOnScreen(base.width, base.height);
-            base.xPositionOnScreen = (int)topLeft.X;
-            base.yPositionOnScreen = (int)topLeft.Y;
+            xPositionOnScreen = (int)topLeft.X;
+            yPositionOnScreen = (int)topLeft.Y;
 
             // Set up portrait and farmer
             _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
@@ -106,6 +312,31 @@ namespace StardewOutfitManager.Menus
                 upNeighborID = 2000
             };
 
+            // Generate outfit navigation scroll
+            upArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + 16, 44, 48), Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f)
+            {
+                myID = 97865,
+                downNeighborID = 106,
+                leftNeighborID = 3546
+            };
+            downArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + base.height - 64, 44, 48), Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f)
+            {
+                myID = 106,
+                upNeighborID = 97865,
+                leftNeighborID = 3546
+            };
+            scrollBar = new ClickableTextureComponent(new Rectangle(this.upArrow.bounds.X + 12, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
+            scrollBarRunner = new Rectangle(this.scrollBar.bounds.X, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, this.scrollBar.bounds.Width, base.height - 64 - this.upArrow.bounds.Height - 28);
+
+            // Generate available player items
+            GeneratePlayerOwnedItemList();
+
+            // Generate outfit slots
+            GenerateOutfitSlotList();
+
+            // Generate scrollable outfit buttons
+            GenerateOutfitButtons();
+
             // Top Bar Tab Switcher Buttons
             populateClickableComponentList();
             menuManager.includeTopTabButtons(this);
@@ -121,7 +352,11 @@ namespace StardewOutfitManager.Menus
             {
                 snapToDefaultClickableComponent();
             }
+        }
 
+        // Player owned items list generation (determines what is equippable at the moment)
+        public void GeneratePlayerOwnedItemList()
+        {
             // Build new item index for swapping
             if (Game1.player.hat.Value != null)
             {
@@ -174,40 +409,58 @@ namespace StardewOutfitManager.Menus
                     playerOwnedItems.Add(item);
                 }
             }
-
-            // Generate outfit navigation scroll
-            upArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + 16, 44, 48), Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f)
-            {
-                myID = 97865,
-                downNeighborID = 106,
-                leftNeighborID = 3546
-            };
-            downArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + base.height - 64, 44, 48), Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f)
-            {
-                myID = 106,
-                upNeighborID = 97865,
-                leftNeighborID = 3546
-            };
-            scrollBar = new ClickableTextureComponent(new Rectangle(this.upArrow.bounds.X + 12, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
-            scrollBarRunner = new Rectangle(this.scrollBar.bounds.X, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, this.scrollBar.bounds.Width, base.height - 64 - this.upArrow.bounds.Height - 28);
-
-
-            // Generate scrollable outfit buttons
-            int outfitsXoffset = IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder + 256 + 96;
-            int outfitsYoffset = 64;
-            for (int i = 0; i < 4; i++)
-            {
-                outfitButtons.Add(new ClickableComponent(new Rectangle(xPositionOnScreen + outfitsXoffset, yPositionOnScreen + 16 + i * ((height - 256) / 4) + outfitsYoffset, width - 32 - outfitsXoffset, (height - 256) / 4 + 4), i.ToString() ?? "")
-                {
-                    myID = i + 3546,
-                    rightNeighborID = 97865,
-                    fullyImmutable = true
-                });
-            }
         }
 
-        // OUTFIT DISPLAY
-        // Create list of favorite outfits as scrollable tabs
+        // Create list of possible wearable outfits for the chosen categories
+        public void GenerateOutfitSlotList()
+        {
+            foreach (FavoriteOutfit outfit in favoritesData.Favorites)
+            {
+                outfitSlots.Add(new OutfitSlot(this, _displayFarmer, outfit, playerOwnedItems));
+            }
+            // Sort list by favorites
+
+            // Sort list by availability
+        }
+
+        // Create list of currently displayed outfits as scrollable components
+        public void GenerateOutfitButtons()
+        {
+            // Create buttons
+            int outfitsXoffset = borderWidth + spaceToClearSideBorder + 256 + 96;
+            int outfitsYoffset = 64;
+            // Two rows of up to 4 outfits possible to have displayed at one time, (j) is row, (i) is column
+            for (int j = 0; j < 2; j++)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    outfitButtons.Add(new ClickableComponent(new Rectangle(xPositionOnScreen + (i * 128) + (i * 12) + outfitsXoffset, yPositionOnScreen + (j * 192) + (j * 12) + outfitsYoffset, 128, 192), i.ToString() ?? "")
+                    {
+                        myID = i + 3546,
+                        rightNeighborID = 97865,
+                        fullyImmutable = true
+                    });
+                }
+            }
+            // Position buttons
+            PositionOutfitButtons();
+        }
+
+        // Position outfit buttons
+        public void PositionOutfitButtons()
+        {
+            // Only eight outfits can be displayed at a time
+            for (int i = 0; i < 8; i++)
+            {
+                // Only try to position outfitslots which exist
+                if (i < outfitSlots.Count)
+                {
+                    // Match slot draw positions to where the outfit buttons have been placed
+                    outfitSlots[i].bgBox.X = outfitButtons[i].bounds.X;
+                    outfitSlots[i].bgBox.Y = outfitButtons[i].bounds.Y;
+                }
+            }
+        }
 
         // CONTROLS
 
@@ -471,13 +724,6 @@ namespace StardewOutfitManager.Menus
         }
 
         // DRAW
-
-        //protected virtual void drawSlotBackground(SpriteBatch b, int i, OutfitSlot slot)
-        protected virtual void drawSlotBackground(SpriteBatch b, int i)
-        {
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 396, 15, 15), this.outfitButtons[i].bounds.X, this.outfitButtons[i].bounds.Y, this.outfitButtons[i].bounds.Width, this.outfitButtons[i].bounds.Height, Color.Wheat, 4f, drawShadow: false);
-        }
-
         public override void draw(SpriteBatch b)
         {
             if (Game1.dialogueUp || Game1.IsFading())
@@ -506,23 +752,24 @@ namespace StardewOutfitManager.Menus
             }
             okButton.draw(b);
 
-            // stolen from load menu
-            for (int i = 0; i < outfitButtons.Count; i++)
+            // Draw Outfit Display Slots (only draw 8 or fewer)
+            for (int i = 0; i < 8; i++)
             {
-                if (currentOutfitIndex + i < outfitButtons.Count)
+                if (i < outfitSlots.Count)
                 {
-                    drawSlotBackground(b, i);
-                    //outfitButtons[currentOutfitIndex + i].Draw(b,i);
+                    outfitSlots[i].Draw(b, i);
                 }
             }
 
             // Draw navigation
-            // TODO: gate the scrollbar on if enough items are present for scrolling
-            drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
-            scrollBar.draw(b);
-            
-            upArrow.draw(b);
-            downArrow.draw(b);
+            if (outfitSlots.Count > 8)
+            {
+                drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
+                scrollBar.draw(b);
+
+                upArrow.draw(b);
+                downArrow.draw(b);
+            }
 
             // Draw TopBar
             menuManager.drawTopBar(b);

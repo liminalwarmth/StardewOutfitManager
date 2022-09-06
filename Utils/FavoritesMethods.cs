@@ -158,6 +158,25 @@ namespace StardewOutfitManager.Utils
             return true;
         }
 
+        // Given a list of possible items to check against, returns the items for any non-null slots that are available and null for any that are not
+        public static Dictionary<string, Item> GetOutfitItemAvailability(this FavoriteOutfit f, List<Item> playerOwnedItems)
+        {
+            Dictionary<string, Item> itemAvailability = new();
+            // Check all items on the needed item list against the list of possible items the player could wear at this dresser
+            foreach (string itemKey in f.Items.Keys)
+            {
+                // Only check for slots that have an item reference stored in that slot
+                if (f.Items[itemKey] != null)
+                {
+                    // Add the item to the available list (or add the slot as a null if it wasn't found)
+                    Item foundItem = GetItemByReferenceID(f, f.Items[itemKey], playerOwnedItems);
+                    itemAvailability.Add(itemKey, foundItem);
+                }
+            }
+            // Return the available items
+            return itemAvailability;
+        }
+
         // Looks up the actual item in a list of item objects which contains the given item tag reference ID (or null if not found
         public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, List<Item> itemListToCheck)
         {
@@ -238,6 +257,46 @@ namespace StardewOutfitManager.Utils
                 }
             }
             return false;
+        }
+
+        // Put available items directly on a display farmer and unequip any slots that are not available (this will cause dupe/deletion if used on the player)
+        public static void dressDisplayFarmerWithAvailableOutfitPieces(this FavoriteOutfit f, Farmer displayFarmer, Dictionary<string, Item> availability)
+        {
+            // Hat
+            displayFarmer.hat.Set(null);
+            if (availability.ContainsKey("Hat"))
+            {
+                if (availability["Hat"] != null) { displayFarmer.hat.Set(availability["Hat"] as Hat); }
+            }
+            // Shirt
+            displayFarmer.shirtItem.Set(null);
+            if (availability.ContainsKey("Shirt"))
+            {
+                if (availability["Shirt"] != null) { displayFarmer.shirtItem.Set(availability["Shirt"] as Clothing); }
+            }
+            // Pants
+            displayFarmer.pantsItem.Set(null);
+            if (availability.ContainsKey("Pants"))
+            {
+                if (availability["Pants"] != null) { displayFarmer.pantsItem.Set(availability["Pants"] as Clothing); }
+            }
+            // Shoes
+            displayFarmer.boots.Set(null);
+            displayFarmer.changeShoeColor(12);
+            if (availability.ContainsKey("Shoes"))
+            {
+                if (availability["Shoes"] != null) { 
+                    displayFarmer.boots.Set(availability["Shoes"] as Boots);
+                    displayFarmer.changeShoeColor(displayFarmer.boots.Value.indexInColorSheet.Value);
+                }
+            }
+            // Hair & Accessory
+            displayFarmer.changeHairStyle(f.Hair);
+            displayFarmer.accessory.Set(f.Accessory);
+            // Finalize display settings
+            displayFarmer.UpdateClothing();
+            displayFarmer.faceDirection(2);
+            displayFarmer.FarmerSprite.StopAnimation();
         }
     }
 }
