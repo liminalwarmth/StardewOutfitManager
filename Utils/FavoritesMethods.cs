@@ -135,6 +135,7 @@ namespace StardewOutfitManager.Utils
 
     }
     
+    // TODO: This adds a lot of duplicate lookups that can probably just be done once--I should optimize this (dictionary of tags and items formed maybe)
     //Extension methods to FavoriteOutfit data model for Outfit management
     public static class FavoriteOutfitMethods
     {
@@ -297,6 +298,30 @@ namespace StardewOutfitManager.Utils
             displayFarmer.UpdateClothing();
             displayFarmer.faceDirection(2);
             displayFarmer.FarmerSprite.StopAnimation();
+        }
+
+        // Equips the available pieces of a favorite outfit onto the player, swapping items into the dresser (and unequips any slot that's supposed to be part of it and isn't available)
+        public static void equipFavoriteOutfit(this FavoriteOutfit f, IClickableMenu menu, StorageFurniture dresserObject, Farmer farmer, List<Item> playerOwnedItems)
+        {
+            foreach (string itemSlot in f.Items.Keys)
+            {
+                // Only check items for slots that have an item reference stored in that slot
+                if (f.Items[itemSlot] != null)
+                {
+                    // Get the item by key if found (or add the item as a null if it wasn't found)
+                    Item equippingItem = f.GetItemByReferenceID(f.Items[itemSlot], playerOwnedItems);
+                    // Perform the necessary swap to wear the right item for this outfit (and don't play the sound)
+                    menu.ItemExchange(dresserObject, farmer, itemSlot, equippingItem, null, false);
+                }
+                // Unequip anything that the outfit has stored as a null
+                else
+                {
+                    menu.ItemExchange(dresserObject, farmer, itemSlot, null, null, false);
+                }
+            }
+            // Change hair and accessory to match outfit settings
+            farmer.changeHairStyle(f.Hair);
+            farmer.accessory.Set(f.Accessory);
         }
     }
 }

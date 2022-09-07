@@ -11,11 +11,9 @@ namespace StardewOutfitManager.Managers
     public class AssetManager
     {
         internal string assetFolderPath;
-        
+
         // UI textures
-        internal readonly Texture2D wardrobeTabTexture;
-        internal readonly Texture2D favoritesTabTexture;
-        internal readonly Texture2D dresserTabTexture;
+        public readonly Texture2D customSprites;
         internal readonly Texture2D wardrobeBackgroundTexture;
         internal readonly Texture2D bgTextureSpring;
         internal readonly Texture2D bgTextureSummer;
@@ -34,16 +32,7 @@ namespace StardewOutfitManager.Managers
             assetFolderPath = helper.ModContent.GetInternalAssetName(Path.Combine("Assets")).Name;
 
             // Load in custom UI image assets
-            wardrobeTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/wardrobeTab.png"));
-            favoritesTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/favoritesTab.png"));
-            dresserTabTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/dresserTab.png"));
-
-            // Backgrounds
-            wardrobeBackgroundTexture = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/wardrobeBG.png"));
-            bgTextureSpring = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/spring_daybg.png"));
-            bgTextureSummer = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/summer_daybg.png"));
-            bgTextureFall = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/fall_daybg.png"));
-            bgTextureWinter = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/winter_daybg.png"));
+            customSprites = helper.ModContent.Load<Texture2D>(Path.Combine(assetFolderPath, "UI/customSpriteSheet.png"));
 
             // Load in JSON hair and accessory names for the base game
             hairJSON = helper.ModContent.Load<Dictionary<string, string>>(Path.Combine(assetFolderPath, "Hair/BaseGame/HairNames.json"));

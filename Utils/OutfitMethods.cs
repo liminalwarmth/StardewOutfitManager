@@ -96,7 +96,8 @@ namespace StardewOutfitManager.Utils
             if (playSound) Game1.playSound("pickUpItem");
         }
 
-        // Equips a favorite outfit, if available, onto the player
+        // Equips the available pieces of a favorite outfit onto the player (and unequips any slot that's supposed to be part of it and isn't available)
+        /* - replaced by equipFavoriteOutfit in favorites
         public static void WearFavoriteOutfit(this IClickableMenu m, StorageFurniture dresserObject, Farmer farmer, FavoriteOutfit outfit, List<Item> playerOwnedItems)
         {
             // If the outfit is available
@@ -118,7 +119,7 @@ namespace StardewOutfitManager.Utils
                 farmer.accessory.Set(outfit.Accessory);
             }
         }
-
+        */
 
     }
     

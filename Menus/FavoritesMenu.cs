@@ -74,7 +74,7 @@ namespace StardewOutfitManager.Menus
                 // Change this outfit box to selected and all others to unselected
                 isSelected = true;
                 // Set the display background to match the outfit background
-                menu.outFitDisplayBG = bgSprite;
+                //menu.outFitDisplayBG = 
                 // Dress the main display farmer in the favorites menu in this outfit
 
                 // Set the queued outfit for equipping the player
@@ -91,7 +91,7 @@ namespace StardewOutfitManager.Menus
 
                 // Draw background
                 b.Draw(bgSprite, new Vector2(bgBox.X, bgBox.Y), Color.White);
-                
+
                 // Draw farmer within background box bounds
                 FarmerRenderer.isDrawingForUI = true;
                 modelFarmer.FarmerRenderer.draw(b, modelFarmer.FarmerSprite.CurrentAnimationFrame, modelFarmer.FarmerSprite.CurrentFrame, modelFarmer.FarmerSprite.SourceRect, new Vector2(bgBox.Center.X - 32, bgBox.Bottom - 160), Vector2.Zero, 0.8f, Color.White, 0f, 1f, modelFarmer);
@@ -258,16 +258,25 @@ namespace StardewOutfitManager.Menus
         private Rectangle _portraitBox;
         private Farmer _displayFarmer;
         private string hoverText = "";
-        private Texture2D outFitDisplayBG = StardewOutfitManager.assetManager.bgTextureFall;
+        private Rectangle outFitDisplayBG = new Rectangle(0, 0, 128, 192);
+
+        // Portrait Box Backgrounds
+        internal Rectangle bgDefault = new Rectangle(0, 0, 128, 192);
+        internal Rectangle bgSpring = new Rectangle(128, 0, 128, 192);
+        internal Rectangle bgSummer = new Rectangle(256, 0, 128, 192);
+        internal Rectangle bgFall = new Rectangle(384, 0, 128, 192);
+        internal Rectangle bgWinter = new Rectangle(512, 0, 128, 192);
+        internal Rectangle bgSpecial = new Rectangle(512, 192, 128, 192);
 
         // Basic UI Button Groups
         public List<ClickableComponent> labels = new();
         public List<ClickableComponent> leftSelectionButtons = new();
         public List<ClickableComponent> rightSelectionButtons = new();
 
-        // Outfit buttons
+        // Outfit buttons and offsets
         public List<ClickableComponent> outfitButtons = new();
         public List<OutfitSlot> outfitSlots = new();
+        internal Rectangle outfitBox;
 
         // Scroll bar and controls
         public ClickableTextureComponent upArrow;
@@ -302,8 +311,8 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.FarmerSprite.StopAnimation();
 
             // Player display window movement buttons
-            leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
-            rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
+            leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
+            rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
 
             // Basic UI Functionality Buttons
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
@@ -312,21 +321,22 @@ namespace StardewOutfitManager.Menus
                 upNeighborID = 2000
             };
 
-            // Generate outfit navigation scroll
-            upArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + 16, 44, 48), Game1.mouseCursors, new Rectangle(421, 459, 11, 12), 4f)
+            // Generate outfit box positions, navigation, and components
+            outfitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder + 342, yPositionOnScreen + 100, 592, 436);
+            upArrow = new ClickableTextureComponent(new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + 16, 44, 48), Game1.mouseCursors, new Rectangle(76, 72, 40, 44), 1f)
             {
                 myID = 97865,
                 downNeighborID = 106,
                 leftNeighborID = 3546
             };
-            downArrow = new ClickableTextureComponent(new Rectangle(base.xPositionOnScreen + base.width + 16, base.yPositionOnScreen + base.height - 64, 44, 48), Game1.mouseCursors, new Rectangle(421, 472, 11, 12), 4f)
+            downArrow = new ClickableTextureComponent(new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + outfitBox.Height - 56, 44, 48), Game1.mouseCursors, new Rectangle(12, 76, 40, 44), 1f)
             {
                 myID = 106,
                 upNeighborID = 97865,
                 leftNeighborID = 3546
             };
-            scrollBar = new ClickableTextureComponent(new Rectangle(this.upArrow.bounds.X + 12, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
-            scrollBarRunner = new Rectangle(this.scrollBar.bounds.X, this.upArrow.bounds.Y + this.upArrow.bounds.Height + 4, this.scrollBar.bounds.Width, base.height - 64 - this.upArrow.bounds.Height - 28);
+            scrollBar = new ClickableTextureComponent(new Rectangle(upArrow.bounds.X + 8, upArrow.bounds.Y + upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
+            scrollBarRunner = new Rectangle(scrollBar.bounds.X, upArrow.bounds.Y + upArrow.bounds.Height + 4, scrollBar.bounds.Width, outfitBox.Height - 64 - upArrow.bounds.Height - 20);
 
             // Generate available player items
             GeneratePlayerOwnedItemList();
@@ -426,15 +436,12 @@ namespace StardewOutfitManager.Menus
         // Create list of currently displayed outfits as scrollable components
         public void GenerateOutfitButtons()
         {
-            // Create buttons
-            int outfitsXoffset = borderWidth + spaceToClearSideBorder + 256 + 96;
-            int outfitsYoffset = 64;
-            // Two rows of up to 4 outfits possible to have displayed at one time, (j) is row, (i) is column
+            // Create buttons (two rows of up to 4 outfits possible to have displayed at one time, (j) is row, (i) is column)
             for (int j = 0; j < 2; j++)
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    outfitButtons.Add(new ClickableComponent(new Rectangle(xPositionOnScreen + (i * 128) + (i * 12) + outfitsXoffset, yPositionOnScreen + (j * 192) + (j * 12) + outfitsYoffset, 128, 192), i.ToString() ?? "")
+                    outfitButtons.Add(new ClickableComponent(new Rectangle(outfitBox.X + 22 + (i * 128) + (i * 12), outfitBox.Y + 20 + (j * 192) + (j * 12), 128, 192), i.ToString() ?? "")
                     {
                         myID = i + 3546,
                         rightNeighborID = 97865,
@@ -583,7 +590,7 @@ namespace StardewOutfitManager.Menus
                 okButton.scale = Math.Max(0.75f, okButton.scale);
                 //StardewOutfitManager.playerManager.cleanMenuExit();
                 //test wear favorite outfit
-                this.WearFavoriteOutfit(dresserObject, _displayFarmer, favoritesData.Favorites[0], playerOwnedItems);
+                //this.WearFavoriteOutfit(dresserObject, _displayFarmer, favoritesData.Favorites[0], playerOwnedItems);
                 Game1.playSound("dwop");
             }
             menuManager.handleTopBarLeftClick(x, y);
@@ -732,11 +739,14 @@ namespace StardewOutfitManager.Menus
             }
             // General UI (title, background)
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
-            SpriteText.drawStringWithScrollCenteredAt(b, "Favorite Outfits", base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
+            SpriteText.drawStringWithScrollCenteredAt(b, "Favorite Outfits", xPositionOnScreen + width / 2, yPositionOnScreen - 64);
+            drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), xPositionOnScreen, yPositionOnScreen, width, height, Color.White, 4f);
+
+            // Outfit displays backdrop box
+            drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 320, 60, 60), outfitBox.X, outfitBox.Y, outfitBox.Width, outfitBox.Height, Color.White, 2f, false);
 
             // Farmer portrait
-            b.Draw(outFitDisplayBG, _portraitBox, Color.White);
+            b.Draw(StardewOutfitManager.assetManager.customSprites, _portraitBox, outFitDisplayBG, Color.White);
             FarmerRenderer.isDrawingForUI = true;
             CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;
@@ -764,7 +774,7 @@ namespace StardewOutfitManager.Menus
             // Draw navigation
             if (outfitSlots.Count > 8)
             {
-                drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
+                drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false);
                 scrollBar.draw(b);
 
                 upArrow.draw(b);

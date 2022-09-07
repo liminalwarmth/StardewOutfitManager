@@ -462,7 +462,7 @@ namespace StardewOutfitManager.Menus
             IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
 
             // Farmer portrait
-            b.Draw(StardewOutfitManager.assetManager.wardrobeBackgroundTexture, _portraitBox, Color.White);
+            b.Draw(StardewOutfitManager.assetManager.customSprites, _portraitBox, new Rectangle(0, 0, 128, 192), Color.White);
             FarmerRenderer.isDrawingForUI = true;
             CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;
