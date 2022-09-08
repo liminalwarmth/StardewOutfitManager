@@ -590,30 +590,35 @@ namespace StardewOutfitManager.Menus
                     }
                 }
             }
-            // Scrollbar arrows
-            //if (this.downArrow.containsPoint(x, y) && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
-            if (this.downArrow.containsPoint(x, y))
+
+            // Scrollbar & Navigation Arrows (only appear if there are more than 8 outfits in view)
+            if (outfitSlots.Count > 8)
             {
-                this.downArrowPressed();
-                Game1.playSound("shwip");
+                //if (this.downArrow.containsPoint(x, y) && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
+                if (downArrow.containsPoint(x, y))
+                {
+                    downArrowPressed();
+                    Game1.playSound("shwip");
+                }
+                //else if (this.upArrow.containsPoint(x, y) && this.currentItemIndex > 0)
+                else if (upArrow.containsPoint(x, y))
+                {
+                    upArrowPressed();
+                    Game1.playSound("shwip");
+                }
+                else if (scrollBar.containsPoint(x, y))
+                {
+                    scrolling = true;
+                }
+                /*
+                else if (!this.downArrow.containsPoint(x, y) && x > base.xPositionOnScreen + base.width && x < base.xPositionOnScreen + base.width + 128 && y > base.yPositionOnScreen && y < base.yPositionOnScreen + base.height)
+                {
+                    this.scrolling = true;
+                    this.leftClickHeld(x, y);
+                    this.releaseLeftClick(x, y);
+                }
+                */
             }
-            //else if (this.upArrow.containsPoint(x, y) && this.currentItemIndex > 0)
-            else if (this.upArrow.containsPoint(x, y))
-            {
-                this.upArrowPressed();
-                Game1.playSound("shwip");
-            }
-            else if (this.scrollBar.containsPoint(x, y))
-            {
-                this.scrolling = true;
-            }
-            else if (!this.downArrow.containsPoint(x, y) && x > base.xPositionOnScreen + base.width && x < base.xPositionOnScreen + base.width + 128 && y > base.yPositionOnScreen && y < base.yPositionOnScreen + base.height)
-            {
-                this.scrolling = true;
-                this.leftClickHeld(x, y);
-                this.releaseLeftClick(x, y);
-            }
-            // currentItemIndex = Math.Max(0, Math.Min(this.forSale.Count - 4, this.currentItemIndex));
 
             // Category buttons
             foreach (ClickableComponent c in categoryButtons)
@@ -733,17 +738,27 @@ namespace StardewOutfitManager.Menus
         public override void leftClickHeld(int x, int y)
         {
             base.leftClickHeld(x, y);
-            if (this.scrolling)
+            if (outfitSlots.Count > 8)
             {
-                int y2 = scrollBar.bounds.Y;
-                scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height, Math.Max(y, scrollBarRunner.Y));
-                float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
-                //outfitDisplayIndex = Math.Min(Math.Max(0, this.forSale.Count - 4), Math.Max(0, (int)((float)this.forSale.Count * percentage)));
-                //this.setScrollBarToCurrentIndex();
-                //this.updateSaleButtonNeighbors();
-                if (y2 != scrollBar.bounds.Y)
+                if (scrolling)
                 {
-                    Game1.playSound("shiny4");
+                    /*
+                    int y2 = scrollBar.bounds.Y;
+                    //scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height, Math.Max(y, scrollBarRunner.Y));
+                    if (y > y2 + scrollBar.bounds.Height)
+                    {
+                        float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
+                        scrollBar.bounds.Y = (int)Math.Round(1 * percentage);
+                    }
+                    //aoiwdhoiawhdioawhdoiawdiuwfiu fuck all of this why doesn't it work
+                    // scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex
+                    //float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
+                    //outfitDisplayIndex = (int)Math.Round(Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
+                    //outfitDisplayIndex = (int)Math.Round(((int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
+
+                    //setScrollBarToCurrentIndex();
+                    //this.updateSaleButtonNeighbors();
+                    */
                 }
             }
         }
@@ -751,42 +766,44 @@ namespace StardewOutfitManager.Menus
         public override void releaseLeftClick(int x, int y)
         {
             base.releaseLeftClick(x, y);
-            this.scrolling = false;
-        }
-
-        /*
-        private void setScrollBarToCurrentIndex()
-        {
-            if (this.forSale.Count > 0)
+            if (scrolling)
             {
-                this.scrollBar.bounds.Y = this.scrollBarRunner.Height / Math.Max(1, this.forSale.Count - 4 + 1) * this.currentItemIndex + this.upArrow.bounds.Bottom + 4;
-                if (this.currentItemIndex == this.forSale.Count - 4)
+                int y2 = scrollBar.bounds.Y;
+                setScrollBarToCurrentIndex();
+                if (y2 != scrollBar.bounds.Y)
                 {
-                    this.scrollBar.bounds.Y = this.downArrow.bounds.Y - this.scrollBar.bounds.Height - 4;
+                    Game1.playSound("shiny4");
                 }
             }
+            scrolling = false;
         }
+
 
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-            if (direction > 0 && this.currentItemIndex > 0)
+            if (outfitSlots.Count > 8)
             {
-                this.upArrowPressed();
-                Game1.playSound("shiny4");
-            }
-            else if (direction < 0 && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
-            {
-                this.downArrowPressed();
-                Game1.playSound("shiny4");
+                if (direction > 0 && outfitDisplayIndex > 0)
+                {
+                    this.upArrowPressed();
+                    Game1.playSound("shiny4");
+                }
+                else if (direction < 0 && outfitDisplayIndex < Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2))
+                {
+                    this.downArrowPressed();
+                    Game1.playSound("shiny4");
+                }
             }
         }
-        */
 
         private void downArrowPressed()
         {
             downArrow.scale = downArrow.baseScale;
-            outfitDisplayIndex++;
+            if (outfitDisplayIndex < Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2))
+            {
+                outfitDisplayIndex++;
+            }
             setScrollBarToCurrentIndex();
             //this.updateSaleButtonNeighbors();
         }
@@ -794,21 +811,19 @@ namespace StardewOutfitManager.Menus
         private void upArrowPressed()
         {
             upArrow.scale = upArrow.baseScale;
-            outfitDisplayIndex--;
+            if (outfitDisplayIndex > 0)
+            {
+                outfitDisplayIndex--;
+            }
             setScrollBarToCurrentIndex();
             //this.updateSaleButtonNeighbors();
         }
 
-        // TODO: Outfit index needs work
         private void setScrollBarToCurrentIndex()
         {
             if (outfitSlots.Count > 8)
             {
-                scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (outfitSlots.Count / 4) + 1) * outfitDisplayIndex + scrollBarRunner.Y + scrollBarRunner.Height;
-                if (outfitDisplayIndex == outfitSlots.Count - 8)
-                {
-                    scrollBar.bounds.Y = scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height;
-                }
+                scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex;
             }
         }
 
