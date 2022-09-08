@@ -30,7 +30,7 @@ namespace StardewOutfitManager.Menus
             public Dictionary<string, Item> outfitAvailabileItems;
             public Farmer modelFarmer;
             public FavoriteOutfit modelOutfit;
-            public Texture2D bgSprite;
+            public Rectangle bgSprite;
             public Rectangle bgBox;
 
             // Hover attributes
@@ -86,11 +86,12 @@ namespace StardewOutfitManager.Menus
                 // Draw selection indicator if this outfit is currently being displayed
                 if (isSelected)
                 {
+                    // TODO: This is jank, make it better
                     b.Draw(Game1.staminaRect, new Rectangle(bgBox.X - 4, bgBox.Y - 4, 128 + 8, 192 + 8), Color.White);
                 }
 
                 // Draw background
-                b.Draw(bgSprite, new Vector2(bgBox.X, bgBox.Y), Color.White);
+                b.Draw(StardewOutfitManager.assetManager.customSprites, new Vector2(bgBox.X, bgBox.Y), bgSprite, Color.White);
 
                 // Draw farmer within background box bounds
                 FarmerRenderer.isDrawingForUI = true;
@@ -233,14 +234,30 @@ namespace StardewOutfitManager.Menus
             }
 
             // Get outfit category background
-            public Texture2D GetCategoryBackground(FavoriteOutfit outfit)
+            public Rectangle GetCategoryBackground(FavoriteOutfit outfit)
             {
-                Texture2D background = StardewOutfitManager.assetManager.wardrobeBackgroundTexture;
+                Rectangle background = menu.bgDefault;
                 // Check category and return appropriate background
                 switch (outfit.Category)
                 {
                     case "Spring":
-                        background = StardewOutfitManager.assetManager.bgTextureSpring;
+                        background = menu.bgSpring;
+                        break;
+
+                    case "Summer":
+                        background = menu.bgSummer;
+                        break;
+
+                    case "Fall":
+                        background = menu.bgFall;
+                        break;
+
+                    case "Winter":
+                        background = menu.bgWinter;
+                        break;
+
+                    case "Special":
+                        background = menu.bgSpecial;
                         break;
                 }
                 return background;
@@ -273,10 +290,16 @@ namespace StardewOutfitManager.Menus
         public List<ClickableComponent> leftSelectionButtons = new();
         public List<ClickableComponent> rightSelectionButtons = new();
 
+        // Category Selector Buttons
+        internal ClickableComponent categorySelected;
+        public Rectangle categoryShading;
+        public List<ClickableComponent> categoryButtons = new();
+
         // Outfit buttons and offsets
         public List<ClickableComponent> outfitButtons = new();
         public List<OutfitSlot> outfitSlots = new();
         internal Rectangle outfitBox;
+        internal int outfitDisplayIndex = 0;
 
         // Scroll bar and controls
         public ClickableTextureComponent upArrow;
@@ -322,7 +345,7 @@ namespace StardewOutfitManager.Menus
             };
 
             // Generate outfit box positions, navigation, and components
-            outfitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder + 342, yPositionOnScreen + 100, 592, 436);
+            outfitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder + 342, yPositionOnScreen + 120, 592, 436);
             upArrow = new ClickableTextureComponent(new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + 16, 44, 48), Game1.mouseCursors, new Rectangle(76, 72, 40, 44), 1f)
             {
                 myID = 97865,
@@ -337,6 +360,16 @@ namespace StardewOutfitManager.Menus
             };
             scrollBar = new ClickableTextureComponent(new Rectangle(upArrow.bounds.X + 8, upArrow.bounds.Y + upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
             scrollBarRunner = new Rectangle(scrollBar.bounds.X, upArrow.bounds.Y + upArrow.bounds.Height + 4, scrollBar.bounds.Width, outfitBox.Height - 64 - upArrow.bounds.Height - 20);
+
+            // Generate Category Buttons
+            int catYoffset = 78;
+            categoryButtons.Add(new ClickableTextureComponent("All Outfits", new Rectangle(outfitBox.X, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(124, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Spring", new Rectangle(outfitBox.X + 90, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(14, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Summer", new Rectangle(outfitBox.X + 180, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(36, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Fall", new Rectangle(outfitBox.X + 270, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(58, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Winter", new Rectangle(outfitBox.X + 360, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(80, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Special", new Rectangle(outfitBox.X + 450, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(102, 192, 22, 18), 4f));
+            categorySelected = categoryButtons[0];
 
             // Generate available player items
             GeneratePlayerOwnedItemList();
@@ -470,7 +503,6 @@ namespace StardewOutfitManager.Menus
         }
 
         // CONTROLS
-
         // Default Snap
         public override void snapToDefaultClickableComponent()
         {
@@ -583,7 +615,17 @@ namespace StardewOutfitManager.Menus
             }
             // currentItemIndex = Math.Max(0, Math.Min(this.forSale.Count - 4, this.currentItemIndex));
 
-            // ok button
+            // Category buttons
+            foreach (ClickableComponent c in categoryButtons)
+            {
+                if (c.containsPoint(x, y))
+                {
+                    changeCategory(c.name);
+                    categorySelected = c;
+                }
+            }
+
+            // OK button
             if (okButton.containsPoint(x, y))
             {
                 okButton.scale -= 0.25f;
@@ -599,7 +641,7 @@ namespace StardewOutfitManager.Menus
         // Handle On-Hover and Resetting Button States
         public override void performHoverAction(int x, int y)
         {
-            this.hoverText = "";
+            hoverText = "";
             foreach (ClickableTextureComponent c6 in leftSelectionButtons)
             {
                 if (c6.containsPoint(x, y))
@@ -620,6 +662,19 @@ namespace StardewOutfitManager.Menus
                 else
                 {
                     c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
+                }
+            }
+            categoryShading = new Rectangle(0, 0, 0, 0);
+            foreach (ClickableTextureComponent c in categoryButtons)
+            {
+                if (c.containsPoint(x, y))
+                {
+                    // Assign shading to any hovered categories that aren't selected
+                    if (c != categorySelected)
+                    {
+                        categoryShading = new Rectangle(c.bounds.X + 12, c.bounds.Y + 12, 64, 48);
+                    }
+                    hoverText = c.name;
                 }
             }
             if (okButton.containsPoint(x, y))
@@ -660,19 +715,33 @@ namespace StardewOutfitManager.Menus
             }
         }
 
+        // Handle category changes
+        private void changeCategory(string name)
+        {
+            // If we didn't click the category already active
+            if (categorySelected.name != name)
+            {
+                // Filter the list of favorite outfits to the correct category and sort it
+
+                // Regenerate the outfit buttons with the new selections
+
+                Game1.playSound("stoneStep");
+            }
+        }
+        
         // Handle scrolling
         public override void leftClickHeld(int x, int y)
         {
             base.leftClickHeld(x, y);
             if (this.scrolling)
             {
-                int y2 = this.scrollBar.bounds.Y;
-                this.scrollBar.bounds.Y = Math.Min(base.yPositionOnScreen + base.height - 64 - 12 - this.scrollBar.bounds.Height, Math.Max(y, base.yPositionOnScreen + this.upArrow.bounds.Height + 20));
-                float percentage = (float)(y - this.scrollBarRunner.Y) / (float)this.scrollBarRunner.Height;
-                //this.currentItemIndex = Math.Min(Math.Max(0, this.forSale.Count - 4), Math.Max(0, (int)((float)this.forSale.Count * percentage)));
+                int y2 = scrollBar.bounds.Y;
+                scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height, Math.Max(y, scrollBarRunner.Y));
+                float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
+                //outfitDisplayIndex = Math.Min(Math.Max(0, this.forSale.Count - 4), Math.Max(0, (int)((float)this.forSale.Count * percentage)));
                 //this.setScrollBarToCurrentIndex();
                 //this.updateSaleButtonNeighbors();
-                if (y2 != this.scrollBar.bounds.Y)
+                if (y2 != scrollBar.bounds.Y)
                 {
                     Game1.playSound("shiny4");
                 }
@@ -716,18 +785,31 @@ namespace StardewOutfitManager.Menus
 
         private void downArrowPressed()
         {
-            this.downArrow.scale = this.downArrow.baseScale;
-            //this.currentItemIndex++;
-            //this.setScrollBarToCurrentIndex();
+            downArrow.scale = downArrow.baseScale;
+            outfitDisplayIndex++;
+            setScrollBarToCurrentIndex();
             //this.updateSaleButtonNeighbors();
         }
 
         private void upArrowPressed()
         {
-            this.upArrow.scale = this.upArrow.baseScale;
-            //this.currentItemIndex--;
-            //this.setScrollBarToCurrentIndex();
+            upArrow.scale = upArrow.baseScale;
+            outfitDisplayIndex--;
+            setScrollBarToCurrentIndex();
             //this.updateSaleButtonNeighbors();
+        }
+
+        // TODO: Outfit index needs work
+        private void setScrollBarToCurrentIndex()
+        {
+            if (outfitSlots.Count > 8)
+            {
+                scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (outfitSlots.Count / 4) + 1) * outfitDisplayIndex + scrollBarRunner.Y + scrollBarRunner.Height;
+                if (outfitDisplayIndex == outfitSlots.Count - 8)
+                {
+                    scrollBar.bounds.Y = scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height;
+                }
+            }
         }
 
         // DRAW
@@ -751,7 +833,7 @@ namespace StardewOutfitManager.Menus
             CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
             FarmerRenderer.isDrawingForUI = false;
 
-            // Draw buttons
+            // Draw rotation buttons
             foreach (ClickableTextureComponent leftSelectionButton in leftSelectionButtons)
             {
                 leftSelectionButton.draw(b);
@@ -760,6 +842,21 @@ namespace StardewOutfitManager.Menus
             {
                 rightSelectionButton.draw(b);
             }
+            
+            // Draw category buttons
+            foreach (ClickableTextureComponent categoryButton in categoryButtons)
+            {
+                categoryButton.draw(b);
+            }
+            // Shade active and hovered categories
+            b.Draw(Game1.staminaRect, new Rectangle(categorySelected.bounds.X + 12, categorySelected.bounds.Y + 12, 64, 48), Color.Black * .4f);
+            if (categoryShading != new Rectangle(categorySelected.bounds.X + 12, categorySelected.bounds.Y + 12, 64, 48)) 
+            {
+                b.Draw(Game1.staminaRect, categoryShading, Color.Black * .1f);
+            }
+            
+
+            // Draw other UI buttons
             okButton.draw(b);
 
             // Draw Outfit Display Slots (only draw 8 or fewer)
