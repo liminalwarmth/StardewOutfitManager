@@ -12,6 +12,7 @@ using StardewOutfitManager.Utils;
 using StardewOutfitManager.Managers;
 using StardewOutfitManager.Data;
 using System.Xml.Linq;
+using static StardewOutfitManager.Menus.FavoritesMenu;
 
 namespace StardewOutfitManager.Menus
 {
@@ -45,13 +46,20 @@ namespace StardewOutfitManager.Menus
         public List<ClickableComponent> leftSelectionButtons = new();
         public List<ClickableComponent> rightSelectionButtons = new();
 
+        // Favorites and Category Buttons
+        public List<ClickableComponent> categoryButtons = new();
+        public ClickableTextureComponent saveFavoriteButton;
+        public Rectangle saveFavoriteBox;
+        public ClickableComponent categorySelected;
+        public Rectangle categoryShading;
+
         // Snap Regions
         internal const int LABELS = 10000;
         internal const int PORTRAIT = 20000;
+        internal const int CATEGORIES = 30000;
 
         // Additional Buttons
         public ClickableTextureComponent okButton;
-        public ClickableTextureComponent saveFavoriteButton;
 
         // Menu, Inventory Lists, List Indexes
         public List<Item> hatStock = new();
@@ -127,12 +135,12 @@ namespace StardewOutfitManager.Menus
 
             /// WARDROBE MENU
             // Set up menu structure
-            Vector2 topLeft = Utility.getTopLeftPositionForCenteringOnScreen(base.width, base.height);
+            Vector2 topLeft = Utility.getTopLeftPositionForCenteringOnScreen(width, height);
             base.xPositionOnScreen = (int)topLeft.X;
             base.yPositionOnScreen = (int)topLeft.Y;
 
             // Set up portrait and farmer
-            _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
+            _portraitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
             _displayFarmer = Game1.player;
             _displayFarmer.faceDirection(2);
             _displayFarmer.FarmerSprite.StopAnimation();
@@ -140,12 +148,12 @@ namespace StardewOutfitManager.Menus
             // Equipment slot displays
             int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
             int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat"));
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt"));
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants"));
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots"));
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
-            this.equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
 
             // Player display window movement buttons
             leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
@@ -255,20 +263,44 @@ namespace StardewOutfitManager.Menus
             itemLabels.Add(accLabel);
 
             // Confirm Button
-            okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
+            okButton = new ClickableTextureComponent("OK", new Rectangle(xPositionOnScreen + width - borderWidth - spaceToClearSideBorder - 56, yPositionOnScreen + height - borderWidth - spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
             {
                 myID = 9999,
-                upNeighborID = 1005,
-                leftNeighborID = 9998
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
 
+            // Favorite Category Buttons
+            int catXpos = xPositionOnScreen + width - borderWidth - spaceToClearSideBorder - 280;
+            int catYpos = _portraitBox.Y;
+            categoryButtons.Add(new ClickableTextureComponent("Spring", new Rectangle(catXpos, catYpos, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(14, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Summer", new Rectangle(catXpos + 90, catYpos, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(36, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Fall", new Rectangle(catXpos + 180, catYpos, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(58, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Winter", new Rectangle(catXpos + 45, catYpos + 80, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(80, 192, 22, 18), 4f));
+            categoryButtons.Add(new ClickableTextureComponent("Special", new Rectangle(catXpos + 135, catYpos + 80, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(102, 192, 22, 18), 4f));
+            for (int i = 0; i < categoryButtons.Count; i++)
+            {
+                categoryButtons[i].myID = 6000 + i;
+                categoryButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].leftNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].rightNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].region = CATEGORIES;
+            }
+
+            // Set default category to current game season
+            categorySelected = Game1.IsSpring ? categoryButtons[0] : Game1.IsSummer ? categoryButtons[1] : Game1.IsFall ? categoryButtons[2] : Game1.IsWinter ? categoryButtons[3] : categoryButtons[4];
+
+
             // Save as Favorite Button
-            saveFavoriteButton = new ClickableTextureComponent("SaveFavorite", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56 - 74, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 47), 1f)
+            saveFavoriteBox = new Rectangle(catXpos + 45, catYpos + 160, 178, 72);
+            saveFavoriteButton = new ClickableTextureComponent("SaveFavorite", saveFavoriteBox, null, null, Game1.menuTexture, new Rectangle(0, 256, 60, 60), 1f)
             {
                 myID = 9998,
-                upNeighborID = 1005,
-                leftNeighborID = 1005,
-                rightNeighborID = 9999
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
 
             // Top Bar Tab Switcher Buttons
@@ -284,6 +316,20 @@ namespace StardewOutfitManager.Menus
             // Default snap
             if (Game1.options.SnappyMenus && Game1.options.gamepadControls) {
                 snapToDefaultClickableComponent();
+            }
+        }
+
+        // ** METHODS **
+
+        // Change the category filter
+        private void ChangeCategory(ClickableComponent newCategory)
+        {
+            // If we didn't click the category already active
+            if (categorySelected.name != newCategory.name)
+            {
+                // Update the category setting
+                categorySelected = newCategory;
+                Game1.playSound("smallSelect");
             }
         }
 
@@ -306,169 +352,8 @@ namespace StardewOutfitManager.Menus
             return (itemIndex == -1) ? null : stockList[itemIndex];
         }
 
-        // CONTROLS
-
-        // Default Snap
-        public override void snapToDefaultClickableComponent()
-        {
-            setCurrentlySnappedComponentTo(1000);
-            snapCursorToCurrentSnappedComponent();
-        }
-
-        // Custom Snap Behavior
-        protected override void customSnapBehavior(int direction, int oldRegion, int oldID)
-        {
-            switch (getCurrentlySnappedComponent().region)
-            {
-                // Label List
-                case LABELS:
-                    // Direction will be 1 (right) or 3 (left) with one exception for these
-                    int change = direction == 1 ? 1 : -1;
-                    // Left and Right Change the Current Item in Slot
-                    if (direction != 2 && direction != 0)
-                    {
-                        selectionClick(getCurrentlySnappedComponent().name, change);
-                    }
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        // Key Press
-        public override void receiveKeyPress(Keys key)
-        {
-            base.receiveKeyPress(key);
-        }
-
-        // Handle Game Pad Controls
-        public override void receiveGamePadButton(Buttons b)
-        {
-            base.receiveGamePadButton(b);
-            if (b == Buttons.RightShoulder) 
-            {
-                selectionClick("Direction", 1);
-            }
-            else if (b == Buttons.LeftShoulder)
-            {
-                selectionClick("Direction", -1);
-            }
-            if (b == Buttons.A && getCurrentlySnappedComponent().region == LABELS)
-            {
-                setCurrentlySnappedComponentTo(9999);
-                snapCursorToCurrentSnappedComponent();
-                Game1.playSound("smallSelect");
-            }
-        }
-
-        // Left click action
-        public override void receiveLeftClick(int x, int y, bool playSound = true)
-        {
-            if (leftSelectionButtons.Count > 0)
-            {
-                foreach (ClickableComponent c2 in leftSelectionButtons)
-                {
-                    if (c2.containsPoint(x, y))
-                    {
-                        selectionClick(c2.name, -1);
-                        if (c2.scale != 0f)
-                        {
-                            c2.scale -= 0.25f;
-                            c2.scale = Math.Max(0.75f, c2.scale);
-                        }
-                    }
-                }
-            }
-            if (rightSelectionButtons.Count > 0)
-            {
-                foreach (ClickableComponent c in rightSelectionButtons)
-                {
-                    if (c.containsPoint(x, y))
-                    {
-                        selectionClick(c.name, 1);
-                        if (c.scale != 0f)
-                        {
-                            c.scale -= 0.25f;
-                            c.scale = Math.Max(0.75f, c.scale);
-                        }
-                    }
-                }
-            }
-            if (okButton.containsPoint(x, y))
-            {
-                okButton.scale -= 0.25f;
-                okButton.scale = Math.Max(0.75f, okButton.scale);
-                StardewOutfitManager.playerManager.cleanMenuExit();
-            }
-            if (saveFavoriteButton.containsPoint(x, y))
-            {
-                saveFavoriteButton.scale -= 0.25f;
-                saveFavoriteButton.scale = Math.Max(0.75f, okButton.scale);
-                favoritesData.SaveNewOutfit(_displayFarmer, "TEMP_CAT", "TEMP_NAME");
-                Game1.playSound("dwop");
-            }
-            menuManager.handleTopBarLeftClick(x, y);
-        }
-
-        // Handle On-Hover and Resetting Button States
-        public override void performHoverAction(int x, int y)
-        {
-            this.hoverText = "";
-            foreach (ClickableTextureComponent c6 in leftSelectionButtons)
-            {
-                if (c6.containsPoint(x, y))
-                {
-                    c6.scale = Math.Min(c6.scale + 0.02f, c6.baseScale + 0.1f);
-                }
-                else
-                {
-                    c6.scale = Math.Max(c6.scale - 0.02f, c6.baseScale);
-                }
-            }
-            foreach (ClickableTextureComponent c5 in rightSelectionButtons)
-            {
-                if (c5.containsPoint(x, y))
-                {
-                    c5.scale = Math.Min(c5.scale + 0.02f, c5.baseScale + 0.1f);
-                }
-                else
-                {
-                    c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
-                }
-            }
-            if (okButton.containsPoint(x, y))
-            {
-                okButton.scale = Math.Min(okButton.scale + 0.02f, okButton.baseScale + 0.1f);
-            }
-            else
-            {
-                okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
-            }
-            if (saveFavoriteButton.containsPoint(x, y))
-            {
-                saveFavoriteButton.scale = Math.Min(saveFavoriteButton.scale + 0.02f, saveFavoriteButton.baseScale + 0.1f);
-            }
-            else
-            {
-                saveFavoriteButton.scale = Math.Max(saveFavoriteButton.scale - 0.02f, saveFavoriteButton.baseScale);
-            }
-            menuManager.handleTopBarOnHover(x, y, ref hoverText);
-        }
-
-        // Game Window Resize - TODO
-        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
-        {
-            base.gameWindowSizeChanged(oldBounds, newBounds);
-            xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
-            yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
-
-            // TODO: Reposition buttons
-            // TODO: Reposition tabs?
-        }
-
-        // Handle menu selection clicks
-        private void selectionClick(string name, int change)
+        // Handle arrow directional selection clicks
+        private void SelectionClick(string name, int change)
         {
             switch (name)
             {
@@ -513,7 +398,209 @@ namespace StardewOutfitManager.Menus
             }
         }
 
-        // DRAW
+        // ** CONTROLS **
+
+        // Default Snap
+        public override void snapToDefaultClickableComponent()
+        {
+            setCurrentlySnappedComponentTo(1000);
+            snapCursorToCurrentSnappedComponent();
+        }
+
+        // Custom Snap Behavior
+        protected override void customSnapBehavior(int direction, int oldRegion, int oldID)
+        {
+            switch (getCurrentlySnappedComponent().region)
+            {
+                // Label List
+                case LABELS:
+                    // Direction will be 1 (right) or 3 (left) with one exception for these
+                    int change = direction == 1 ? 1 : -1;
+                    // Left and Right Change the Current Item in Slot
+                    if (direction != 2 && direction != 0)
+                    {
+                        SelectionClick(getCurrentlySnappedComponent().name, change);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        // Key Press
+        public override void receiveKeyPress(Keys key)
+        {
+            base.receiveKeyPress(key);
+        }
+
+        // Handle Game Pad Controls
+        public override void receiveGamePadButton(Buttons b)
+        {
+            base.receiveGamePadButton(b);
+            if (b == Buttons.RightShoulder) 
+            {
+                SelectionClick("Direction", 1);
+            }
+            else if (b == Buttons.LeftShoulder)
+            {
+                SelectionClick("Direction", -1);
+            }
+            if (b == Buttons.A && getCurrentlySnappedComponent().region == LABELS)
+            {
+                setCurrentlySnappedComponentTo(9999);
+                snapCursorToCurrentSnappedComponent();
+                Game1.playSound("smallSelect");
+            }
+            else if (b == Buttons.A && getCurrentlySnappedComponent() == saveFavoriteButton)
+            {
+                setCurrentlySnappedComponentTo(9999);
+                snapCursorToCurrentSnappedComponent();
+            }
+        }
+
+        // Left click action
+        public override void receiveLeftClick(int x, int y, bool playSound = true)
+        {
+            // Directional arrow navigation
+            if (leftSelectionButtons.Count > 0)
+            {
+                foreach (ClickableComponent c2 in leftSelectionButtons)
+                {
+                    if (c2.containsPoint(x, y))
+                    {
+                        SelectionClick(c2.name, -1);
+                        if (c2.scale != 0f)
+                        {
+                            c2.scale -= 0.25f;
+                            c2.scale = Math.Max(0.75f, c2.scale);
+                        }
+                    }
+                }
+            }
+            if (rightSelectionButtons.Count > 0)
+            {
+                foreach (ClickableComponent c in rightSelectionButtons)
+                {
+                    if (c.containsPoint(x, y))
+                    {
+                        SelectionClick(c.name, 1);
+                        if (c.scale != 0f)
+                        {
+                            c.scale -= 0.25f;
+                            c.scale = Math.Max(0.75f, c.scale);
+                        }
+                    }
+                }
+            }
+
+            // OK / confirm button
+            if (okButton.containsPoint(x, y))
+            {
+                okButton.scale -= 0.25f;
+                okButton.scale = Math.Max(0.75f, okButton.scale);
+                StardewOutfitManager.playerManager.cleanMenuExit();
+            }
+            
+            // *TODO* Save favorite outfit button
+                // handle name
+            if (saveFavoriteButton.containsPoint(x, y))
+            {
+                saveFavoriteButton.scale -= 0.25f;
+                saveFavoriteButton.scale = Math.Max(0.75f, okButton.scale);
+                favoritesData.SaveNewOutfit(_displayFarmer, categorySelected.name, "");
+                Game1.playSound("dwop");
+            }
+
+            // Favorite category buttons
+            foreach (ClickableComponent c in categoryButtons)
+            {
+                if (c.containsPoint(x, y)) { ChangeCategory(c); }
+            }
+
+            // Top bar handling
+            menuManager.handleTopBarLeftClick(x, y);
+        }
+
+        // Handle On-Hover and Resetting Button States
+        public override void performHoverAction(int x, int y)
+        {
+            hoverText = "";
+            foreach (ClickableTextureComponent c6 in leftSelectionButtons)
+            {
+                if (c6.containsPoint(x, y))
+                {
+                    c6.scale = Math.Min(c6.scale + 0.02f, c6.baseScale + 0.1f);
+                }
+                else
+                {
+                    c6.scale = Math.Max(c6.scale - 0.02f, c6.baseScale);
+                }
+            }
+            foreach (ClickableTextureComponent c5 in rightSelectionButtons)
+            {
+                if (c5.containsPoint(x, y))
+                {
+                    c5.scale = Math.Min(c5.scale + 0.02f, c5.baseScale + 0.1f);
+                }
+                else
+                {
+                    c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
+                }
+            }
+            
+            // OK / confirm button
+            if (okButton.containsPoint(x, y))
+            {
+                okButton.scale = Math.Min(okButton.scale + 0.02f, okButton.baseScale + 0.1f);
+            }
+            else
+            {
+                okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
+            }
+
+            // Save favorite outfit button
+            if (saveFavoriteButton.containsPoint(x, y))
+            {
+                saveFavoriteButton.scale = Math.Min(saveFavoriteButton.scale + 0.02f, saveFavoriteButton.baseScale + 0.05f);
+            }
+            else
+            {
+                saveFavoriteButton.scale = Math.Max(saveFavoriteButton.scale - 0.02f, saveFavoriteButton.baseScale);
+            }
+
+            // Favorites category buttons
+            categoryShading = new Rectangle(0, 0, 0, 0);
+            foreach (ClickableTextureComponent c in categoryButtons)
+            {
+                if (c.containsPoint(x, y))
+                {
+                    // Assign shading to any hovered categories that aren't selected
+                    if (c != categorySelected)
+                    {
+                        categoryShading = new Rectangle(c.bounds.X + 12, c.bounds.Y + 12, 64, 48);
+                    }
+                    hoverText = c.name;
+                }
+            }
+
+            // Top bar handling
+            menuManager.handleTopBarOnHover(x, y, ref hoverText);
+        }
+
+        // *TODO* Game Window Resize
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            base.gameWindowSizeChanged(oldBounds, newBounds);
+            xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
+            yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
+
+            // TODO: Reposition buttons
+            // TODO: Reposition tabs?
+        }
+
+        // ** DRAW **
+        // *TODO* make labels look nicer for categories
         public override void draw(SpriteBatch b)
         {
             if (Game1.dialogueUp || Game1.IsFading())
@@ -521,12 +608,12 @@ namespace StardewOutfitManager.Menus
                 return;
             }
 
-            // General UI (title, background)
+            // Draw title scroll and background
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
-            SpriteText.drawStringWithScrollCenteredAt(b, "Wardrobe", base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
+            SpriteText.drawStringWithScrollCenteredAt(b, "Wardrobe", xPositionOnScreen + width / 2, yPositionOnScreen - 64);
+            drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), xPositionOnScreen, yPositionOnScreen, width, height, Color.White, 4f);
 
-            // Farmer portrait
+            // Draw farmer portrait
             b.Draw(StardewOutfitManager.assetManager.customSprites, _portraitBox, new Rectangle(0, 0, 128, 192), Color.White);
             FarmerRenderer.isDrawingForUI = true;
             CustomModTools.DrawCustom.drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(_portraitBox.Center.X - 64, _portraitBox.Bottom - 320), Color.White, 2f, _displayFarmer);
@@ -606,7 +693,7 @@ namespace StardewOutfitManager.Menus
                 }
             }
 
-            // Draw buttons
+            // Draw arrows and OK buttons
             foreach (ClickableTextureComponent leftSelectionButton in leftSelectionButtons)
             {
                 leftSelectionButton.draw(b);
@@ -616,7 +703,23 @@ namespace StardewOutfitManager.Menus
                 rightSelectionButton.draw(b);
             }
             okButton.draw(b);
-            saveFavoriteButton.draw(b);
+
+            // Draw save favorite button
+            float scale = saveFavoriteButton.scale;
+            drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60), (int)(saveFavoriteBox.X + saveFavoriteBox.Width/2 - (saveFavoriteBox.Width/2 * scale)), (int)(saveFavoriteBox.Y + saveFavoriteBox.Height / 2 - (saveFavoriteBox.Height / 2 * scale)), (int)(saveFavoriteBox.Width - saveFavoriteBox.Width + (saveFavoriteBox.Width * scale)), (int)(saveFavoriteBox.Height - saveFavoriteBox.Height + (saveFavoriteBox.Height * scale)), Color.White, 1f, false);
+            Utility.drawTextWithShadow(b, "Save Outfit", Game1.smallFont, new Vector2(saveFavoriteBox.X + saveFavoriteBox.Width / 2 - Game1.smallFont.MeasureString("Save Outfit").X / 2f * scale, saveFavoriteBox.Y + saveFavoriteBox.Height / 2 - 14 * scale), Game1.textColor, 1f * scale);
+
+            // Draw favorite category buttons
+            foreach (ClickableTextureComponent categoryButton in categoryButtons)
+            {
+                categoryButton.draw(b);
+            }
+            // Shade active and hovered categories
+            b.Draw(Game1.staminaRect, new Rectangle(categorySelected.bounds.X + 12, categorySelected.bounds.Y + 12, 64, 48), Color.Black * .4f);
+            if (categoryShading != new Rectangle(categorySelected.bounds.X + 12, categorySelected.bounds.Y + 12, 64, 48))
+            {
+                b.Draw(Game1.staminaRect, categoryShading, Color.Black * .1f);
+            }
 
             // Draw TopBar
             menuManager.drawTopBar(b);
@@ -641,7 +744,6 @@ namespace StardewOutfitManager.Menus
                 }
                 Utility.drawTextWithShadow(b, c.name, Game1.smallFont, new Vector2((c.bounds.X + 21) - Game1.smallFont.MeasureString(c.name).X / 2f, c.bounds.Y + 5f), color);
             }
-
             foreach (ClickableComponent c in itemLabels)
             {
                 if (c.name.Length > 0)

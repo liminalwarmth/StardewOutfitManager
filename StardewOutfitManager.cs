@@ -38,8 +38,9 @@ namespace StardewOutfitManager
             harmony.PatchAll();
 
             // Checked events
-            helper.Events.Display.RenderingActiveMenu += this.OnMenuRender;
-            helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
+            helper.Events.Display.RenderingActiveMenu += OnMenuRender;
+            helper.Events.Input.ButtonsChanged += OnButtonsChanged;
+            helper.Events.GameLoop.Saved += OnSaved;
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
@@ -102,6 +103,12 @@ namespace StardewOutfitManager
                     }
                 }
             }
+        }
+
+        // Save favorites data file after the player saves their game and the object tags have been written into the save
+        private void OnSaved(object sender, SavedEventArgs e)
+        {
+            playerManager.saveFavoritesDataToFile();
         }
     }
 }

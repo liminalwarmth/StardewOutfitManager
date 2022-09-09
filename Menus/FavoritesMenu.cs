@@ -391,7 +391,6 @@ namespace StardewOutfitManager.Menus
             categoryButtons.Add(new ClickableTextureComponent("Fall", new Rectangle(outfitBox.X + 270, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(58, 192, 22, 18), 4f));
             categoryButtons.Add(new ClickableTextureComponent("Winter", new Rectangle(outfitBox.X + 360, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(80, 192, 22, 18), 4f));
             categoryButtons.Add(new ClickableTextureComponent("Special", new Rectangle(outfitBox.X + 450, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(102, 192, 22, 18), 4f));
-            categorySelected = categoryButtons[0];
             for (int i = 0; i < categoryButtons.Count; i++)
             {
                 categoryButtons[i].myID = 6000 + i;
@@ -401,6 +400,9 @@ namespace StardewOutfitManager.Menus
                 categoryButtons[i].rightNeighborID = ClickableComponent.SNAP_AUTOMATIC;
                 categoryButtons[i].region = CATEGORIES;
             }
+            
+            // Set default category to current game season
+            categorySelected = Game1.IsSpring ? categoryButtons[1] : Game1.IsSummer ? categoryButtons[2] : Game1.IsFall ? categoryButtons[3] : Game1.IsWinter ? categoryButtons[4] : categoryButtons[0];
 
             // Generate available player items
             GeneratePlayerOwnedItemList();
