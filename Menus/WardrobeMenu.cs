@@ -287,6 +287,25 @@ namespace StardewOutfitManager.Menus
             }
         }
 
+        // Returns the item in the index which is referenced by the directional change
+        private Item ClothingSwap(ref int itemIndex, ref List<Item> stockList, int change)
+        {
+            // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
+            int listSize = stockList.Count;
+            if (listSize > 0)
+            {
+                itemIndex += change;
+                if (itemIndex >= listSize) itemIndex = -1;
+                else if (itemIndex < -1) itemIndex = listSize - 1;
+            }
+            else
+            {
+                itemIndex = -1;
+            }
+            // Return null (no item if -1), otherwise return the item
+            return (itemIndex == -1) ? null : stockList[itemIndex];
+        }
+
         // CONTROLS
 
         // Default Snap
@@ -448,6 +467,52 @@ namespace StardewOutfitManager.Menus
             // TODO: Reposition tabs?
         }
 
+        // Handle menu selection clicks
+        private void selectionClick(string name, int change)
+        {
+            switch (name)
+            {
+                case "Hat":
+                    {
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref hatIndex, ref hatStock, change), hatLabel);
+                        break;
+                    }
+                case "Shirt":
+                    {
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shirtIndex, ref shirtStock, change), shirtLabel);
+                        break;
+                    }
+                case "Pants":
+                    {
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref pantsIndex, ref pantsStock, change), pantsLabel);
+                        break;
+                    }
+                case "Shoes":
+                    {
+                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shoesIndex, ref shoesStock, change), shoesLabel);
+                        break;
+                    }
+                case "Direction":
+                    {
+                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
+                        _displayFarmer.FarmerSprite.StopAnimation();
+                        _displayFarmer.completelyStopAnimatingOrDoingAction();
+                        Game1.playSound("stoneStep");
+                        break;
+                    }
+                case "Hair":
+                    {
+                        this.HairSwap(name, change, _displayFarmer, hairLabel);
+                        break;
+                    }
+                case "Accessory":
+                    {
+                        this.AccessorySwap(name, change, _displayFarmer, accLabel);
+                        break;
+                    }
+            }
+        }
+
         // DRAW
         public override void draw(SpriteBatch b)
         {
@@ -595,71 +660,6 @@ namespace StardewOutfitManager.Menus
 
             Game1.mouseCursorTransparency = 1f;
             base.drawMouse(b);
-        }
-
-        // Handle menu selection clicks
-        private void selectionClick(string name, int change)
-        {
-            switch (name)
-            {
-                case "Hat":
-                    {
-                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref hatIndex, ref hatStock, change), hatLabel);
-                        break;
-                    }
-                case "Shirt":
-                    {
-                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shirtIndex, ref shirtStock, change), shirtLabel);
-                        break;
-                    }
-                case "Pants":
-                    {
-                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref pantsIndex, ref pantsStock, change), pantsLabel);
-                        break;
-                    }
-                case "Shoes":
-                    {
-                        this.ItemExchange(dresserObject, _displayFarmer, name, ClothingSwap(ref shoesIndex, ref shoesStock, change), shoesLabel);
-                        break;
-                    }
-                case "Direction":
-                    {
-                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
-                        _displayFarmer.FarmerSprite.StopAnimation();
-                        _displayFarmer.completelyStopAnimatingOrDoingAction();
-                        Game1.playSound("stoneStep");
-                        break;
-                    }
-                case "Hair":
-                    {
-                        this.HairSwap(name, change, _displayFarmer, hairLabel);
-                        break;
-                    }
-                case "Accessory":
-                    {
-                        this.AccessorySwap(name, change, _displayFarmer, accLabel);
-                        break;
-                    }
-            }
-        }
-        
-        // Returns the item in the index which is referenced by the directional change
-        private Item ClothingSwap(ref int itemIndex, ref List<Item> stockList, int change)
-        {
-            // Move to next or prior clothing item and update current and prior item indexes for reference, based on arrow direction change
-            int listSize = stockList.Count;
-            if (listSize > 0)
-            {
-                itemIndex += change;
-                if (itemIndex >= listSize) itemIndex = -1;
-                else if (itemIndex < -1) itemIndex = listSize - 1;
-            }
-            else
-            {
-                itemIndex = -1;
-            }
-            // Return null (no item if -1), otherwise return the item
-            return (itemIndex == -1) ? null : stockList[itemIndex];
         }
     }
 }

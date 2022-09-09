@@ -1,10 +1,10 @@
 ﻿To-Do:
 - Move saving favorites to data file to the end of day save action
 - Up and down labels cycle around to top or bottom
-- Buttons to display controller buttons if gamepad is enabled
-- Press A to go to okay, B from there to go back
-- Favorites system implemented
-- Heart on a portrait if it's already a favorite
+- Set current season to current category when the favorites menu is opened
+- (BUG) Scrollbar on favorites menu nightmare (need to fix scrolling with mouse)
+- (BUG) Need to look at the reflection method for recolor in my custom 2x draw script, it's not working on the display farmer
+- (PERFORMANCE) Need to simplify outfit tag / list object lookups in favorites methods so there's less duplicate checking lists for item tags
 
 edit csproj
 	// https://discord.com/channels/137344473976799233/156109690059751424/1015366511084441600

@@ -13,13 +13,16 @@ using StardewOutfitManager.Utils;
 using StardewOutfitManager.Data;
 using System.Reflection.Metadata.Ecma335;
 using static StardewValley.Menus.LoadGameMenu;
+using StardewValley.Characters;
 
 namespace StardewOutfitManager.Menus
 {
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {
-        // Outfit button slot definition (jacked from load menu, reference it)
+        // ** OUTFIT SLOT CLASS**
+
+        // Outfit slot class definition
         public class OutfitSlot
         {
             // Base variables
@@ -27,6 +30,7 @@ namespace StardewOutfitManager.Menus
             internal bool isAvailable;
             internal bool isFavorite;
             internal bool isSelected;
+            internal bool isVisible = false;
             public Dictionary<string, Item> outfitAvailabileItems;
             public Farmer modelFarmer;
             public FavoriteOutfit modelOutfit;
@@ -40,6 +44,7 @@ namespace StardewOutfitManager.Menus
             internal string lastWorn;
             internal List<ClickableComponent> itemAvailabilityIcons = new();
 
+            // ** CONSTRUCTOR **
             public OutfitSlot(FavoritesMenu menu, Farmer player, FavoriteOutfit outfit, List<Item> playerOwnedItems)
             {
                 // Set up background and fake model farmer
@@ -47,13 +52,17 @@ namespace StardewOutfitManager.Menus
                 modelOutfit = outfit;
                 bgBox = new Rectangle(menu.xPositionOnScreen, menu.yPositionOnScreen, 128, 192);
                 bgSprite = GetCategoryBackground(modelOutfit);
-                modelFarmer = CreateFakeEventFarmer(player);
+                modelFarmer = menu.CreateFakeModelFarmer(player);
+
+                // Set whether this is a favorited outfit among all outfits
+                isFavorite = modelOutfit.isFavorite;
 
                 // Establish equipment availability and dress the display farmer in what's available
                 outfitAvailabileItems = modelOutfit.GetOutfitItemAvailability(playerOwnedItems);
                 modelOutfit.dressDisplayFarmerWithAvailableOutfitPieces(modelFarmer, outfitAvailabileItems);
+
                 // Set outfit slot to unavailable if any necessary items are missing
-                isAvailable = outfitAvailabileItems.ContainsValue(null) ? false : true;
+                isAvailable = !outfitAvailabileItems.ContainsValue(null);
 
                 // Set the on-hover attributes and outfit item availability displays
                 outfitName = modelOutfit.Name;
@@ -68,26 +77,36 @@ namespace StardewOutfitManager.Menus
                 itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
             }
 
-            // Activate the outfit slot and display the model outfit
-            public void Activate()
+            // ** METHODS **
+            
+            // *DISPLAY BUG* Activate the outfit slot and display the model outfit
+            public void Select()
             {
                 // Change this outfit box to selected and all others to unselected
+                foreach (OutfitSlot outfit in menu.outfitSlots) { outfit.isSelected = false; }
                 isSelected = true;
+                
+                // Update the menu reference to the selected outfit slot
+                menu.outfitSlotSelected = this;
+                
                 // Set the display background to match the outfit background
-                //menu.outFitDisplayBG = 
-                // Dress the main display farmer in the favorites menu in this outfit
+                menu.outFitDisplayBG = bgSprite;
 
-                // Set the queued outfit for equipping the player
+                // *BUG* sleeve color is sticky, recolor reflection method not working in 2x draw custom script
+                // Dress the main display farmer in the favorites menu in this outfit
+                modelOutfit.dressDisplayFarmerWithAvailableOutfitPieces(menu._displayFarmer, outfitAvailabileItems);
+                Game1.playSound("dwop");
             }
 
-            // Draw the outfit box
-            public void Draw(SpriteBatch b, int i)
+            // *TODO* Draw the outfit box
+                // Need to set up the hover info boxes still
+            public void Draw(SpriteBatch b)
             {
                 // Draw selection indicator if this outfit is currently being displayed
                 if (isSelected)
                 {
-                    // TODO: This is jank, make it better
-                    b.Draw(Game1.staminaRect, new Rectangle(bgBox.X - 4, bgBox.Y - 4, 128 + 8, 192 + 8), Color.White);
+                    b.Draw(Game1.staminaRect, new Rectangle(bgBox.X, bgBox.Y - 3, 128, 192 + 6), Color.Fuchsia);
+                    b.Draw(Game1.staminaRect, new Rectangle(bgBox.X - 3, bgBox.Y, 128 + 6, 192), Color.Fuchsia);
                 }
 
                 // Draw background
@@ -110,10 +129,10 @@ namespace StardewOutfitManager.Menus
                 // Draw heart if favorited
                 if (isFavorite)
                 {
-                    b.Draw(Game1.menuTexture, new Rectangle(bgBox.X + 14, bgBox.Y + 14, 28, 28), new Rectangle(63, 772, 28, 28), Color.White);
+                    b.Draw(Game1.menuTexture, new Rectangle(bgBox.X + 14, bgBox.Y + 15, 24, 24), new Rectangle(64, 772, 28, 28), Color.White);
                 }
 
-                // Draw infobox if hovered on (or snapped to)
+                // *TODO* Draw infobox if hovered on (or snapped to)
                 if (isHovered)
                 {
                     // Draw box
@@ -198,39 +217,26 @@ namespace StardewOutfitManager.Menus
                 }
             }
 
-            public void Dispose()
+            // Delete a favorite outfit
+            public void Delete()
             {
+                // Return the display farmer to the player defaults
+                menu.ResetSelectedOutfit();
+                // Remove the outfit from the favorites data model
+                menu.favoritesData.DeleteOutfit(modelOutfit);
+                // Remove the outfit slot from the outfitslots list
+                menu.outfitSlots.Remove(this);
+                // Re-filter, sort, and position the new outfit list
+                menu.FilterOutfitSlotsByCategoryAndSort(menu.outfitSlots);
+                menu.UpdateOutfitButtonsAndSlots();
             }
 
-            // Create outfit model
-            public Farmer CreateFakeEventFarmer(Farmer player)
+            // Toggle whether this is a favorited outfit in the favorites menu
+            public void ToggleFavorite()
             {
-                Farmer farmer = new Farmer(new FarmerSprite(player.FarmerSprite.textureName.Value), new Vector2(192f, 192f), 1, "", new List<Item>(), player.IsMale);
-                farmer.Name = player.Name;
-                farmer.displayName = player.displayName;
-                farmer.isFakeEventActor = true;
-                farmer.changeGender(player.IsMale);
-                farmer.changeHairStyle(player.hair.Value);
-                farmer.UniqueMultiplayerID = player.UniqueMultiplayerID;
-                farmer.shirtItem.Set(player.shirtItem.Value);
-                farmer.pantsItem.Set(player.pantsItem.Value);
-                farmer.shirt.Set(player.shirt.Value);
-                farmer.pants.Set(player.pants.Value);
-                farmer.changeShoeColor(player.shoes.Value);
-                farmer.boots.Set(player.boots.Value);
-                farmer.leftRing.Set(player.leftRing.Value);
-                farmer.rightRing.Set(player.rightRing.Value);
-                farmer.hat.Set(player.hat.Value);
-                farmer.shirtColor = player.shirtColor;
-                farmer.pantsColor.Set(player.pantsColor.Value);
-                farmer.changeHairColor(player.hairstyleColor.Value);
-                farmer.changeSkinColor(player.skin.Value);
-                farmer.accessory.Set(player.accessory.Value);
-                farmer.changeEyeColor(player.newEyeColor.Value);
-                farmer.UpdateClothing();
-                farmer.faceDirection(2);
-                farmer.FarmerSprite.StopAnimation();
-                return farmer;
+                // Toggle both the slot and the data model status
+                isFavorite = !isFavorite;
+                modelOutfit.isFavorite = isFavorite;
             }
 
             // Get outfit category background
@@ -264,6 +270,8 @@ namespace StardewOutfitManager.Menus
             }
         }
 
+        // ** FAVORITES MENU CLASS **
+
         // Reference Dresser Object
         internal StorageFurniture dresserObject = StardewOutfitManager.playerManager.menuManager.Value.dresserObject;
         // Reference Top Tab Menu Manager
@@ -287,8 +295,6 @@ namespace StardewOutfitManager.Menus
 
         // Basic UI Button Groups
         public List<ClickableComponent> labels = new();
-        public List<ClickableComponent> leftSelectionButtons = new();
-        public List<ClickableComponent> rightSelectionButtons = new();
 
         // Category Selector Buttons
         internal ClickableComponent categorySelected;
@@ -297,12 +303,19 @@ namespace StardewOutfitManager.Menus
 
         // Outfit buttons and offsets
         public List<ClickableComponent> outfitButtons = new();
-        public List<OutfitSlot> outfitSlots = new();
         internal Rectangle outfitBox;
+
+        // Master list of generated slots and filtered display list of slots
+        public List<OutfitSlot> outfitSlots = new();
+        public List<OutfitSlot> outfitSlotsFiltered = new();
+
+        // Outfit Data
         internal int outfitDisplayIndex = 0;
+        internal int currentOutfitIndex = 0;
+        internal OutfitSlot outfitSlotSelected = null;
 
         // Scroll bar and controls
-        public ClickableTextureComponent upArrow;
+        public ClickableTextureComponent upArrow;   // Start at 7000
         public ClickableTextureComponent downArrow;
         public ClickableTextureComponent scrollBar;
         private Rectangle scrollBarRunner;
@@ -312,13 +325,19 @@ namespace StardewOutfitManager.Menus
         public List<Item> playerOwnedItems = new();
 
         // Snap Regions
-        internal const int LABELS = 10000;
-        internal const int PORTRAIT = 20000;
+        internal const int OUTFITS = 10000;         // Start at 2000
+        internal const int CATEGORIES = 20000;      // Start at 6000
+        internal const int PORTRAIT = 30000;        // Start at 3000
+        internal const int OUTFITSETTINGS = 40000;  // Start at 4000
 
         // Additional Buttons
+        public ClickableTextureComponent leftRotationButton;
+        public ClickableTextureComponent rightRotationButton;
         public ClickableTextureComponent okButton;
 
-        // Main Wardrobe Menu Functionality
+        // ** CONSTRUCTOR **
+
+        // Favorites Menu
         public FavoritesMenu() : base(Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2, Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2, 1000 + IClickableMenu.borderWidth * 2, 600 + IClickableMenu.borderWidth * 2, showUpperRightCloseButton: true)
         {
             /// FAVORITES MENU
@@ -329,34 +348,37 @@ namespace StardewOutfitManager.Menus
 
             // Set up portrait and farmer
             _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
-            _displayFarmer = Game1.player;
+            _displayFarmer = CreateFakeModelFarmer(Game1.player);
             _displayFarmer.faceDirection(2);
             _displayFarmer.FarmerSprite.StopAnimation();
 
             // Player display window movement buttons
-            leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
-            rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
+            leftRotationButton = new ClickableTextureComponent("LeftRotate", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f);
+            rightRotationButton = new ClickableTextureComponent("RightRotate", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f);
 
             // Basic UI Functionality Buttons
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
             {
-                myID = 1000,
-                upNeighborID = 2000
+                myID = 9999,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
 
             // Generate outfit box positions, navigation, and components
             outfitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder + 342, yPositionOnScreen + 120, 592, 436);
             upArrow = new ClickableTextureComponent(new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + 16, 44, 48), Game1.mouseCursors, new Rectangle(76, 72, 40, 44), 1f)
             {
-                myID = 97865,
-                downNeighborID = 106,
-                leftNeighborID = 3546
+                myID = 7000,
+                upNeighborID = 6005,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
             downArrow = new ClickableTextureComponent(new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + outfitBox.Height - 56, 44, 48), Game1.mouseCursors, new Rectangle(12, 76, 40, 44), 1f)
             {
-                myID = 106,
-                upNeighborID = 97865,
-                leftNeighborID = 3546
+                myID = 7001,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
             scrollBar = new ClickableTextureComponent(new Rectangle(upArrow.bounds.X + 8, upArrow.bounds.Y + upArrow.bounds.Height + 4, 24, 40), Game1.mouseCursors, new Rectangle(435, 463, 6, 10), 4f);
             scrollBarRunner = new Rectangle(scrollBar.bounds.X, upArrow.bounds.Y + upArrow.bounds.Height + 4, scrollBar.bounds.Width, outfitBox.Height - 64 - upArrow.bounds.Height - 20);
@@ -370,15 +392,44 @@ namespace StardewOutfitManager.Menus
             categoryButtons.Add(new ClickableTextureComponent("Winter", new Rectangle(outfitBox.X + 360, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(80, 192, 22, 18), 4f));
             categoryButtons.Add(new ClickableTextureComponent("Special", new Rectangle(outfitBox.X + 450, outfitBox.Y - catYoffset, 88, 72), null, "", StardewOutfitManager.assetManager.customSprites, new Rectangle(102, 192, 22, 18), 4f));
             categorySelected = categoryButtons[0];
+            for (int i = 0; i < categoryButtons.Count; i++)
+            {
+                categoryButtons[i].myID = 6000 + i;
+                categoryButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].leftNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].rightNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                categoryButtons[i].region = CATEGORIES;
+            }
 
             // Generate available player items
             GeneratePlayerOwnedItemList();
 
-            // Generate outfit slots
-            GenerateOutfitSlotList();
+            // Generate master outfit slot list, and create initial filtered list from it
+            foreach (FavoriteOutfit outfit in favoritesData.Favorites)
+            {
+                outfitSlots.Add(new OutfitSlot(this, _displayFarmer, outfit, playerOwnedItems));
+            }
+            FilterOutfitSlotsByCategoryAndSort(outfitSlots);
 
-            // Generate scrollable outfit buttons
-            GenerateOutfitButtons();
+            // Create buttons (two rows of up to 4 outfits possible to have displayed at one time, (j) is row, (i) is column) and assign initial outfit slots to them
+            for (int j = 0; j < 2; j++)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    ClickableComponent btn = new ClickableComponent(new Rectangle(outfitBox.X + 22 + (i * 128) + (i * 12), outfitBox.Y + 20 + (j * 192) + (j * 12), 128, 192), i.ToString() ?? "")
+                    {
+                        myID = 2000 + i + (j * 4),
+                        upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                        downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                        leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                        rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                        region = OUTFITS
+                    };
+                    outfitButtons.Add(btn);
+                }
+            }
+            UpdateOutfitButtonsAndSlots();
 
             // Top Bar Tab Switcher Buttons
             populateClickableComponentList();
@@ -393,9 +444,16 @@ namespace StardewOutfitManager.Menus
             // Default snap
             if (Game1.options.SnappyMenus && Game1.options.gamepadControls)
             {
-                snapToDefaultClickableComponent();
+                if (outfitSlotsFiltered.Count > 0)
+                {
+                    setCurrentlySnappedComponentTo(2000);
+                    snapCursorToCurrentSnappedComponent();
+                }
+                else { snapToDefaultClickableComponent(); }
             }
         }
+
+        // ** METHODS **
 
         // Player owned items list generation (determines what is equippable at the moment)
         public void GeneratePlayerOwnedItemList()
@@ -453,77 +511,247 @@ namespace StardewOutfitManager.Menus
                 }
             }
         }
-
-        // Create list of possible wearable outfits for the chosen categories
-        public void GenerateOutfitSlotList()
+        
+        // Create outfit model for display
+        public Farmer CreateFakeModelFarmer(Farmer player)
         {
-            foreach (FavoriteOutfit outfit in favoritesData.Favorites)
-            {
-                outfitSlots.Add(new OutfitSlot(this, _displayFarmer, outfit, playerOwnedItems));
-            }
-            // Sort list by favorites
-
-            // Sort list by availability
+            Farmer farmer = new Farmer(new FarmerSprite(player.FarmerSprite.textureName.Value), new Vector2(192f, 192f), 1, "", new List<Item>(), player.IsMale);
+            farmer.Name = player.Name;
+            farmer.displayName = player.displayName;
+            farmer.isFakeEventActor = true;
+            farmer.changeGender(player.IsMale);
+            farmer.changeHairStyle(player.hair.Value);
+            farmer.UniqueMultiplayerID = player.UniqueMultiplayerID;
+            farmer.shirtItem.Set(player.shirtItem.Value);
+            farmer.pantsItem.Set(player.pantsItem.Value);
+            farmer.shirt.Set(player.shirt.Value);
+            farmer.pants.Set(player.pants.Value);
+            farmer.changeShoeColor(player.shoes.Value);
+            farmer.boots.Set(player.boots.Value);
+            farmer.leftRing.Set(player.leftRing.Value);
+            farmer.rightRing.Set(player.rightRing.Value);
+            farmer.hat.Set(player.hat.Value);
+            farmer.shirtColor = player.shirtColor;
+            farmer.pantsColor.Set(player.pantsColor.Value);
+            farmer.changeHairColor(player.hairstyleColor.Value);
+            farmer.changeSkinColor(player.skin.Value);
+            farmer.accessory.Set(player.accessory.Value);
+            farmer.changeEyeColor(player.newEyeColor.Value);
+            farmer.UpdateClothing();
+            farmer.faceDirection(2);
+            farmer.FarmerSprite.StopAnimation();
+            return farmer;
         }
 
-        // Create list of currently displayed outfits as scrollable components
-        public void GenerateOutfitButtons()
+        // Clears the selection and resets the display farmer to player defaults
+        public void ResetSelectedOutfit()
         {
-            // Create buttons (two rows of up to 4 outfits possible to have displayed at one time, (j) is row, (i) is column)
-            for (int j = 0; j < 2; j++)
+            // Change all outfits to unselected and update the selected reference
+            foreach (OutfitSlot outfit in outfitSlots) { outfit.isSelected = false; }
+            outfitSlotSelected = null;
+
+            // Reset the background and restore the display model to player default equipment
+            outFitDisplayBG = bgDefault;
+            Farmer player = Game1.player;
+            _displayFarmer.changeHairStyle(player.hair.Value);
+            _displayFarmer.shirtItem.Set(player.shirtItem.Value);
+            _displayFarmer.pantsItem.Set(player.pantsItem.Value);
+            _displayFarmer.shirt.Set(player.shirt.Value);
+            _displayFarmer.pants.Set(player.pants.Value);
+            _displayFarmer.changeShoeColor(player.shoes.Value);
+            _displayFarmer.boots.Set(player.boots.Value);
+            _displayFarmer.leftRing.Set(player.leftRing.Value);
+            _displayFarmer.rightRing.Set(player.rightRing.Value);
+            _displayFarmer.hat.Set(player.hat.Value);
+            _displayFarmer.shirtColor = player.shirtColor;
+            _displayFarmer.pantsColor.Set(player.pantsColor.Value);
+            _displayFarmer.accessory.Set(player.accessory.Value);
+            _displayFarmer.UpdateClothing();
+            _displayFarmer.faceDirection(2);
+            _displayFarmer.FarmerSprite.StopAnimation();
+        }
+
+        public void FilterOutfitSlotsByCategoryAndSort(List<OutfitSlot> list)
+        {
+            if (list.Count > 0)
             {
-                for (int i = 0; i < 4; i++)
+                // Filter to the given category
+                List<OutfitSlot> filtered = new();
+                if (categorySelected.name == "All Outfits")
                 {
-                    outfitButtons.Add(new ClickableComponent(new Rectangle(outfitBox.X + 22 + (i * 128) + (i * 12), outfitBox.Y + 20 + (j * 192) + (j * 12), 128, 192), i.ToString() ?? "")
-                    {
-                        myID = i + 3546,
-                        rightNeighborID = 97865,
-                        fullyImmutable = true
-                    });
+                    filtered = list;
                 }
+                else
+                {
+                    foreach (OutfitSlot slot in list)
+                    {
+                        if (slot.modelOutfit.Category == categorySelected.name)
+                        {
+                            filtered.Add(slot);
+                        }
+                    }
+                }
+
+                // If this is all outfits, sort by season
+                if (filtered.Count > 0 && categorySelected.name == "All Outfits")
+                {
+                    List<OutfitSlot> spring = new();
+                    List<OutfitSlot> summer = new();
+                    List<OutfitSlot> fall = new();
+                    List<OutfitSlot> winter = new();
+                    List<OutfitSlot> special = new();
+                    foreach (OutfitSlot slot in filtered)
+                    {
+                        if (slot.modelOutfit.Category == "Spring") { spring.Add(slot); }
+                        else if (slot.modelOutfit.Category == "Summer") { summer.Add(slot); }
+                        else if (slot.modelOutfit.Category == "Fall") { fall.Add(slot); }
+                        else if (slot.modelOutfit.Category == "Winter") { winter.Add(slot); }
+                        else { special.Add(slot); }
+                    }
+                    filtered = spring.Concat(summer).Concat(fall).Concat(winter).Concat(special).ToList();
+                }
+
+                // Sort filtered list (can nest this conditionally if desired because it changes filtered)
+                if (filtered.Count > 0)
+                {
+                    List<OutfitSlot> favorited = new();
+                    List<OutfitSlot> regular = new();
+                    List<OutfitSlot> unavailableAndFavorite = new();
+                    List<OutfitSlot> unavailable = new();
+                    foreach (OutfitSlot slot in filtered)
+                    {
+                        if (slot.isAvailable == false && slot.isFavorite == true) { unavailableAndFavorite.Add(slot); }
+                        else if (slot.isAvailable == false) { unavailable.Add(slot); }
+                        else if (slot.isFavorite == false) { favorited.Add(slot); }
+                        else { regular.Add(slot); }
+                    }
+                    filtered = regular.Concat(favorited).Concat(unavailableAndFavorite).Concat(unavailable).ToList();
+                }
+
+                // Set the filtered list to the ordered slots
+                outfitSlotsFiltered = filtered;
+                // Update the current outfit index
+                currentOutfitIndex = 0;
             }
-            // Position buttons
-            PositionOutfitButtons();
         }
 
-        // Position outfit buttons
-        public void PositionOutfitButtons()
+        // Update the outfit buttons to the correct slots based on current outfit index
+        public void UpdateOutfitButtonsAndSlots()
         {
-            // Only eight outfits can be displayed at a time
+            // First set all slots to invisible and clear their button position assignments
+            foreach (OutfitSlot outfit in outfitSlots)
+            {
+                outfit.isVisible = false;
+                outfit.bgBox.X = -1000;
+                outfit.bgBox.Y = -1000;
+            }
+            
+            // Then assign up to 8 outfits from the filtered list beginning at the current index to button positions
             for (int i = 0; i < 8; i++)
             {
                 // Only try to position outfitslots which exist
-                if (i < outfitSlots.Count)
+                if (currentOutfitIndex + i < outfitSlotsFiltered.Count)
                 {
-                    // Match slot draw positions to where the outfit buttons have been placed
-                    outfitSlots[i].bgBox.X = outfitButtons[i].bounds.X;
-                    outfitSlots[i].bgBox.Y = outfitButtons[i].bounds.Y;
+                    // Match slot draw positions to where the 8 outfit buttons have been placed
+                    outfitSlotsFiltered[currentOutfitIndex + i].bgBox.X = outfitButtons[i].bounds.X;
+                    outfitSlotsFiltered[currentOutfitIndex + i].bgBox.Y = outfitButtons[i].bounds.Y;
+                    outfitSlotsFiltered[currentOutfitIndex + i].isVisible = true;
+                    outfitButtons[i].visible = true;
+                }
+                // Set any unused outfit buttons to invisible
+                else { outfitButtons[i].visible = false; }
+            }
+            
+            // Set navigation to visible if there are more than 8 outfits
+            upArrow.visible = outfitSlotsFiltered.Count > 8;
+            downArrow.visible = outfitSlotsFiltered.Count > 8;
+            scrollBar.visible = outfitSlotsFiltered.Count > 8;
+            
+            // If the outfit index is 0 (top of outfits)...
+            if (currentOutfitIndex == 0)
+            {
+                // Set the top row to auto-snap up
+                for (int i = 0; i < 4; i++) { outfitButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
+                // If there are more than 8 slots, set the bottom row to custom snap down
+                if (outfitSlotsFiltered.Count > 8) { for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; } }
+                // Otherwise set them to auto-snap down
+                else { for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; } }
+            }
+            // If we're at the bottom of the index but it's not 0
+            else if (currentOutfitIndex + 4 >= outfitSlotsFiltered.Count - 4)
+            {
+                // Set the top row to custom snap up
+                for (int i = 0; i < 4; i++) { outfitButtons[i].upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; }
+                // Set the bottom row to auto-snap down
+                for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
+            }
+            // Otherwise the top row should custom snap up and auto-snap down and the bottom row should custom snap down and auto-snap up
+            else
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    outfitButtons[i].upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR;
+                    outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                }
+                for (int i = 4; i < 8; i++)
+                {
+                    outfitButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC;
+                    outfitButtons[i].downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR;
                 }
             }
         }
 
-        // CONTROLS
+        // Change the category filter
+        private void ChangeCategory(ClickableComponent newCategory)
+        {
+            // If we didn't click the category already active
+            if (categorySelected.name != newCategory.name)
+            {
+                // Update the category setting
+                categorySelected = newCategory;
+                // Filter the list of favorite outfits to the correct category and sort it
+                FilterOutfitSlotsByCategoryAndSort(outfitSlots);
+                // Update the outfit buttons with the new slots
+                UpdateOutfitButtonsAndSlots();
+                Game1.playSound("smallSelect");
+            }
+        }
+        
+        // ** CONTROLS **
+
         // Default Snap
         public override void snapToDefaultClickableComponent()
         {
-            setCurrentlySnappedComponentTo(1000);
+            setCurrentlySnappedComponentTo(6000); 
             snapCursorToCurrentSnappedComponent();
         }
 
         // Custom Snap Behavior
         protected override void customSnapBehavior(int direction, int oldRegion, int oldID)
         {
-            switch (getCurrentlySnappedComponent().region)
+            ClickableComponent cmp = getCurrentlySnappedComponent();
+            switch (cmp.region)
             {
-                // Label List
-                case LABELS:
-                    // Direction will be 1 (right) or 3 (left) with one exception for these
-                    int change = direction == 1 ? 1 : -1;
-                    // Left and Right Change the Current Item in Slot
-                    if (direction != 2 && direction != 0)
+                case OUTFITS:
+                    // Move the visible outfit indexes if this isn't an automatic snap move
+                    if (direction == 0) { upArrowPressed(); }
+                    if (direction == 2) 
                     {
-                        selectionClick(getCurrentlySnappedComponent().name, change);
+                        downArrowPressed();
+                        // If we land on an invalid slot, shift to the first valid one in the row
+                        if (!cmp.visible)
+                        {
+                            for (int i = 7; i > -1; i--) 
+                            {
+                                if (outfitButtons[i].visible)
+                                {
+                                    setCurrentlySnappedComponentTo(outfitButtons[i].myID);
+                                    break;
+                                }
+                            }
+                        }
                     }
+                    snapCursorToCurrentSnappedComponent();
                     break;
 
                 default:
@@ -531,144 +759,138 @@ namespace StardewOutfitManager.Menus
             }
         }
 
-        // Key Press
+        // Key press
         public override void receiveKeyPress(Keys key)
         {
             base.receiveKeyPress(key);
         }
 
-        // Handle Game Pad Controls
+        // Game pad buttons 
         public override void receiveGamePadButton(Buttons b)
         {
             base.receiveGamePadButton(b);
             if (b == Buttons.RightShoulder)
             {
-                selectionClick("Direction", 1);
+                rotationClick(-1);
             }
             else if (b == Buttons.LeftShoulder)
             {
-                selectionClick("Direction", -1);
+                rotationClick(1);
             }
-            if (b == Buttons.A && getCurrentlySnappedComponent().region == LABELS)
+            if (b == Buttons.A)
             {
-                setCurrentlySnappedComponentTo(9999);
-                snapCursorToCurrentSnappedComponent();
-                Game1.playSound("smallSelect");
+                ClickableComponent cmp = getCurrentlySnappedComponent();
+                // A on outfits region moves you to the confirm button
+                if (cmp.region == OUTFITS && outfitSlotSelected == outfitSlotsFiltered[cmp.myID - 2000 + currentOutfitIndex])
+                {
+                    setCurrentlySnappedComponentTo(9999);
+                    snapCursorToCurrentSnappedComponent();
+                }
             }
         }
 
         // Left click action
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
-            if (leftSelectionButtons.Count > 0)
+            // Rotation Buttons
+            if (leftRotationButton.containsPoint(x, y))
             {
-                foreach (ClickableComponent c2 in leftSelectionButtons)
+                rotationClick(-1);
+                if (leftRotationButton.scale != 0f)
                 {
-                    if (c2.containsPoint(x, y))
-                    {
-                        selectionClick(c2.name, -1);
-                        if (c2.scale != 0f)
-                        {
-                            c2.scale -= 0.25f;
-                            c2.scale = Math.Max(0.75f, c2.scale);
-                        }
-                    }
+                    leftRotationButton.scale -= 0.25f;
+                    leftRotationButton.scale = Math.Max(0.75f, leftRotationButton.scale);
                 }
             }
-            if (rightSelectionButtons.Count > 0)
+            if (rightRotationButton.containsPoint(x, y))
             {
-                foreach (ClickableComponent c in rightSelectionButtons)
+                rotationClick(1);
+                if (rightRotationButton.scale != 0f)
                 {
-                    if (c.containsPoint(x, y))
-                    {
-                        selectionClick(c.name, 1);
-                        if (c.scale != 0f)
-                        {
-                            c.scale -= 0.25f;
-                            c.scale = Math.Max(0.75f, c.scale);
-                        }
-                    }
+                    rightRotationButton.scale -= 0.25f;
+                    rightRotationButton.scale = Math.Max(0.75f, rightRotationButton.scale);
                 }
             }
 
-            // Scrollbar & Navigation Arrows (only appear if there are more than 8 outfits in view)
-            if (outfitSlots.Count > 8)
+            // Scrollbar & Navigation Arrows 
+            if (downArrow.containsPoint(x, y))
             {
-                //if (this.downArrow.containsPoint(x, y) && this.currentItemIndex < Math.Max(0, this.forSale.Count - 4))
-                if (downArrow.containsPoint(x, y))
-                {
-                    downArrowPressed();
-                    Game1.playSound("shwip");
-                }
-                //else if (this.upArrow.containsPoint(x, y) && this.currentItemIndex > 0)
-                else if (upArrow.containsPoint(x, y))
-                {
-                    upArrowPressed();
-                    Game1.playSound("shwip");
-                }
-                else if (scrollBar.containsPoint(x, y))
-                {
-                    scrolling = true;
-                }
-                /*
-                else if (!this.downArrow.containsPoint(x, y) && x > base.xPositionOnScreen + base.width && x < base.xPositionOnScreen + base.width + 128 && y > base.yPositionOnScreen && y < base.yPositionOnScreen + base.height)
-                {
-                    this.scrolling = true;
-                    this.leftClickHeld(x, y);
-                    this.releaseLeftClick(x, y);
-                }
-                */
+                downArrowPressed();
+                Game1.playSound("shwip");
+            }
+            else if (upArrow.containsPoint(x, y))
+            {
+                upArrowPressed();
+                Game1.playSound("shwip");
+            }
+            else if (scrollBar.containsPoint(x, y))
+            {
+                scrolling = true;
+            }
+                // note: I don't know how this works with scrolling
+            else if (!this.downArrow.containsPoint(x, y) && x > base.xPositionOnScreen + base.width && x < base.xPositionOnScreen + base.width + 128 && y > base.yPositionOnScreen && y < base.yPositionOnScreen + base.height)
+            {
+                this.scrolling = true;
+                this.leftClickHeld(x, y);
+                this.releaseLeftClick(x, y);
+            }
+
+            // Outfit Slot Buttons
+            for (int i = 0; i < 8; i++)
+            {
+                // Set this outfit to the selected outfit
+                if (outfitButtons[i].containsPoint(x, y)) { outfitSlotsFiltered[currentOutfitIndex + i].Select(); }
             }
 
             // Category buttons
             foreach (ClickableComponent c in categoryButtons)
             {
-                if (c.containsPoint(x, y))
-                {
-                    changeCategory(c.name);
-                    categorySelected = c;
-                }
+                if (c.containsPoint(x, y)) { ChangeCategory(c); }
             }
 
+            // Outfit Customization
+            
             // OK button
             if (okButton.containsPoint(x, y))
             {
                 okButton.scale -= 0.25f;
                 okButton.scale = Math.Max(0.75f, okButton.scale);
-                //StardewOutfitManager.playerManager.cleanMenuExit();
-                //test wear favorite outfit
-                //this.WearFavoriteOutfit(dresserObject, _displayFarmer, favoritesData.Favorites[0], playerOwnedItems);
-                Game1.playSound("dwop");
+                // Equip the outfit if not null and close the menu
+                if (outfitSlotSelected != null)
+                {
+                    outfitSlotSelected.modelOutfit.equipFavoriteOutfit(this, dresserObject, Game1.player, outfitSlotSelected.outfitAvailabileItems);
+                }
+                StardewOutfitManager.playerManager.cleanMenuExit();
             }
+
+            // Menu tab switching
             menuManager.handleTopBarLeftClick(x, y);
         }
 
-        // Handle On-Hover and Resetting Button States
+        // *TODO* Handle on-hover and resetting button states
+            // Set up and down arrows to scale when clicked (a button group would be efficient instead of setting this for every button)
         public override void performHoverAction(int x, int y)
         {
             hoverText = "";
-            foreach (ClickableTextureComponent c6 in leftSelectionButtons)
+            // Rotation buttons
+            if (leftRotationButton.containsPoint(x, y))
             {
-                if (c6.containsPoint(x, y))
-                {
-                    c6.scale = Math.Min(c6.scale + 0.02f, c6.baseScale + 0.1f);
-                }
-                else
-                {
-                    c6.scale = Math.Max(c6.scale - 0.02f, c6.baseScale);
-                }
+                leftRotationButton.scale = Math.Min(leftRotationButton.scale + 0.02f, leftRotationButton.baseScale + 0.1f);
             }
-            foreach (ClickableTextureComponent c5 in rightSelectionButtons)
+            else
             {
-                if (c5.containsPoint(x, y))
-                {
-                    c5.scale = Math.Min(c5.scale + 0.02f, c5.baseScale + 0.1f);
-                }
-                else
-                {
-                    c5.scale = Math.Max(c5.scale - 0.02f, c5.baseScale);
-                }
+                leftRotationButton.scale = Math.Max(leftRotationButton.scale - 0.02f, leftRotationButton.baseScale);
             }
+            if (rightRotationButton.containsPoint(x, y))
+            {
+                rightRotationButton.scale = Math.Min(rightRotationButton.scale + 0.02f, rightRotationButton.baseScale + 0.1f);
+            }
+            else
+            {
+                rightRotationButton.scale = Math.Max(rightRotationButton.scale - 0.02f, rightRotationButton.baseScale);
+            }
+            
+            // Category buttons
             categoryShading = new Rectangle(0, 0, 0, 0);
             foreach (ClickableTextureComponent c in categoryButtons)
             {
@@ -682,6 +904,8 @@ namespace StardewOutfitManager.Menus
                     hoverText = c.name;
                 }
             }
+            
+            // Other UI buttons
             if (okButton.containsPoint(x, y))
             {
                 okButton.scale = Math.Min(okButton.scale + 0.02f, okButton.baseScale + 0.1f);
@@ -693,7 +917,8 @@ namespace StardewOutfitManager.Menus
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
-        // Game Window Resize - TODO
+        // *TODO* Game Window Resize
+            // Make this happen
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             base.gameWindowSizeChanged(oldBounds, newBounds);
@@ -704,65 +929,42 @@ namespace StardewOutfitManager.Menus
             // TODO: Reposition tabs?
         }
 
-        // Handle menu selection clicks
-        private void selectionClick(string name, int change)
+        // Handle rotation actions
+        private void rotationClick(int change)
         {
-            switch (name)
-            {
-                case "Direction":
-                    {
-                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
-                        _displayFarmer.FarmerSprite.StopAnimation();
-                        _displayFarmer.completelyStopAnimatingOrDoingAction();
-                        Game1.playSound("stoneStep");
-                        break;
-                    }
-            }
-        }
-
-        // Handle category changes
-        private void changeCategory(string name)
-        {
-            // If we didn't click the category already active
-            if (categorySelected.name != name)
-            {
-                // Filter the list of favorite outfits to the correct category and sort it
-
-                // Regenerate the outfit buttons with the new selections
-
-                Game1.playSound("stoneStep");
-            }
+            _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
+            _displayFarmer.FarmerSprite.StopAnimation();
+            _displayFarmer.completelyStopAnimatingOrDoingAction();
+            Game1.playSound("stoneStep");
         }
         
-        // Handle scrolling
+        // *BUGS* Handle scrolling
         public override void leftClickHeld(int x, int y)
         {
             base.leftClickHeld(x, y);
-            if (outfitSlots.Count > 8)
+            if (scrolling)
             {
-                if (scrolling)
+                /*
+                int y2 = scrollBar.bounds.Y;
+                //scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height, Math.Max(y, scrollBarRunner.Y));
+                if (y > y2 + scrollBar.bounds.Height)
                 {
-                    /*
-                    int y2 = scrollBar.bounds.Y;
-                    //scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollBarRunner.Height - scrollBar.bounds.Height, Math.Max(y, scrollBarRunner.Y));
-                    if (y > y2 + scrollBar.bounds.Height)
-                    {
-                        float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
-                        scrollBar.bounds.Y = (int)Math.Round(1 * percentage);
-                    }
-                    //aoiwdhoiawhdioawhdoiawdiuwfiu fuck all of this why doesn't it work
-                    // scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex
-                    //float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
-                    //outfitDisplayIndex = (int)Math.Round(Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
-                    //outfitDisplayIndex = (int)Math.Round(((int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
-
-                    //setScrollBarToCurrentIndex();
-                    //this.updateSaleButtonNeighbors();
-                    */
+                    float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
+                    scrollBar.bounds.Y = (int)Math.Round(1 * percentage);
                 }
+                //aoiwdhoiawhdioawhdoiawdiuwfiu fuck all of this why doesn't it work
+                // scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex
+                //float percentage = (y - scrollBarRunner.Y) / scrollBarRunner.Height;
+                //outfitDisplayIndex = (int)Math.Round(Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
+                //outfitDisplayIndex = (int)Math.Round(((int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * percentage);
+
+                //setScrollBarToCurrentIndex();
+                //this.updateSaleButtonNeighbors();
+                */
             }
         }
 
+        // *BUGS* NOTE: I modified this fucking with scrolling, revisit
         public override void releaseLeftClick(int x, int y)
         {
             base.releaseLeftClick(x, y);
@@ -778,18 +980,17 @@ namespace StardewOutfitManager.Menus
             scrolling = false;
         }
 
-
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-            if (outfitSlots.Count > 8)
+            if (outfitSlotsFiltered.Count > 8)
             {
-                if (direction > 0 && outfitDisplayIndex > 0)
+                if (direction > 0 && currentOutfitIndex > 0)
                 {
                     this.upArrowPressed();
                     Game1.playSound("shiny4");
                 }
-                else if (direction < 0 && outfitDisplayIndex < Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2))
+                else if (direction < 0 && currentOutfitIndex + 4 < outfitSlotsFiltered.Count - 4)
                 {
                     this.downArrowPressed();
                     Game1.playSound("shiny4");
@@ -800,34 +1001,31 @@ namespace StardewOutfitManager.Menus
         private void downArrowPressed()
         {
             downArrow.scale = downArrow.baseScale;
-            if (outfitDisplayIndex < Math.Max(0, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2))
+            if (currentOutfitIndex + 4 < outfitSlotsFiltered.Count - 4)
             {
-                outfitDisplayIndex++;
+                currentOutfitIndex += 4;
             }
             setScrollBarToCurrentIndex();
-            //this.updateSaleButtonNeighbors();
+            UpdateOutfitButtonsAndSlots();
         }
 
         private void upArrowPressed()
         {
             upArrow.scale = upArrow.baseScale;
-            if (outfitDisplayIndex > 0)
+            if (currentOutfitIndex > 0)
             {
-                outfitDisplayIndex--;
+                currentOutfitIndex -= 4;
             }
             setScrollBarToCurrentIndex();
-            //this.updateSaleButtonNeighbors();
+            UpdateOutfitButtonsAndSlots();
         }
 
         private void setScrollBarToCurrentIndex()
         {
-            if (outfitSlots.Count > 8)
-            {
-                scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlots.Count / 4) - 2) * outfitDisplayIndex;
-            }
+            scrollBar.bounds.Y = scrollBarRunner.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlotsFiltered.Count / 4) - 2) * (currentOutfitIndex / 4) + scrollBarRunner.Y - scrollBar.bounds.Height / Math.Max(1, (int)Math.Ceiling((float)outfitSlotsFiltered.Count / 4) - 2) * (currentOutfitIndex / 4);
         }
 
-        // DRAW
+        // ** DRAW **
         public override void draw(SpriteBatch b)
         {
             if (Game1.dialogueUp || Game1.IsFading())
@@ -849,15 +1047,9 @@ namespace StardewOutfitManager.Menus
             FarmerRenderer.isDrawingForUI = false;
 
             // Draw rotation buttons
-            foreach (ClickableTextureComponent leftSelectionButton in leftSelectionButtons)
-            {
-                leftSelectionButton.draw(b);
-            }
-            foreach (ClickableTextureComponent rightSelectionButton in rightSelectionButtons)
-            {
-                rightSelectionButton.draw(b);
-            }
-            
+            leftRotationButton.draw(b);
+            rightRotationButton.draw(b);
+
             // Draw category buttons
             foreach (ClickableTextureComponent categoryButton in categoryButtons)
             {
@@ -870,28 +1062,20 @@ namespace StardewOutfitManager.Menus
                 b.Draw(Game1.staminaRect, categoryShading, Color.Black * .1f);
             }
             
-
             // Draw other UI buttons
             okButton.draw(b);
 
-            // Draw Outfit Display Slots (only draw 8 or fewer)
-            for (int i = 0; i < 8; i++)
+            // Draw Outfit Display Slots (only draw 8 or fewer based on current index)
+            foreach (OutfitSlot slot in outfitSlotsFiltered)
             {
-                if (i < outfitSlots.Count)
-                {
-                    outfitSlots[i].Draw(b, i);
-                }
+                if (slot.isVisible) { slot.Draw(b); }
             }
 
             // Draw navigation
-            if (outfitSlots.Count > 8)
-            {
-                drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false);
-                scrollBar.draw(b);
-
-                upArrow.draw(b);
-                downArrow.draw(b);
-            }
+            if (scrollBar.visible) { drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false); }
+            scrollBar.draw(b);
+            upArrow.draw(b);
+            downArrow.draw(b);
 
             // Draw TopBar
             menuManager.drawTopBar(b);
@@ -907,13 +1091,12 @@ namespace StardewOutfitManager.Menus
                 Utility.drawTextWithShadow(b, c.name, Game1.smallFont, new Vector2((c.bounds.X + 21) - Game1.smallFont.MeasureString(c.name).X / 2f, c.bounds.Y + 5f), color);
             }
 
-
             // Draw hover text
             if (!hoverText.Equals(""))
             {
                 b.End();
                 b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-                IClickableMenu.drawHoverText(b, hoverText, Game1.smallFont);
+                drawHoverText(b, hoverText, Game1.smallFont);
             }
 
             Game1.mouseCursorTransparency = 1f;

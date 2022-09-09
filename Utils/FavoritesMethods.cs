@@ -84,55 +84,6 @@ namespace StardewOutfitManager.Utils
             }
             return false;
         }
-
-        // Sort a given list of outfits by different criteria and return sorted list
-        public static List<FavoriteOutfit> SortOutfitList(this FavoritesData f, List<FavoriteOutfit> list, string sortType)
-        {
-            List<FavoriteOutfit> sorted = new List<FavoriteOutfit>();
-            foreach (FavoriteOutfit outfit in list)
-            {
-                switch (sortType)
-                {
-                    // Sort by when the player last wore the outfit
-                    case "lastWorn":
-                        // some sorting code to compare wear dates
-                        // insert
-                        break;
-
-                    // Sort by the outfit's primary category
-                    case "category":
-                        // some sorting code to compare categories
-                        // insert
-                        break;
-                }
-            }
-            return sorted;
-        }
-
-        // Filter a list of outfits by different criteria and return filtered list
-        public static List<FavoriteOutfit> FilterOutfitList(this FavoritesData f, List<FavoriteOutfit> list, string filterType, string categoryType = null)
-        {
-            List<FavoriteOutfit> filtered = new List<FavoriteOutfit>();
-            foreach (FavoriteOutfit outfit in list)
-            {
-                switch (filterType)
-                {
-                    case "category":
-                        if (categoryType == outfit.Category) { filtered.Add(outfit); }
-                        break;
-
-                    case "favorites":
-                        if (outfit.isFavorite) { filtered.Add(outfit); }
-                        break;
-
-                    case "notFavorites":
-                        if (!outfit.isFavorite) { filtered.Add(outfit); }
-                        break;
-                }
-            }
-            return filtered;
-        }
-
     }
     
     // TODO: This adds a lot of duplicate lookups that can probably just be done once--I should optimize this (dictionary of tags and items formed maybe)
@@ -273,7 +224,10 @@ namespace StardewOutfitManager.Utils
             displayFarmer.shirtItem.Set(null);
             if (availability.ContainsKey("Shirt"))
             {
-                if (availability["Shirt"] != null) { displayFarmer.shirtItem.Set(availability["Shirt"] as Clothing); }
+                if (availability["Shirt"] != null) 
+                { 
+                    displayFarmer.shirtItem.Set(availability["Shirt"] as Clothing);
+                }
             }
             // Pants
             displayFarmer.pantsItem.Set(null);
@@ -301,22 +255,19 @@ namespace StardewOutfitManager.Utils
         }
 
         // Equips the available pieces of a favorite outfit onto the player, swapping items into the dresser (and unequips any slot that's supposed to be part of it and isn't available)
-        public static void equipFavoriteOutfit(this FavoriteOutfit f, IClickableMenu menu, StorageFurniture dresserObject, Farmer farmer, List<Item> playerOwnedItems)
+        public static void equipFavoriteOutfit(this FavoriteOutfit f, IClickableMenu menu, StorageFurniture dresserObject, Farmer farmer, Dictionary<string, Item> availability)
         {
+            // First unequip all player slots and put whatever is in them back in the dresser
             foreach (string itemSlot in f.Items.Keys)
             {
-                // Only check items for slots that have an item reference stored in that slot
-                if (f.Items[itemSlot] != null)
+                menu.ItemExchange(dresserObject, farmer, itemSlot, null, null, false);
+            }
+            // Then equip the available pieces of this outfit, removing them from the dresser
+            foreach (string itemSlot in availability.Keys)
+            {
+                if (availability[itemSlot] != null)
                 {
-                    // Get the item by key if found (or add the item as a null if it wasn't found)
-                    Item equippingItem = f.GetItemByReferenceID(f.Items[itemSlot], playerOwnedItems);
-                    // Perform the necessary swap to wear the right item for this outfit (and don't play the sound)
-                    menu.ItemExchange(dresserObject, farmer, itemSlot, equippingItem, null, false);
-                }
-                // Unequip anything that the outfit has stored as a null
-                else
-                {
-                    menu.ItemExchange(dresserObject, farmer, itemSlot, null, null, false);
+                    menu.ItemExchange(dresserObject, farmer, itemSlot, availability[itemSlot], null, false);
                 }
             }
             // Change hair and accessory to match outfit settings

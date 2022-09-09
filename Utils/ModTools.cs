@@ -18,12 +18,13 @@ namespace StardewOutfitManager.Utils
             //  Example use at 2x scale: drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(0, 0), Color.White, 2f, _displayFarmer);
             //  Note: Don't try to scale this to decimals or blinking gets weird. Stick to 1f, 2f, etc.
             public static void drawFarmerScaled(SpriteBatch b, FarmerSprite.AnimationFrame animationFrame, int currentFrame, Rectangle sourceRect, Vector2 position, Color overrideColor, float scale, Farmer who)
-            {
+            {   
                 int facingDirection = who.facingDirection;
                 float layerDepth = 0.8f;
                 float rotation = 0;
                 Vector2 origin = Vector2.Zero;
 
+                //AccessTools.Method(typeof(FarmerRenderer), "executeRecolorActions").Invoke(who.FarmerRenderer, new object[] { who });
                 AccessTools.Method(typeof(FarmerRenderer), "executeRecolorActions").Invoke(who.FarmerRenderer, new object[] { who });
                 position = new Vector2((float)Math.Floor(position.X), (float)Math.Floor(position.Y));
                 var rotationAdjustment = Vector2.Zero;
