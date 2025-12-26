@@ -19,6 +19,10 @@ namespace StardewOutfitManager.Managers
         public PerScreen<MenuManager> menuManager = new();
         // Each local player can have a different set of favorites data loaded
         public PerScreen<FavoritesData> favoritesData = new();
+        // Remember which tab the player last used (persists across dresser sessions within a play session)
+        // Values: 0 = WardrobeMenu, 1 = FavoritesMenu, 2 = NewDresserMenu
+        // Note: This resets when the game is closed - intentional as it's just session convenience
+        public PerScreen<int> lastUsedTab = new(() => 0);
         // Store the mod helper
         internal IModHelper modHelper;
 
@@ -32,6 +36,8 @@ namespace StardewOutfitManager.Managers
         {
             if (menuManager.Value.activeManagedMenu != null)
             {
+                // Remember which tab was last used for next dresser open
+                lastUsedTab.Value = menuManager.Value.currentTab;
                 // Unlock the dresser for other players to use
                 menuManager.Value.dresserObject.mutex.ReleaseLock();
                 // Exit the active menu

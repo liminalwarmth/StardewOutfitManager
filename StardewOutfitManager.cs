@@ -64,11 +64,34 @@ namespace StardewOutfitManager
                     playerManager.menuManager.Value = new MenuManager();
                     // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being closed
                     playerManager.menuManager.Value.dresserObject = originalDresser;
-                    // Open a new instance of the primary Wardrobe menu
-                    Game1.activeClickableMenu = new WardrobeMenu();
+                    // Store the dresser's display name for the tab hover text
+                    playerManager.menuManager.Value.dresserDisplayName = originalDresser.DisplayName ?? "Dresser";
+                    // Initialize category selection to current in-game season
+                    playerManager.menuManager.Value.selectedCategory = MenuManager.GetCurrentSeasonCategory();
+                    // Open to the last used tab (0 = Wardrobe, 1 = Favorites, 2 = Dresser)
+                    int lastTab = playerManager.lastUsedTab.Value;
+                    switch (lastTab)
+                    {
+                        case 1:
+                            Game1.activeClickableMenu = new FavoritesMenu();
+                            break;
+                        case 2:
+                            List<Item> list = originalDresser.heldItems.ToList();
+                            list.Sort(originalDresser.SortItems);
+                            Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
+                            foreach (Item item in list)
+                            {
+                                contents[item] = new int[2] { 0, 1 };
+                            }
+                            Game1.activeClickableMenu = new NewDresserMenu(contents) { source = originalDresser };
+                            break;
+                        default:
+                            Game1.activeClickableMenu = new WardrobeMenu();
+                            break;
+                    }
                     // Start managing the menu we just opened
                     playerManager.menuManager.Value.activeManagedMenu = Game1.activeClickableMenu;
-                    playerManager.menuManager.Value.positionActiveTab(0);
+                    playerManager.menuManager.Value.positionActiveTab(lastTab);
                     Game1.playSound("bigSelect");
                 }
             }

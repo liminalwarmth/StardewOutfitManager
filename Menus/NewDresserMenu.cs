@@ -1073,10 +1073,9 @@ namespace StardewOutfitManager.Menus
             {
                 b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             }
-            // Added a title to match the others
-            SpriteText.drawStringWithScrollCenteredAt(b, "Dresser", base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
-            IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(384, 373, 18, 18), base.xPositionOnScreen, base.yPositionOnScreen, base.width, base.height, Color.White, 4f);
-            //
+            // Added a title to match the others - uses the actual dresser's display name
+            SpriteText.drawStringWithScrollCenteredAt(b, menuManager.dresserDisplayName, base.xPositionOnScreen + base.width / 2, base.yPositionOnScreen - 64);
+            // Removed full-size background box - the inventory and item list have their own backgrounds
             Texture2D purchase_texture = Game1.mouseCursors;
             Rectangle purchase_window_border = new Rectangle(384, 373, 18, 18);
             Rectangle purchase_item_rect = new Rectangle(384, 396, 15, 15);
@@ -1166,15 +1165,16 @@ namespace StardewOutfitManager.Menus
             {
                 this.poof.draw(b);
             }
-            this.upArrow.draw(b);
-            this.downArrow.draw(b);
             for (int i = 0; i < this.tabButtons.Count; i++)
             {
                 this.tabButtons[i].draw(b);
             }
             menuManager.drawTopBar(b);
+            // Only draw scroll arrows and bar when there are more items than fit on screen
             if (this.forSale.Count > 4)
             {
+                this.upArrow.draw(b);
+                this.downArrow.draw(b);
                 IClickableMenu.drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), this.scrollBarRunner.X, this.scrollBarRunner.Y, this.scrollBarRunner.Width, this.scrollBarRunner.Height, Color.White, 4f);
                 this.scrollBar.draw(b);
             }

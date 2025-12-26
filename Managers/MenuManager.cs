@@ -30,6 +30,22 @@ namespace StardewOutfitManager.Managers
         internal int tabYPosition;
         internal int currentTab;
 
+        // Shared farmer facing direction across all tabs (persists until menu is closed)
+        public int farmerFacingDirection = 2;
+
+        // Shared season/category selection across all tabs (persists until menu is closed)
+        // Valid values: "Spring", "Summer", "Fall", "Winter", "Special", "All Outfits" (FavoritesMenu only)
+        public string selectedCategory = null;
+
+        // Display name of the dresser being accessed (e.g., "Junimo Dresser")
+        public string dresserDisplayName = "Dresser";
+
+        // Get the current in-game season as a category string
+        public static string GetCurrentSeasonCategory()
+        {
+            return Game1.IsSpring ? "Spring" : Game1.IsSummer ? "Summer" : Game1.IsFall ? "Fall" : Game1.IsWinter ? "Winter" : "Special";
+        }
+
         // Hang onto the menu we are currently working with until we perform a CleanExit
         internal IClickableMenu activeManagedMenu;
 
@@ -192,7 +208,7 @@ namespace StardewOutfitManager.Managers
                 }
                 else if (dresserButton.containsPoint(x, y))
                 {
-                    hoverTextField = "Dresser";
+                    hoverTextField = dresserDisplayName;
                 }
             }
         }

@@ -36,6 +36,10 @@ namespace StardewOutfitManager.Utils
             outfit.Items.Add("LeftRing", outfit.tagItemAsFavorite(player.leftRing.Value));
             outfit.Items.Add("RightRing", outfit.tagItemAsFavorite(player.rightRing.Value));
 
+            // Store clothing dye colors for dyeable items (allows same item with different dyes to be saved separately)
+            outfit.ItemColors.Add("Shirt", getClothingColorString(player.shirtItem.Value));
+            outfit.ItemColors.Add("Pants", getClothingColorString(player.pantsItem.Value));
+
             // TODO: In addition to storing the values I need to figure out how to store reference indexes for Hair and Accessory if not base
             outfit.Hair = player.hair.Value;
             outfit.HairIndex = "";
@@ -73,7 +77,9 @@ namespace StardewOutfitManager.Utils
                     outfit.Items["RightRing"] == favorite.Items["RightRing"] &&
                     outfit.Hair == favorite.Hair &&
                     outfit.Accessory == favorite.Accessory &&
-                    outfit.Category == favorite.Category)
+                    outfit.Category == favorite.Category &&
+                    getItemColor(outfit, "Shirt") == getItemColor(favorite, "Shirt") &&
+                    getItemColor(outfit, "Pants") == getItemColor(favorite, "Pants"))
                 {
                     if (checkName == true)
                     {
@@ -83,6 +89,27 @@ namespace StardewOutfitManager.Utils
                 }
             }
             return false;
+        }
+
+        // Get clothing color string from an outfit's ItemColors dictionary (handles missing keys for backwards compatibility)
+        private static string getItemColor(FavoriteOutfit outfit, string slot)
+        {
+            if (outfit.ItemColors != null && outfit.ItemColors.TryGetValue(slot, out string color))
+            {
+                return color;
+            }
+            return null;
+        }
+
+        // Get clothing color as a serializable string from a Clothing item
+        private static string getClothingColorString(Item item)
+        {
+            if (item is Clothing clothing && clothing.dyeable.Value)
+            {
+                Color c = clothing.clothesColor.Value;
+                return $"{c.R},{c.G},{c.B},{c.A}";
+            }
+            return null;
         }
     }
     
@@ -270,7 +297,7 @@ namespace StardewOutfitManager.Utils
             displayFarmer.accessory.Set(f.Accessory);
             // Finalize display settings
             displayFarmer.UpdateClothing();
-            displayFarmer.faceDirection(2);
+            // Note: Facing direction is managed by the calling menu, not here
             displayFarmer.FarmerSprite.StopAnimation();
         }
 

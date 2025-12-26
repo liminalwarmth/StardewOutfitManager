@@ -30,6 +30,10 @@ namespace StardewOutfitManager.Data
 
         public Dictionary<string, string> Items { get; set; } = new Dictionary<string, string>();
 
+        // Stores clothing dye colors for dyeable items (Shirt, Pants) - format: "R,G,B,A"
+        // This allows the same item with different dye colors to be saved as different outfits
+        public Dictionary<string, string> ItemColors { get; set; } = new Dictionary<string, string>();
+
         // The index and index position of the hair (index will come into play if there are multiple reference indexes)
         public string HairIndex { get; set; } = "";
         public int Hair { get; set; } = 0;

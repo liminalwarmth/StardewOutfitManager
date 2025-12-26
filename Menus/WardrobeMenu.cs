@@ -30,6 +30,7 @@ namespace StardewOutfitManager.Menus
         private Rectangle _portraitBox;
         private Farmer _displayFarmer;
         private string hoverText = "";
+        private Item hoveredItem = null;
 
         // Item Display Name Labels
         private ClickableComponent descriptionLabel;
@@ -142,7 +143,7 @@ namespace StardewOutfitManager.Menus
             // Set up portrait and farmer
             _portraitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
             _displayFarmer = Game1.player;
-            _displayFarmer.faceDirection(2);
+            _displayFarmer.faceDirection(menuManager.farmerFacingDirection);
             _displayFarmer.FarmerSprite.StopAnimation();
 
             // Equipment slot displays
@@ -156,8 +157,8 @@ namespace StardewOutfitManager.Menus
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
 
             // Player display window movement buttons
-            leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
-            rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 40, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
+            leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
+            rightSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f));
 
             //int selectorBtnsX = _portraitBox.Right + 128;   // Xpos of button block
             int selectorBtnsX = xPositionOnScreen + width/2 + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder - 120;        // Xpos of button block
@@ -289,8 +290,16 @@ namespace StardewOutfitManager.Menus
                 categoryButtons[i].region = CATEGORIES;
             }
 
-            // Set default category to current game season
-            categorySelected = Game1.IsSpring ? categoryButtons[0] : Game1.IsSummer ? categoryButtons[1] : Game1.IsFall ? categoryButtons[2] : Game1.IsWinter ? categoryButtons[3] : categoryButtons[4];
+            // Set category from shared menu manager state (persists across tab switches)
+            // "All Outfits" is a FavoritesMenu-only category that doesn't exist in WardrobeMenu,
+            // so we fall back to the current in-game season when switching from FavoritesMenu
+            string category = menuManager.selectedCategory;
+            if (category == "All Outfits")
+            {
+                category = MenuManager.GetCurrentSeasonCategory();
+                menuManager.selectedCategory = category;
+            }
+            categorySelected = categoryButtons.FirstOrDefault(c => c.name == category) ?? categoryButtons[0];
 
 
             // Save as Favorite Button
@@ -330,6 +339,8 @@ namespace StardewOutfitManager.Menus
             {
                 // Update the category setting
                 categorySelected = newCategory;
+                // Save to shared menu manager state
+                menuManager.selectedCategory = newCategory.name;
                 Game1.playSound("smallSelect");
             }
         }
@@ -380,7 +391,9 @@ namespace StardewOutfitManager.Menus
                     }
                 case "Direction":
                     {
-                        _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
+                        int newDirection = (_displayFarmer.FacingDirection - change + 4) % 4;
+                        _displayFarmer.faceDirection(newDirection);
+                        menuManager.farmerFacingDirection = newDirection;
                         _displayFarmer.FarmerSprite.StopAnimation();
                         _displayFarmer.completelyStopAnimatingOrDoingAction();
                         Game1.playSound("stoneStep");
@@ -607,6 +620,30 @@ namespace StardewOutfitManager.Menus
                 }
             }
 
+            // Equipment icon hover - track hovered item for standard tooltip display
+            hoveredItem = null;
+            foreach (ClickableComponent c in equipmentIcons)
+            {
+                if (c.containsPoint(x, y))
+                {
+                    hoveredItem = c.name switch
+                    {
+                        "Hat" => Game1.player.hat.Value,
+                        "Shirt" => Game1.player.shirtItem.Value,
+                        "Pants" => Game1.player.pantsItem.Value,
+                        "Boots" => Game1.player.boots.Value,
+                        "Left Ring" => Game1.player.leftRing.Value,
+                        "Right Ring" => Game1.player.rightRing.Value,
+                        _ => null
+                    };
+                    if (hoveredItem == null)
+                    {
+                        hoverText = $"Empty {c.name} Slot";
+                    }
+                    break;
+                }
+            }
+
             // Top bar handling
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
@@ -614,11 +651,19 @@ namespace StardewOutfitManager.Menus
         // Game Window Resize - reposition all UI elements
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
+            // Call base first to handle standard menu repositioning
             base.gameWindowSizeChanged(oldBounds, newBounds);
 
-            // Recalculate base menu position
-            xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
-            yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
+            // Then recalculate our menu position to center it properly
+            Vector2 topLeft = Utility.getTopLeftPositionForCenteringOnScreen(width, height);
+            xPositionOnScreen = (int)topLeft.X;
+            yPositionOnScreen = (int)topLeft.Y;
+
+            // Reposition close button after we've set our position
+            if (upperRightCloseButton != null)
+            {
+                upperRightCloseButton.bounds = new Rectangle(xPositionOnScreen + width - 36, yPositionOnScreen - 8, 48, 48);
+            }
 
             // Reposition portrait box
             _portraitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
@@ -640,9 +685,9 @@ namespace StardewOutfitManager.Menus
             int arrowOffset = 8;
             int labelSpacing = 4;
 
-            // Direction buttons
-            leftSelectionButtons[0].bounds = new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60);
-            rightSelectionButtons[0].bounds = new Rectangle(_portraitBox.X + 256 - 40, _portraitBox.Bottom - 24, 60, 60);
+            // Direction buttons (matching FavoritesMenu positioning)
+            leftSelectionButtons[0].bounds = new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60);
+            rightSelectionButtons[0].bounds = new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60);
 
             // Hat, Shirt, Pants, Shoes, Hair, Accessory buttons and labels (indices 1-6)
             for (int i = 0; i < 6; i++)
@@ -827,11 +872,13 @@ namespace StardewOutfitManager.Menus
                 }
             }
 
-            // Draw hover text
-            if (!hoverText.Equals(""))
+            // Draw hover text or item tooltip
+            if (hoveredItem != null)
             {
-                b.End();
-                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+                IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), hoveredItem.DisplayName, hoveredItem);
+            }
+            else if (!hoverText.Equals(""))
+            {
                 IClickableMenu.drawHoverText(b, hoverText, Game1.smallFont);
             }
 
