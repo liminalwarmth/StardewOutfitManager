@@ -10,7 +10,14 @@ This mod was last updated for SMAPI 3.x / Stardew Valley 1.5.x. This document ou
 ### Key Documentation Sources
 - [Modding:Migrate to Stardew Valley 1.6](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6)
 - [Modding:Migrate to SMAPI 4.0](https://wiki.stardewvalley.net/Modding:Migrate_to_SMAPI_4.0)
+- [Modding:Migrate to Stardew Valley 1.6.16](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6.16) - Future version prep
 - [Fashion Sense GitHub](https://github.com/Floogen/FashionSense) - Reference implementation for FarmerRenderer patches
+
+### Decompiled Game Source (for API research)
+- **SDV 1.6 Decompiled**: [Dannode36/StardewValleyDecompiled](https://github.com/Dannode36/StardewValleyDecompiled)
+  - ShopMenu.cs: `Stardew Valley/StardewValley.Menus/ShopMenu.cs`
+  - FarmerRenderer.cs: `Stardew Valley/StardewValley/FarmerRenderer.cs`
+- **SDV 1.5.6 Decompiled**: [WeDias/StardewValley](https://github.com/WeDias/StardewValley) - For comparing changes
 
 ### Reference Mod Analysis: Fashion Sense
 Fashion Sense is a popular mod that does extensive FarmerRenderer patching. Key patterns observed:
@@ -252,6 +259,33 @@ Try the current implementation first. If it fails:
 
 ---
 
+## Phase 3.5: NewDresserMenu.cs - HIGH RISK
+
+**File:** `Menus/NewDresserMenu.cs`
+
+This file is a "hacky port" of decompiled SDV v1.5.6 ShopMenu code (see comments lines 19-26). SDV 1.6 changed ShopMenu significantly.
+
+### Key SDV 1.6 ShopMenu Changes (from decompiled source)
+- `ShopId` is now **required** (throws ArgumentNullException if null)
+- New `ShopCachedTheme` inner class for visual themes
+- Constructors changed - all now require `shopId` parameter
+- Callbacks (`onPurchase`, `onSell`) replace inheritance-based customization
+- New `ItemStockInformation` parameter for stock management
+- Context-specific setup moved to `setUpStoreForContext()` using `ShopId` switching
+
+### Risk Areas
+- Over 1000 lines of cloned game code from 1.5.6
+- Constructor signatures changed significantly
+- `storeContext` replaced by `ShopId` in game's ShopMenu
+
+### Strategy
+1. Build first and let compiler errors reveal what changed
+2. The file has its own `storeContext` field (line 63) - no change needed there
+3. Compare against [SDV 1.6 ShopMenu.cs](https://github.com/Dannode36/StardewValleyDecompiled/blob/main/Stardew%20Valley/StardewValley.Menus/ShopMenu.cs) if major issues arise
+4. Consider if SDV 1.6's callback-based approach could simplify our implementation
+
+---
+
 ## Phase 4: Other API Verifications
 
 These should work but need testing:
@@ -283,10 +317,19 @@ Consider using these in future refactoring.
 | `StardewOutfitManager.csproj` | Critical | net5.0→net6.0, update NuGet |
 | `manifest.json` | Critical | MinimumApiVersion 3.0→4.0 |
 | `StardewOutfitManager.cs` | Critical | storeContext→ShopId |
+| `Menus/NewDresserMenu.cs` | High | Verify ShopMenu internals against SDV 1.6 |
 | `Utils/ModTools.cs` | High | IsMale checks, possibly reflection patterns |
 | `Menus/WardrobeMenu.cs` | Medium | Verify clothesType enum |
+| `Menus/FavoritesMenu.cs` | Medium | Verify clothesType enum, IsMale |
 | `Utils/OutfitMethods.cs` | Low | Verify boots color sheet |
 | `Utils/FavoritesMethods.cs` | Low | Verify boots color sheet |
+
+### Codebase Verification Notes
+We verified the following are NOT used (safe for SDV 1.6):
+- Mod does NOT use `ParentSheetIndex` (uses category constants instead)
+- Mod does NOT use `indexInTileSheetFemale` (gender-neutral clothing safe)
+- Mod already uses SMAPI 4.0-style `helper.ModContent` API
+- Mod does NOT use deprecated `IAssetLoader`/`IAssetEditor` interfaces
 
 ---
 
@@ -345,15 +388,52 @@ These existed before and should be addressed after compatibility is achieved:
 - [ ] Fix `StardewOutfitManager.cs`
   - [ ] Change `storeContext` to `ShopId` on line 50
 
-### Phase 2: Build and Fix Compilation Errors
-- [ ] Run `dotnet build` and capture errors
-- [ ] Fix IsMale → Gender enum if needed (Utils/ModTools.cs)
-  - [ ] Line 69: pants rect offset
-  - [ ] Line 89: eye rendering
-  - [ ] Line 158: height offset
-  - [ ] Lines 202, 236, 243, 250, 251, 294: hair style offsets
-- [ ] Fix clothesType enum if needed (Menus/WardrobeMenu.cs lines 118, 123)
-- [ ] Fix any other compilation errors that arise
+### Phase 2: Build and Fix Compilation Errors (40 errors found)
+
+#### 2.1 clothesType Enum Changes (2 errors)
+**Files:** `WardrobeMenu.cs:118,122`, `FavoritesMenu.cs:502`
+```csharp
+// OLD: (item as Clothing).clothesType.Value == 0
+// NEW: (item as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT
+// OLD: (item as Clothing).clothesType.Value == 1
+// NEW: (item as Clothing).clothesType.Value == Clothing.ClothesType.PANTS
+```
+
+#### 2.2 changeShoeColor int→string (4 errors)
+**Files:** `OutfitMethods.cs:64,68`, `FavoritesMethods.cs:240,245`
+```csharp
+// OLD: farmer.changeShoeColor(12)
+// NEW: farmer.changeShoeColor("12")
+// OLD: farmer.changeShoeColor(farmer.boots.Value.indexInColorSheet.Value)
+// NEW: farmer.changeShoeColor(farmer.boots.Value.indexInColorSheet.Value.ToString())
+```
+
+#### 2.3 ModTools.cs API Changes (5+ errors)
+- Line 22: `who.facingDirection` → `who.FacingDirection` (property case change) or use `.Value`
+- Line 66: `Clothing.GetMaxPantsValue()` removed → need alternative
+- Line 102: `animationFrame.secondaryArm` removed → check SDV 1.6 AnimationFrame
+- Line 170: `Clothing.GetMaxShirtValue()` removed → need alternative
+
+#### 2.4 FavoritesMenu.cs shirtColor Removed (4 errors)
+**Lines:** 536, 568
+```csharp
+// OLD: farmer.shirtColor = player.shirtColor
+// shirtColor property was removed in SDV 1.6
+// Shirt color is now handled through the Clothing item itself
+```
+
+#### 2.5 NewDresserMenu.cs ShopMenu Clone (25+ errors)
+Major API changes from cloning SDV 1.5.6 ShopMenu:
+- `(bool)NetBool` → use `.Value` property
+- `(int)NetInt` → use `.Value` property
+- `actionWhenPurchased()` → now requires `shopId` parameter
+- `hasItemInInventory()` → method removed, use alternatives
+- `removeItemsFromInventory()` → method removed
+- `isRecipe` → `IsRecipe` (capitalization)
+- Draw method signature changes (arg 13 int→Color?)
+- Various other SDV 1.6 internal changes
+
+**Strategy:** Fix these in groups, building after each to verify
 
 ### Phase 3: Deploy and Test Basic Loading
 - [ ] Run `./deploy.sh` successfully
@@ -391,6 +471,27 @@ These existed before and should be addressed after compatibility is achieved:
 - [ ] Rings handling issue
 - [ ] Custom content pack support
 - [ ] Performance optimization
+
+---
+
+## Future: SDV 1.6.16 Preparation
+
+**Note:** SDV 1.6.16 is an unreleased future version. The migration guide exists to help mod authors prepare. These changes are NOT needed for 1.6.15 compatibility.
+
+When 1.6.16 releases, the following changes will be needed:
+
+### addItemToInventoryBool Removal
+The method will be **completely removed** in 1.6.16. Replace with `TryAddToInventory()`:
+- `Menus/NewDresserMenu.cs` lines 897, 1141, 1484
+- `Managers/MenuManager.cs` line 114
+
+```csharp
+// OLD:
+Game1.player.addItemToInventoryBool(item)
+
+// NEW:
+Game1.player.TryAddToInventory(item).AnyAdded
+```
 
 ---
 

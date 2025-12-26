@@ -495,11 +495,11 @@ namespace StardewOutfitManager.Menus
                 {
                     playerOwnedItems.Add(item);
                 }
-                else if (item is Clothing && (item as Clothing).clothesType.Value == 0)
+                else if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT)
                 {
                     playerOwnedItems.Add(item as Clothing);
                 }
-                else if (item is Clothing && (item as Clothing).clothesType.Value == 1)
+                else if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.PANTS)
                 {
                     playerOwnedItems.Add(item as Clothing);
                 }
@@ -533,7 +533,7 @@ namespace StardewOutfitManager.Menus
             farmer.leftRing.Set(player.leftRing.Value);
             farmer.rightRing.Set(player.rightRing.Value);
             farmer.hat.Set(player.hat.Value);
-            farmer.shirtColor = player.shirtColor;
+            // SDV 1.6: shirtColor removed - color now comes from Clothing item directly
             farmer.pantsColor.Set(player.pantsColor.Value);
             farmer.changeHairColor(player.hairstyleColor.Value);
             farmer.changeSkinColor(player.skin.Value);
@@ -565,7 +565,7 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.leftRing.Set(player.leftRing.Value);
             _displayFarmer.rightRing.Set(player.rightRing.Value);
             _displayFarmer.hat.Set(player.hat.Value);
-            _displayFarmer.shirtColor = player.shirtColor;
+            // SDV 1.6: shirtColor removed - color now comes from Clothing item directly
             _displayFarmer.pantsColor.Set(player.pantsColor.Value);
             _displayFarmer.accessory.Set(player.accessory.Value);
             _displayFarmer.UpdateClothing();

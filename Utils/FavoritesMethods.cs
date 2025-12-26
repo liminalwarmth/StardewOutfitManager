@@ -237,12 +237,12 @@ namespace StardewOutfitManager.Utils
             }
             // Shoes
             displayFarmer.boots.Set(null);
-            displayFarmer.changeShoeColor(12);
+            displayFarmer.changeShoeColor("12");
             if (availability.ContainsKey("Shoes"))
             {
-                if (availability["Shoes"] != null) { 
+                if (availability["Shoes"] != null) {
                     displayFarmer.boots.Set(availability["Shoes"] as Boots);
-                    displayFarmer.changeShoeColor(displayFarmer.boots.Value.indexInColorSheet.Value);
+                    displayFarmer.changeShoeColor(displayFarmer.boots.Value.indexInColorSheet.Value.ToString());
                 }
             }
             // Hair & Accessory

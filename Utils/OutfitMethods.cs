@@ -61,11 +61,11 @@ namespace StardewOutfitManager.Utils
                 // Equip the new item or unequip the current slot if there is no new boots item given (requires special color handling)
                 if (itemToEquip == null) {
                     farmer.boots.Set(null);
-                    farmer.changeShoeColor(12);
+                    farmer.changeShoeColor("12");
                     }
                 else {
-                    farmer.boots.Set(itemToEquip as Boots); 
-                    farmer.changeShoeColor(farmer.boots.Value.indexInColorSheet.Value);
+                    farmer.boots.Set(itemToEquip as Boots);
+                    farmer.changeShoeColor(farmer.boots.Value.indexInColorSheet.Value.ToString());
                 }
                 if (itemLabel != null) itemLabel.name = (farmer.boots.Value != null) ? farmer.boots.Value.DisplayName : "None";
             }

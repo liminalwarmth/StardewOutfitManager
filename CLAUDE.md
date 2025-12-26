@@ -26,6 +26,16 @@ Each farmer has their own favorites data stored separately (keyed by player name
 - Custom farmer rendering with proper layer management for previews
 - Item tagging via modData to track outfit pieces even when items move around in the world
 
+## Development Journal
+
+**IMPORTANT:** Before starting any task, review `Docs/journal.md` to understand recent changes and context.
+
+After completing any task, add a new entry to the TOP of the journal with:
+- Date and timestamp (format: `## YYYY-MM-DD HH:MM - Task Title`)
+- Brief bulleted summary of changes made
+- Files modified
+- Any issues encountered or decisions made
+
 ## Before Starting Any Task
 
 1. **Research First**: Before making any code changes related to Stardew Valley or SMAPI APIs:
@@ -68,3 +78,19 @@ Before reporting that any task is complete, you MUST:
 3. Launch Stardew Valley
 4. Test at a dresser (farmhouse has one by default)
 5. Check SMAPI console for errors
+
+## Reference Resources
+
+### Decompiled Game Source (for API research)
+- **SDV 1.6 Decompiled**: [Dannode36/StardewValleyDecompiled](https://github.com/Dannode36/StardewValleyDecompiled)
+  - ShopMenu.cs: `Stardew Valley/StardewValley.Menus/ShopMenu.cs`
+  - FarmerRenderer.cs: `Stardew Valley/StardewValley/FarmerRenderer.cs`
+- **SDV 1.5.6 Decompiled**: [WeDias/StardewValley](https://github.com/WeDias/StardewValley) - For comparing changes
+
+### Migration Guides
+- [SDV 1.6 Migration](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6)
+- [SMAPI 4.0 Migration](https://wiki.stardewvalley.net/Modding:Migrate_to_SMAPI_4.0)
+- [SDV 1.6.16 Migration](https://stardewvalleywiki.com/Modding:Migrate_to_Stardew_Valley_1.6.16) - Future version
+
+### Reference Mods
+- [Fashion Sense](https://github.com/Floogen/FashionSense) - FarmerRenderer patching patterns

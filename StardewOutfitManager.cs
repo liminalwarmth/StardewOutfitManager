@@ -47,7 +47,7 @@ namespace StardewOutfitManager
         private void OnMenuRender(object sender, RenderingActiveMenuEventArgs e)
         {
             // Our opening event where we store the dresser object only triggers when it's both a ShopMenu AND a Dresser AND we aren't yet managing that menu
-            if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.storeContext == "Dresser" && playerManager.menuManager.Value == null)
+            if (Game1.activeClickableMenu is ShopMenu originalMenu && originalMenu.ShopId == "Dresser" && playerManager.menuManager.Value == null)
             {
                 // Get a reference to the dresser
                 StorageFurniture originalDresser = (StorageFurniture)originalMenu.source;
