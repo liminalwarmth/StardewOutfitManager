@@ -86,23 +86,39 @@ namespace StardewOutfitManager.Utils
         }
     }
     
-    // TODO: This adds a lot of duplicate lookups that can probably just be done once--I should optimize this (dictionary of tags and items formed maybe)
     //Extension methods to FavoriteOutfit data model for Outfit management
     public static class FavoriteOutfitMethods
     {
-        // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
-        // Given a list of possible items to check against, returns true if all pieces of this outfit are present
-        public static bool isAvailable(this FavoriteOutfit f, List<Item> playerOwnedItems)
+        // Build a lookup dictionary from item tags to items (call once, reuse for all outfit checks)
+        public static Dictionary<string, Item> BuildItemTagLookup(List<Item> items)
         {
-            // Check all items on the needed item list against the list of possible items the player could wear at this dresser
+            var lookup = new Dictionary<string, Item>();
+            foreach (Item item in items)
+            {
+                if (item.modData.TryGetValue("StardewOutfitManagerFavoriteItem", out string tag))
+                {
+                    // Only store first occurrence if duplicate tags exist
+                    if (!lookup.ContainsKey(tag))
+                    {
+                        lookup[tag] = item;
+                    }
+                }
+            }
+            return lookup;
+        }
+
+        // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
+        // Given a pre-built lookup dictionary, returns true if all pieces of this outfit are present
+        public static bool isAvailable(this FavoriteOutfit f, Dictionary<string, Item> itemTagLookup)
+        {
+            // Check all items on the needed item list against the lookup dictionary
             foreach (string itemID in f.Items.Values)
             {
                 // Only check for slots that have an item reference stored in that slot
                 if (itemID != null)
                 {
-                    Item foundItem = GetItemByReferenceID(f, itemID, playerOwnedItems);
                     // If they're missing an item from this outfit, the ensemble is unavailable
-                    if ( foundItem == null) { return false; }
+                    if (!itemTagLookup.ContainsKey(itemID)) { return false; }
                 }
             }
 
@@ -110,18 +126,18 @@ namespace StardewOutfitManager.Utils
             return true;
         }
 
-        // Given a list of possible items to check against, returns the items for any non-null slots that are available and null for any that are not
-        public static Dictionary<string, Item> GetOutfitItemAvailability(this FavoriteOutfit f, List<Item> playerOwnedItems)
+        // Given a pre-built lookup dictionary, returns the items for any non-null slots that are available and null for any that are not
+        public static Dictionary<string, Item> GetOutfitItemAvailability(this FavoriteOutfit f, Dictionary<string, Item> itemTagLookup)
         {
             Dictionary<string, Item> itemAvailability = new();
-            // Check all items on the needed item list against the list of possible items the player could wear at this dresser
+            // Check all items on the needed item list against the lookup dictionary
             foreach (string itemKey in f.Items.Keys)
             {
                 // Only check for slots that have an item reference stored in that slot
                 if (f.Items[itemKey] != null)
                 {
                     // Add the item to the available list (or add the slot as a null if it wasn't found)
-                    Item foundItem = GetItemByReferenceID(f, f.Items[itemKey], playerOwnedItems);
+                    itemTagLookup.TryGetValue(f.Items[itemKey], out Item foundItem);
                     itemAvailability.Add(itemKey, foundItem);
                 }
             }
@@ -129,19 +145,11 @@ namespace StardewOutfitManager.Utils
             return itemAvailability;
         }
 
-        // Looks up the actual item in a list of item objects which contains the given item tag reference ID (or null if not found
-        public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, List<Item> itemListToCheck)
+        // Looks up the actual item in a pre-built lookup dictionary by tag reference ID (or null if not found)
+        public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, Dictionary<string, Item> itemTagLookup)
         {
-            foreach (Item item in itemListToCheck)
-            {
-                if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
-                {
-                   if (item.modData["StardewOutfitManagerFavoriteItem"] == id) { 
-                        return item; 
-                   }
-                }
-            }
-            return null;
+            itemTagLookup.TryGetValue(id, out Item foundItem);
+            return foundItem;
         }
 
         // Tag an item as a favorite Items for easy storage and retrieval
@@ -244,6 +252,18 @@ namespace StardewOutfitManager.Utils
                     displayFarmer.boots.Set(availability["Shoes"] as Boots);
                     displayFarmer.changeShoeColor(displayFarmer.boots.Value.indexInColorSheet.Value.ToString());
                 }
+            }
+            // LeftRing
+            displayFarmer.leftRing.Set(null);
+            if (availability.ContainsKey("LeftRing"))
+            {
+                if (availability["LeftRing"] != null) { displayFarmer.leftRing.Set(availability["LeftRing"] as Ring); }
+            }
+            // RightRing
+            displayFarmer.rightRing.Set(null);
+            if (availability.ContainsKey("RightRing"))
+            {
+                if (availability["RightRing"] != null) { displayFarmer.rightRing.Set(availability["RightRing"] as Ring); }
             }
             // Hair & Accessory
             displayFarmer.changeHairStyle(f.Hair);

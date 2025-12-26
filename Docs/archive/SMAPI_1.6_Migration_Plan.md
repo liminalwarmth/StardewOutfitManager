@@ -452,11 +452,11 @@ Major API changes from cloning SDV 1.5.6 ShopMenu:
 - [x] Test farmer preview renders correctly
 
 ### Phase 5: Test Advanced Features
-- [ ] Test saving a favorite outfit
-- [ ] Test loading a favorite outfit
-- [ ] Test favorites persist after save/load
+- [x] Test saving a favorite outfit
+- [x] Test loading a favorite outfit
+- [x] Test favorites persist after save/load
 - [x] Test menu closes properly (mutex release)
-- [ ] Test gamepad controls if applicable
+- [x] Test gamepad controls if applicable - Code reviewed, no SDV 1.6 changes needed
 
 ### Phase 6: Fix Issues Found During Testing - N/A (no issues found)
 - [x] Document any runtime errors from SMAPI console - None found
@@ -466,11 +466,11 @@ Major API changes from cloning SDV 1.5.6 ShopMenu:
 - [x] Fix any other issues found - None found
 
 ### Phase 7: (Optional) Address Pre-existing Bugs
-- [ ] FavoritesMenu display bug
-- [ ] Sleeve color sticky issue
-- [ ] Rings handling issue
-- [ ] Custom content pack support
-- [ ] Performance optimization
+- [x] FavoritesMenu display bug - Fixed (was related to sleeve color)
+- [x] Sleeve color sticky issue - Fixed (ModTools.cs used wrong FarmerRenderer)
+- [x] Rings handling issue - Fixed (added ring equipment to dressDisplayFarmerWithAvailableOutfitPieces)
+- [x] Custom content pack support - Deferred to separate enhancement plan
+- [x] Performance optimization - Fixed (added BuildItemTagLookup for O(1) lookups)
 
 ---
 

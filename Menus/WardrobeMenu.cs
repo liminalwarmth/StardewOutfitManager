@@ -502,14 +502,22 @@ namespace StardewOutfitManager.Menus
                 StardewOutfitManager.playerManager.cleanMenuExit();
             }
             
-            // *TODO* Save favorite outfit button
-                // handle name
+            // Save current outfit as favorite (display name computed dynamically from roster position)
             if (saveFavoriteButton.containsPoint(x, y))
             {
                 saveFavoriteButton.scale -= 0.25f;
-                saveFavoriteButton.scale = Math.Max(0.75f, okButton.scale);
-                favoritesData.SaveNewOutfit(_displayFarmer, categorySelected.name, "");
-                Game1.playSound("dwop");
+                saveFavoriteButton.scale = Math.Max(0.75f, saveFavoriteButton.scale);
+
+                string category = categorySelected.name;
+
+                if (favoritesData.SaveNewOutfit(_displayFarmer, category, ""))
+                {
+                    Game1.playSound("dwop");
+                }
+                else
+                {
+                    Game1.playSound("cancel"); // Outfit already exists
+                }
             }
 
             // Favorite category buttons
