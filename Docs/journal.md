@@ -4,6 +4,61 @@ Entries are listed newest-first. Review this before starting any task.
 
 ---
 
+## 2025-12-25 21:00 - Outfit Hover Infobox
+
+**Task:** Add hover infobox to outfit cards showing outfit name and item preview grid
+
+### Changes Made
+
+**1. Outfit Hover Tracking** (`FavoritesMenu.cs`)
+- Added `outfitSlotHovered` field to track which outfit is being hovered
+- Updated `performHoverAction()` to detect hover over outfit buttons
+
+**2. Hover Infobox Display** (`FavoritesMenu.cs`)
+- Added `DrawOutfitHoverInfobox()` method
+- Shows outfit name at top
+- Displays 2x3 grid of item icons (Hat, Shirt, Left Ring / Boots, Pants, Right Ring)
+- Missing items shown as faded empty slot icons
+- Infobox positioned to right of hovered slot (or left if it would clip off screen)
+
+**3. Gamepad Support** (`FavoritesMenu.cs`)
+- Infobox also appears when gamepad navigates to an outfit slot
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-25 20:30 - Equipment Icons in FavoritesMenu
+
+**Task:** Add equipment icons below portrait in FavoritesMenu to show selected outfit items (matching WardrobeMenu pattern)
+
+### Changes Made
+
+**1. Equipment Icons Display** (`FavoritesMenu.cs`)
+- Added `equipmentIcons` list with 6 ClickableComponent slots (Hat, Shirt, Pants, Boots, Left Ring, Right Ring)
+- Icons positioned below portrait in 2x3 grid layout
+- Shows actual items from selected outfit or empty slot icons when missing
+- Full gamepad navigation support with `myID`, `region`, and neighbor IDs
+
+**2. Hover Text for Items** (`FavoritesMenu.cs`)
+- Added `GetEquipmentSlotHoverText()` helper method
+- Mouse hover over equipment icon shows item name tooltip
+- Gamepad snap to equipment icon also shows tooltip
+- Missing items show "Empty X Slot" text
+
+**3. Window Resize Support** (`FavoritesMenu.cs`)
+- Equipment icons reposition correctly on window resize
+
+**4. Cleanup** (`FavoritesMenu.cs`)
+- Removed obsolete `isHovered`, `hoverBox`, `lastWorn`, `itemAvailabilityIcons` fields from OutfitSlot class
+- Removed incomplete hover infobox draw code from OutfitSlot.Draw()
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
 ## 2025-12-25 19:00 - Feature Requests from idea.txt
 
 **Task:** Implement remaining items from idea.txt (#8, #9, #10)

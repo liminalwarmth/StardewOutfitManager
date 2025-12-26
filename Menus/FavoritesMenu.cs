@@ -37,12 +37,8 @@ namespace StardewOutfitManager.Menus
             public Rectangle bgSprite;
             public Rectangle bgBox;
 
-            // Hover attributes
-            internal bool isHovered = false;
-            internal Rectangle hoverBox = new Rectangle(0, 256, 60, 60);
+            // Display name for outfit
             internal string outfitName;
-            internal string lastWorn;
-            internal List<ClickableComponent> itemAvailabilityIcons = new();
 
             // ** CONSTRUCTOR **
             public OutfitSlot(FavoritesMenu menu, Farmer player, FavoriteOutfit outfit, Dictionary<string, Item> itemTagLookup)
@@ -64,17 +60,8 @@ namespace StardewOutfitManager.Menus
                 // Set outfit slot to unavailable if any necessary items are missing
                 isAvailable = !outfitAvailabileItems.ContainsValue(null);
 
-                // Set the on-hover attributes and outfit item availability displays
+                // Set the display name
                 outfitName = GetDisplayName();
-                lastWorn = modelOutfit.LastWorn.ToString();
-                int eqIconXOffset = hoverBox.X;
-                int eqIconYOffset = hoverBox.Y;
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat"));
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt"));
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants"));
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots"));
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
-                itemAvailabilityIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
             }
 
             // ** METHODS **
@@ -128,60 +115,6 @@ namespace StardewOutfitManager.Menus
                 if (isFavorite)
                 {
                     b.Draw(Game1.menuTexture, new Rectangle(bgBox.X + 14, bgBox.Y + 15, 24, 24), new Rectangle(64, 772, 28, 28), Color.White);
-                }
-
-                // *TODO* Draw infobox if hovered on (or snapped to)
-                if (isHovered)
-                {
-                    // Draw box
-
-                    // Draw outfit name
-
-                    // Draw last worn text
-
-                    // Draw item availability using outfit slot's data (not Game1.player)
-                    foreach (ClickableComponent c in itemAvailabilityIcons)
-                    {
-                        // Map component names to outfit availability dictionary keys
-                        string slotKey = c.name switch
-                        {
-                            "Hat" => "Hat",
-                            "Shirt" => "Shirt",
-                            "Pants" => "Pants",
-                            "Boots" => "Shoes",
-                            "Left Ring" => "LeftRing",
-                            "Right Ring" => "RightRing",
-                            _ => null
-                        };
-
-                        // Get the item from this outfit slot's availability (or null if not in outfit/unavailable)
-                        Item slotItem = null;
-                        if (slotKey != null && outfitAvailabileItems.ContainsKey(slotKey))
-                        {
-                            slotItem = outfitAvailabileItems[slotKey];
-                        }
-
-                        // Get the empty slot icon based on slot type
-                        int emptySlotIcon = c.name switch
-                        {
-                            "Hat" => 42,
-                            "Shirt" => 69,
-                            "Pants" => 68,
-                            "Boots" => 40,
-                            "Left Ring" or "Right Ring" => 41,
-                            _ => 10
-                        };
-
-                        if (slotItem != null)
-                        {
-                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                            slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
-                        }
-                        else
-                        {
-                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White);
-                        }
-                    }
                 }
             }
 
@@ -305,6 +238,7 @@ namespace StardewOutfitManager.Menus
         internal int outfitDisplayIndex = 0;
         internal int currentOutfitIndex = 0;
         internal OutfitSlot outfitSlotSelected = null;
+        internal OutfitSlot outfitSlotHovered = null;
 
         // Scroll bar and controls
         public ClickableTextureComponent upArrow;   // Start at 7000
@@ -321,11 +255,15 @@ namespace StardewOutfitManager.Menus
         internal const int CATEGORIES = 20000;      // Start at 6000
         internal const int PORTRAIT = 30000;        // Start at 3000
         internal const int OUTFITSETTINGS = 40000;  // Start at 4000
+        internal const int EQUIPMENT = 50000;       // Start at 5000
 
         // Additional Buttons
         public ClickableTextureComponent leftRotationButton;
         public ClickableTextureComponent rightRotationButton;
         public ClickableTextureComponent okButton;
+
+        // Equipment Icons (for selected outfit display)
+        public List<ClickableComponent> equipmentIcons = new();
 
         // ** CONSTRUCTOR **
 
@@ -347,6 +285,66 @@ namespace StardewOutfitManager.Menus
             // Player display window movement buttons
             leftRotationButton = new ClickableTextureComponent("LeftRotate", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f);
             rightRotationButton = new ClickableTextureComponent("RightRotate", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f);
+
+            // Equipment icons for selected outfit display (below portrait)
+            // Layout: [Hat][Shirt][Left Ring]
+            //         [Boots][Pants][Right Ring]
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat")
+            {
+                myID = 5000,
+                rightNeighborID = 5001,
+                downNeighborID = 5003,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt")
+            {
+                myID = 5001,
+                leftNeighborID = 5000,
+                rightNeighborID = 5004,
+                downNeighborID = 5002,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants")
+            {
+                myID = 5002,
+                leftNeighborID = 5003,
+                rightNeighborID = 5005,
+                upNeighborID = 5001,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots")
+            {
+                myID = 5003,
+                rightNeighborID = 5002,
+                upNeighborID = 5000,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring")
+            {
+                myID = 5004,
+                leftNeighborID = 5001,
+                downNeighborID = 5005,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
+            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring")
+            {
+                myID = 5005,
+                leftNeighborID = 5002,
+                upNeighborID = 5004,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                region = EQUIPMENT
+            });
 
             // Basic UI Functionality Buttons
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
@@ -870,6 +868,18 @@ namespace StardewOutfitManager.Menus
         public override void performHoverAction(int x, int y)
         {
             hoverText = "";
+            outfitSlotHovered = null;
+
+            // Check outfit slot hover
+            for (int i = 0; i < 8; i++)
+            {
+                if (outfitButtons[i].containsPoint(x, y) && currentOutfitIndex + i < outfitSlotsFiltered.Count)
+                {
+                    outfitSlotHovered = outfitSlotsFiltered[currentOutfitIndex + i];
+                    break;
+                }
+            }
+
             // Rotation buttons
             if (leftRotationButton.containsPoint(x, y))
             {
@@ -912,6 +922,17 @@ namespace StardewOutfitManager.Menus
             {
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
+
+            // Equipment icon hover - show item name
+            foreach (ClickableComponent c in equipmentIcons)
+            {
+                if (c.containsPoint(x, y))
+                {
+                    hoverText = GetEquipmentSlotHoverText(c);
+                    break;
+                }
+            }
+
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
@@ -928,6 +949,16 @@ namespace StardewOutfitManager.Menus
             _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
             leftRotationButton.bounds = new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60);
             rightRotationButton.bounds = new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60);
+
+            // Reposition equipment icons
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
+            equipmentIcons[0].bounds = new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64);           // Hat
+            equipmentIcons[1].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64);      // Shirt
+            equipmentIcons[2].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64); // Pants
+            equipmentIcons[3].bounds = new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64);      // Boots
+            equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
+            equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
 
             // Reposition OK button
             okButton.bounds = new Rectangle(xPositionOnScreen + width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, yPositionOnScreen + height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64);
@@ -1064,6 +1095,96 @@ namespace StardewOutfitManager.Menus
             scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollRange, Math.Max(scrollBarRunner.Y, scrollBar.bounds.Y));
         }
 
+        // Get hover text for equipment slot (for mouse and gamepad)
+        private string GetEquipmentSlotHoverText(ClickableComponent c)
+        {
+            if (outfitSlotSelected == null) return "";
+
+            string slotKey = c.name switch
+            {
+                "Hat" => "Hat",
+                "Shirt" => "Shirt",
+                "Pants" => "Pants",
+                "Boots" => "Shoes",
+                "Left Ring" => "LeftRing",
+                "Right Ring" => "RightRing",
+                _ => null
+            };
+
+            Item slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
+                ? outfitSlotSelected.outfitAvailabileItems[slotKey]
+                : null;
+
+            return slotItem?.DisplayName ?? $"Empty {c.name} Slot";
+        }
+
+        // Draw outfit hover infobox with name and item grid
+        private void DrawOutfitHoverInfobox(SpriteBatch b, OutfitSlot slot)
+        {
+            if (slot == null) return;
+
+            // Infobox dimensions
+            int boxWidth = 220;
+            int boxHeight = 180;
+            int padding = 16;
+            int itemSize = 48;
+
+            // Position to the right of the hovered slot, or left if it would clip
+            int boxX = slot.bgBox.Right + 8;
+            int boxY = slot.bgBox.Y;
+
+            // Check if it would clip off the right edge of the menu
+            if (boxX + boxWidth > xPositionOnScreen + width - borderWidth)
+            {
+                boxX = slot.bgBox.Left - boxWidth - 8;
+            }
+
+            // Check if it would clip off the bottom
+            if (boxY + boxHeight > yPositionOnScreen + height - borderWidth)
+            {
+                boxY = yPositionOnScreen + height - borderWidth - boxHeight;
+            }
+
+            // Draw background box
+            drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60), boxX, boxY, boxWidth, boxHeight, Color.White, 1f, false);
+
+            // Draw outfit name
+            string displayName = slot.outfitName;
+            Vector2 nameSize = Game1.smallFont.MeasureString(displayName);
+            float nameScale = Math.Min(1f, (boxWidth - padding * 2) / nameSize.X);
+            Utility.drawTextWithShadow(b, displayName, Game1.smallFont, new Vector2(boxX + padding, boxY + padding), Game1.textColor, nameScale);
+
+            // Draw 2x3 item grid below the name
+            int gridX = boxX + padding + 12;
+            int gridY = boxY + padding + 32;
+            int gridSpacing = 4;
+
+            // Slot keys in order: Hat, Shirt, Left Ring (top row), Boots, Pants, Right Ring (bottom row)
+            string[] slotKeys = { "Hat", "Shirt", "LeftRing", "Shoes", "Pants", "RightRing" };
+            int[] emptyIcons = { 42, 69, 41, 40, 68, 41 };
+
+            for (int i = 0; i < 6; i++)
+            {
+                int col = i % 3;
+                int row = i / 3;
+                int itemX = gridX + col * (itemSize + gridSpacing);
+                int itemY = gridY + row * (itemSize + gridSpacing);
+
+                Rectangle itemBounds = new Rectangle(itemX, itemY, itemSize, itemSize);
+                Item slotItem = slot.outfitAvailabileItems.ContainsKey(slotKeys[i]) ? slot.outfitAvailabileItems[slotKeys[i]] : null;
+
+                if (slotItem != null)
+                {
+                    b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                    slotItem.drawInMenu(b, new Vector2(itemX, itemY), 0.75f, 1f, 0.866f, StackDrawType.Hide);
+                }
+                else
+                {
+                    b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptyIcons[i]), Color.White * 0.5f);
+                }
+            }
+        }
+
         // ** DRAW **
         public override void draw(SpriteBatch b)
         {
@@ -1089,6 +1210,49 @@ namespace StardewOutfitManager.Menus
             leftRotationButton.draw(b);
             rightRotationButton.draw(b);
 
+            // Draw equipment icons for selected outfit
+            if (outfitSlotSelected != null)
+            {
+                foreach (ClickableComponent c in equipmentIcons)
+                {
+                    // Map component name to outfit dictionary key
+                    string slotKey = c.name switch
+                    {
+                        "Hat" => "Hat",
+                        "Shirt" => "Shirt",
+                        "Pants" => "Pants",
+                        "Boots" => "Shoes",
+                        "Left Ring" => "LeftRing",
+                        "Right Ring" => "RightRing",
+                        _ => null
+                    };
+
+                    Item slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
+                        ? outfitSlotSelected.outfitAvailabileItems[slotKey]
+                        : null;
+
+                    int emptySlotIcon = c.name switch
+                    {
+                        "Hat" => 42,
+                        "Shirt" => 69,
+                        "Pants" => 68,
+                        "Boots" => 40,
+                        "Left Ring" or "Right Ring" => 41,
+                        _ => 10
+                    };
+
+                    if (slotItem != null)
+                    {
+                        b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                        slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
+                    }
+                    else
+                    {
+                        b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White);
+                    }
+                }
+            }
+
             // Draw category buttons
             foreach (ClickableTextureComponent categoryButton in categoryButtons)
             {
@@ -1110,6 +1274,18 @@ namespace StardewOutfitManager.Menus
                 if (slot.isVisible) { slot.Draw(b); }
             }
 
+            // Draw outfit hover infobox (for mouse hover or gamepad snap)
+            OutfitSlot hoverSlot = outfitSlotHovered;
+            if (hoverSlot == null && Game1.options.gamepadControls)
+            {
+                ClickableComponent snapped = getCurrentlySnappedComponent();
+                if (snapped?.region == OUTFITS && currentOutfitIndex + snapped.myID - 2000 < outfitSlotsFiltered.Count)
+                {
+                    hoverSlot = outfitSlotsFiltered[currentOutfitIndex + snapped.myID - 2000];
+                }
+            }
+            DrawOutfitHoverInfobox(b, hoverSlot);
+
             // Draw navigation
             if (scrollBar.visible) { drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false); }
             scrollBar.draw(b);
@@ -1128,6 +1304,16 @@ namespace StardewOutfitManager.Menus
                 }
                 Color color = Game1.textColor;
                 Utility.drawTextWithShadow(b, c.name, Game1.smallFont, new Vector2((c.bounds.X + 21) - Game1.smallFont.MeasureString(c.name).X / 2f, c.bounds.Y + 5f), color);
+            }
+
+            // If using gamepad and snapped to equipment icon, show its hover text
+            if (Game1.options.gamepadControls && string.IsNullOrEmpty(hoverText))
+            {
+                ClickableComponent snapped = getCurrentlySnappedComponent();
+                if (snapped?.region == EQUIPMENT)
+                {
+                    hoverText = GetEquipmentSlotHoverText(snapped);
+                }
             }
 
             // Draw hover text
