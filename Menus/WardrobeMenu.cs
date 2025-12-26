@@ -115,11 +115,11 @@ namespace StardewOutfitManager.Menus
                 {
                     hatStock.Add(item);
                 }
-                else if (item is Clothing && (item as Clothing).clothesType.Value == 0)
+                else if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT)
                 {
                     shirtStock.Add(item as Clothing);
                 }
-                else if (item is Clothing && (item as Clothing).clothesType.Value == 1)
+                else if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.PANTS)
                 {
                     pantsStock.Add(item as Clothing);
                 }

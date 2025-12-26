@@ -177,7 +177,7 @@ namespace StardewOutfitManager.Menus
         {
             foreach (ISalable j in itemsForSale)
             {
-                if (j is StardewValley.Object && (j as StardewValley.Object).isRecipe)
+                if (j is StardewValley.Object && (j as StardewValley.Object).IsRecipe)
                 {
                     if (Game1.player.knowsRecipe(j.Name))
                     {
@@ -422,9 +422,9 @@ namespace StardewOutfitManager.Menus
                     if (r.NextDouble() < 0.2)
                     {
                         int which = r.Next(2) + 3;
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTrader" + which + ((which == 4) ? ("_" + (Game1.player.isMale ? "male" : "female")) : ""));
+                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTrader" + which + ((which == 4) ? ("_" + (Game1.player.IsMale ? "male" : "female")) : ""));
                     }
-                    if (Game1.stats.getStat("hardModeMonstersKilled") > 50 && Game1.dayOfMonth != 28 && r.NextDouble() < 0.2)
+                    if (Game1.stats.Get("hardModeMonstersKilled") > 50 && Game1.dayOfMonth != 28 && r.NextDouble() < 0.2)
                     {
                         ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTraderSecret");
                     }
@@ -434,7 +434,7 @@ namespace StardewOutfitManager.Menus
                     if (r.NextDouble() < 0.2)
                     {
                         int which2 = r.Next(2) + 3;
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:DesertTrader" + which2 + ((which2 == 4) ? ("_" + (Game1.player.isMale ? "male" : "female")) : ""));
+                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:DesertTrader" + which2 + ((which2 == 4) ? ("_" + (Game1.player.IsMale ? "male" : "female")) : ""));
                     }
                     break;
                 case "boxOffice":
@@ -823,7 +823,7 @@ namespace StardewOutfitManager.Menus
                         {
                             buyback_item = this.AddBuybackItem(toSell, sell_unit_price, toSell.Stack);
                         }
-                        if (toSell is StardewValley.Object && (int)(toSell as StardewValley.Object).edibility != -300)
+                        if (toSell is StardewValley.Object && (toSell as StardewValley.Object).Edibility != -300)
                         {
                             Item stackClone = toSell.getOne();
                             stackClone.Stack = toSell.Stack;
@@ -1014,14 +1014,14 @@ namespace StardewOutfitManager.Menus
                         }
                         else if (this.currentTab == 2)
                         {
-                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == 0)
+                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT)
                             {
                                 this.forSale.Add(item3);
                             }
                         }
                         else if (this.currentTab == 3)
                         {
-                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == 1)
+                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == Clothing.ClothesType.PANTS)
                             {
                                 this.forSale.Add(item3);
                             }
@@ -1193,7 +1193,7 @@ namespace StardewOutfitManager.Menus
                     }
                     extraTradeItemCount2 *= numberToBuy;
                 }
-                if (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= price2 && (extraTradeItem2 == -1 || Game1.player.hasItemInInventory(extraTradeItem2, extraTradeItemCount2)))
+                if (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= price2 && (extraTradeItem2 == -1 || Game1.player.Items.ContainsId(extraTradeItem2.ToString(), extraTradeItemCount2)))
                 {
                     this.heldItem = item.GetSalableInstance();
                     this.heldItem.Stack = numberToBuy;
@@ -1205,7 +1205,7 @@ namespace StardewOutfitManager.Menus
                     {
                         this.heldItem.Stack *= item.Stack;
                     }
-                    if (!this.heldItem.CanBuyItem(Game1.player) && !item.IsInfiniteStock() && (!(this.heldItem is StardewValley.Object) || !(this.heldItem as StardewValley.Object).isRecipe))
+                    if (!this.heldItem.CanBuyItem(Game1.player) && !item.IsInfiniteStock() && (!(this.heldItem is StardewValley.Object) || !(this.heldItem as StardewValley.Object).IsRecipe))
                     {
                         Game1.playSound("smallSelect");
                         this.heldItem = null;
@@ -1223,11 +1223,11 @@ namespace StardewOutfitManager.Menus
                     ShopMenu.chargePlayer(Game1.player, this.currency, price2);
                     if (extraTradeItem2 != -1)
                     {
-                        Game1.player.removeItemsFromInventory(extraTradeItem2, extraTradeItemCount2);
+                        Game1.player.Items.ReduceId(extraTradeItem2.ToString(), extraTradeItemCount2);
                     }
-                    if (!this._isStorageShop && item.actionWhenPurchased())
+                    if (!this._isStorageShop && item.actionWhenPurchased(this.storeContext))
                     {
-                        if (this.heldItem is StardewValley.Object && (bool)(this.heldItem as StardewValley.Object).isRecipe)
+                        if (this.heldItem is StardewValley.Object && (this.heldItem as StardewValley.Object).IsRecipe)
                         {
                             string recipeName = this.heldItem.Name.Substring(0, this.heldItem.Name.IndexOf("Recipe") - 1);
                             try
@@ -1308,7 +1308,7 @@ namespace StardewOutfitManager.Menus
                         return false;
                     }
                     item.Stack = tmp;
-                    if (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= price && (extraTradeItem == -1 || Game1.player.hasItemInInventory(extraTradeItem, extraTradeItemCount)))
+                    if (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= price && (extraTradeItem == -1 || Game1.player.Items.ContainsId(extraTradeItem.ToString(), extraTradeItemCount)))
                     {
                         int amountAddedToStack = numberToBuy;
                         if (this.itemPriceAndStock[item][1] == int.MaxValue && item.Stack != int.MaxValue)
@@ -1339,9 +1339,9 @@ namespace StardewOutfitManager.Menus
                         }
                         if (extraTradeItem != -1)
                         {
-                            Game1.player.removeItemsFromInventory(extraTradeItem, extraTradeItemCount);
+                            Game1.player.Items.ReduceId(extraTradeItem.ToString(), extraTradeItemCount);
                         }
-                        if (!this._isStorageShop && item.actionWhenPurchased())
+                        if (!this._isStorageShop && item.actionWhenPurchased(this.storeContext))
                         {
                             this.heldItem = null;
                         }
@@ -1434,7 +1434,7 @@ namespace StardewOutfitManager.Menus
                         {
                             this.buyBackItemsToResellTomorrow[buyback_item].Stack += sell_stack;
                         }
-                        else if (sold_item is StardewValley.Object && (int)(sold_item as StardewValley.Object).edibility != -300 && Game1.random.NextDouble() < 0.03999999910593033 && Game1.currentLocation is ShopLocation)
+                        else if (sold_item is StardewValley.Object && (sold_item as StardewValley.Object).Edibility != -300 && Game1.random.NextDouble() < 0.03999999910593033 && Game1.currentLocation is ShopLocation)
                         {
                             ISalable sell_back_instance = sold_item.GetSalableInstance();
                             if (buyback_item != null)
@@ -1614,13 +1614,13 @@ namespace StardewOutfitManager.Menus
             Game1.playSound("shiny4");
         }
 
-        private int getHoveredItemExtraItemIndex()
+        private string getHoveredItemExtraItemIndex()
         {
             if (this.itemPriceAndStock != null && this.hoveredItem != null && this.itemPriceAndStock.ContainsKey(this.hoveredItem) && this.itemPriceAndStock[this.hoveredItem].Length > 2)
             {
-                return this.itemPriceAndStock[this.hoveredItem][2];
+                return this.itemPriceAndStock[this.hoveredItem][2].ToString();
             }
-            return -1;
+            return null;
         }
 
         private int getHoveredItemExtraItemAmount()
@@ -1717,7 +1717,7 @@ namespace StardewOutfitManager.Menus
             Texture2D purchase_texture = Game1.mouseCursors;
             Rectangle purchase_window_border = new Rectangle(384, 373, 18, 18);
             Rectangle purchase_item_rect = new Rectangle(384, 396, 15, 15);
-            int purchase_item_text_color = -1;
+            Color? purchase_item_text_color = null;
             bool purchase_draw_item_background = true;
             Rectangle purchase_item_background = new Rectangle(296, 363, 18, 18);
             Color purchase_selected_color = Color.Wheat;
@@ -1786,7 +1786,7 @@ namespace StardewOutfitManager.Menus
                     {
                         required_item_count = this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][3];
                     }
-                    bool hasEnoughToTrade = Game1.player.hasItemInInventory(requiredItem, required_item_count);
+                    bool hasEnoughToTrade = Game1.player.Items.ContainsId(requiredItem.ToString(), required_item_count);
                     if (this.canPurchaseCheck != null && !this.canPurchaseCheck(this.currentItemIndex + k))
                     {
                         hasEnoughToTrade = false;
@@ -1830,7 +1830,7 @@ namespace StardewOutfitManager.Menus
             }
             if (!this.hoverText.Equals(""))
             {
-                if (this.hoveredItem is StardewValley.Object && (bool)(this.hoveredItem as StardewValley.Object).isRecipe)
+                if (this.hoveredItem is StardewValley.Object && (this.hoveredItem as StardewValley.Object).IsRecipe)
                 {
                     IClickableMenu.drawToolTip(b, " ", this.boldTitleText, this.hoveredItem as Item, this.heldItem != null, -1, this.currency, this.getHoveredItemExtraItemIndex(), this.getHoveredItemExtraItemAmount(), new CraftingRecipe(this.hoveredItem.Name.Replace(" Recipe", "")), (this.hoverPrice > 0) ? this.hoverPrice : (-1));
                 }
@@ -1859,7 +1859,7 @@ namespace StardewOutfitManager.Menus
                     portrait_draw_position = base.xPositionOnScreen - (int)Game1.dialogueFont.MeasureString(this.potraitPersonDialogue).X - 64;
                     if (portrait_draw_position > 0)
                     {
-                        IClickableMenu.drawHoverText(b, this.potraitPersonDialogue, Game1.dialogueFont, 0, 0, -1, null, -1, null, null, 0, -1, -1, portrait_draw_position, base.yPositionOnScreen + ((this.portraitPerson != null) ? 312 : 0));
+                        IClickableMenu.drawHoverText(b, this.potraitPersonDialogue, Game1.dialogueFont, 0, 0, -1, null, -1, null, null, 0, null, -1, portrait_draw_position, base.yPositionOnScreen + ((this.portraitPerson != null) ? 312 : 0));
                     }
                 }
             }

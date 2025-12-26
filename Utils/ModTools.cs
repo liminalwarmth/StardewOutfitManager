@@ -18,8 +18,8 @@ namespace StardewOutfitManager.Utils
             //  Example use at 2x scale: drawFarmerScaled(b, _displayFarmer.FarmerSprite.CurrentAnimationFrame, _displayFarmer.FarmerSprite.CurrentFrame, _displayFarmer.FarmerSprite.SourceRect, new Vector2(0, 0), Color.White, 2f, _displayFarmer);
             //  Note: Don't try to scale this to decimals or blinking gets weird. Stick to 1f, 2f, etc.
             public static void drawFarmerScaled(SpriteBatch b, FarmerSprite.AnimationFrame animationFrame, int currentFrame, Rectangle sourceRect, Vector2 position, Color overrideColor, float scale, Farmer who)
-            {   
-                int facingDirection = who.facingDirection;
+            {
+                int facingDirection = who.FacingDirection;
                 float layerDepth = 0.8f;
                 float rotation = 0;
                 Vector2 origin = Vector2.Zero;
@@ -61,11 +61,10 @@ namespace StardewOutfitManager.Utils
 
                 // Draw Pants
                 Rectangle pants_rect = new Rectangle(sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height);
-                // ints replace ClampPants
+                // SDV 1.6: GetPantsIndex() already returns validated index
                 int pantsIndex = who.GetPantsIndex();
-                int pantsValue = (pantsIndex > Clothing.GetMaxPantsValue() || pantsIndex < 0) ? 0 : pantsIndex;
-                pants_rect.X += (pantsValue % 10 * 192);
-                pants_rect.Y += (pantsValue / 10 * 688);
+                pants_rect.X += (pantsIndex % 10 * 192);
+                pants_rect.Y += (pantsIndex / 10 * 688);
                 if (!who.IsMale)
                 {
                     pants_rect.X += 96;
@@ -99,7 +98,8 @@ namespace StardewOutfitManager.Utils
                 {
                     arm_layer_offset = -1E-07f;
                 }
-                sourceRect.Offset(-288 + (animationFrame.secondaryArm ? 192 : 96), 0);
+                // SDV 1.6: secondaryArm property removed, use standard arm offset
+                sourceRect.Offset(-288 + 96, 0);
                 b.Draw(baseTexture, position + origin + positionOffset + who.armOffset, sourceRect, overrideColor, rotation, origin, 4f * scale, animationFrame.flip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, layerDepth + arm_layer_offset);
                 if (!who.usingSlingshot || !(who.CurrentTool is Slingshot))
                 {
@@ -165,10 +165,9 @@ namespace StardewOutfitManager.Utils
                     hair_metadata = Farmer.GetHairStyleMetadata(hair_style);
                 }
                 AccessTools.Method(typeof(FarmerRenderer), "executeRecolorActions").Invoke(who.FarmerRenderer, new object[] { who });
-                // ints replace ClampShirt
+                // SDV 1.6: GetShirtIndex() already returns validated index
                 int shirtIndex = who.GetShirtIndex();
-                int shirtValue = (shirtIndex > Clothing.GetMaxShirtValue() || shirtIndex < 0) ? 0 : shirtIndex;
-                Rectangle shirtSourceRect = new Rectangle(shirtValue * 8 % 128, shirtValue * 8 / 128 * 32, 8, 8);
+                Rectangle shirtSourceRect = new Rectangle(shirtIndex * 8 % 128, shirtIndex * 8 / 128 * 32, 8, 8);
                 Texture2D hair_texture = FarmerRenderer.hairStylesTexture;
                 Rectangle hairstyleSourceRect = new Rectangle(hair_style * 16 % FarmerRenderer.hairStylesTexture.Width, hair_style * 16 / FarmerRenderer.hairStylesTexture.Width * 96, 16, 32);
                 if (hair_metadata != null)
@@ -177,7 +176,13 @@ namespace StardewOutfitManager.Utils
                     hairstyleSourceRect = new Rectangle(hair_metadata.tileX * 16, hair_metadata.tileY * 16, 16, 32);
                 }
                 Rectangle accessorySourceRect = ((int)who.accessory.Value >= 0) ? accessorySourceRect = new Rectangle((int)who.accessory.Value * 16 % FarmerRenderer.accessoriesTexture.Width, (int)who.accessory.Value * 16 / FarmerRenderer.accessoriesTexture.Width * 32, 16, 16) : new Rectangle();
-                Rectangle hatSourceRect = (who.hat.Value != null) ? hatSourceRect = new Rectangle(20 * (int)who.hat.Value.which.Value % FarmerRenderer.hatsTexture.Width, 20 * (int)who.hat.Value.which.Value / FarmerRenderer.hatsTexture.Width * 20 * 4, 20, 20) : new Rectangle();
+                // SDV 1.6: Hat now uses string ItemId, get sprite index by parsing ItemId (base game hats use numeric IDs)
+                int hatSpriteIndex = 0;
+                if (who.hat.Value != null && int.TryParse(who.hat.Value.ItemId, out int parsedIndex))
+                {
+                    hatSpriteIndex = parsedIndex;
+                }
+                Rectangle hatSourceRect = (who.hat.Value != null) ? new Rectangle(20 * hatSpriteIndex % FarmerRenderer.hatsTexture.Width, 20 * hatSpriteIndex / FarmerRenderer.hatsTexture.Width * 20 * 4, 20, 20) : new Rectangle();
                 Rectangle dyed_shirt_source_rect = shirtSourceRect;
                 float dye_layer_offset = 1E-07f;
                 float hair_draw_layer = 2.2E-05f;
