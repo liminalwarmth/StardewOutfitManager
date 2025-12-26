@@ -34,23 +34,7 @@ namespace StardewOutfitManager.Menus
 
         public const int region_tabStartIndex = 99999;
 
-        public const int howManyRecipesFitOnPage = 28;
-
-        public const int infiniteStock = int.MaxValue;
-
-        public const int salePriceIndex = 0;
-
-        public const int stockIndex = 1;
-
-        public const int extraTradeItemIndex = 2;
-
-        public const int extraTradeItemCountIndex = 3;
-
         public const int itemsPerPage = 4;
-
-        public const int numberRequiredForExtraItemTrade = 5;
-
-        private string descriptionText = "";
 
         private string hoverText = "";
 
@@ -80,8 +64,6 @@ namespace StardewOutfitManager.Menus
 
         public Dictionary<ISalable, int[]> itemPriceAndStock = new Dictionary<ISalable, int[]>();
 
-        private float sellPercentage = 1f;
-
         private List<TemporaryAnimatedSprite> animations = new List<TemporaryAnimatedSprite>();
 
         public int hoverPrice = -1;
@@ -96,10 +78,6 @@ namespace StardewOutfitManager.Menus
 
         public ClickableTextureComponent scrollBar;
 
-        public NPC portraitPerson;
-
-        public string potraitPersonDialogue;
-
         public StorageFurniture source;
 
         private bool scrolling;
@@ -108,19 +86,11 @@ namespace StardewOutfitManager.Menus
 
         public Func<ISalable, bool> onSell;
 
-        public Func<int, bool> canPurchaseCheck;
-
         public List<ClickableTextureComponent> tabButtons = new List<ClickableTextureComponent>();
 
         protected int currentTab;
 
         protected bool _isStorageShop;
-
-        public bool readOnly;
-
-        public HashSet<ISalable> buyBackItems = new HashSet<ISalable>();
-
-        public Dictionary<ISalable, ISalable> buyBackItemsToResellTomorrow = new Dictionary<ISalable, ISalable>();
 
         // My vars
         // Reference Top Tab Menu Manager
@@ -166,10 +136,6 @@ namespace StardewOutfitManager.Menus
             : this(itemPriceAndStock.Keys.ToList(), currency, who)
         {
             this.itemPriceAndStock = itemPriceAndStock;
-            if (this.potraitPersonDialogue == null)
-            {
-                this.setUpShopOwner(who);
-            }
         }
 
         public NewDresserMenu(List<ISalable> itemsForSale, int currency = 0, string who = null)
@@ -191,10 +157,6 @@ namespace StardewOutfitManager.Menus
                 j.salePrice(),
                 j.Stack
                 });
-            }
-            if (this.itemPriceAndStock.Count >= 2)
-            {
-                this.setUpShopOwner(who);
             }
             this.updatePosition();
             this.currency = currency;
@@ -400,239 +362,6 @@ namespace StardewOutfitManager.Menus
             this.snapCursorToCurrentSnappedComponent();
         }
 
-        public void setUpShopOwner(string who)
-        {
-            if (who == null)
-            {
-                return;
-            }
-            Random r = new Random((int)(Game1.uniqueIDForThisGame + Game1.stats.DaysPlayed));
-            string ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11457");
-            switch (who)
-            {
-                case "VolcanoShop":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:VolcanoShop" + r.Next(4));
-                    if (r.NextDouble() < 0.1)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:VolcanoShop4");
-                    }
-                    break;
-                case "IslandTrade":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTrader" + (r.Next(2) + 1));
-                    if (r.NextDouble() < 0.2)
-                    {
-                        int which = r.Next(2) + 3;
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTrader" + which + ((which == 4) ? ("_" + (Game1.player.IsMale ? "male" : "female")) : ""));
-                    }
-                    if (Game1.stats.Get("hardModeMonstersKilled") > 50 && Game1.dayOfMonth != 28 && r.NextDouble() < 0.2)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:IslandTraderSecret");
-                    }
-                    break;
-                case "DesertTrade":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:DesertTrader" + (r.Next(2) + 1));
-                    if (r.NextDouble() < 0.2)
-                    {
-                        int which2 = r.Next(2) + 3;
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:DesertTrader" + which2 + ((which2 == 4) ? ("_" + (Game1.player.IsMale ? "male" : "female")) : ""));
-                    }
-                    break;
-                case "boxOffice":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:MovieTheaterBoxOffice");
-                    break;
-                case "Concessions":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:MovieTheaterConcessions" + Game1.random.Next(5));
-                    break;
-                case "Robin":
-                    this.portraitPerson = Game1.getCharacterFromName("Robin");
-                    switch (Game1.random.Next(5))
-                    {
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11460");
-                            break;
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11461");
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11462");
-                            break;
-                        case 3:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11463");
-                            break;
-                        case 4:
-                            {
-                                string suggestedItem = this.itemPriceAndStock.ElementAt(Game1.random.Next(2, this.itemPriceAndStock.Count)).Key.DisplayName;
-                                ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11464", suggestedItem, Lexicon.getRandomPositiveAdjectiveForEventOrPerson(), Lexicon.getProperArticleForWord(suggestedItem));
-                                break;
-                            }
-                    }
-                    break;
-                case "Clint":
-                    this.portraitPerson = Game1.getCharacterFromName("Clint");
-                    switch (Game1.random.Next(3))
-                    {
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11469");
-                            break;
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11470");
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11471");
-                            break;
-                    }
-                    break;
-                case "ClintUpgrade":
-                    this.portraitPerson = Game1.getCharacterFromName("Clint");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11474");
-                    break;
-                case "Willy":
-                    this.portraitPerson = Game1.getCharacterFromName("Willy");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11477");
-                    if (Game1.random.NextDouble() < 0.05)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11478");
-                    }
-                    break;
-                case "Pierre":
-                    this.portraitPerson = Game1.getCharacterFromName("Pierre");
-                    switch (Game1.dayOfMonth % 7)
-                    {
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11481");
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11482");
-                            break;
-                        case 3:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11483");
-                            break;
-                        case 4:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11484");
-                            break;
-                        case 5:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11485");
-                            break;
-                        case 6:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11486");
-                            break;
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11487");
-                            break;
-                    }
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11488") + ppDialogue;
-                    if (Game1.dayOfMonth == 28)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11489");
-                    }
-                    break;
-                case "Dwarf":
-                    this.portraitPerson = Game1.getCharacterFromName("Dwarf");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11492");
-                    break;
-                case "HatMouse":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11494");
-                    break;
-                case "BlueBoat":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.blueboat");
-                    break;
-                case "magicBoatShop":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.magicBoat");
-                    break;
-                case "KrobusGone":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:KrobusShopGone");
-                    break;
-                case "Krobus":
-                    this.portraitPerson = Game1.getCharacterFromName("Krobus");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11497");
-                    break;
-                case "TravelerNightMarket":
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.travelernightmarket");
-                    break;
-                case "Traveler":
-                    switch (r.Next(5))
-                    {
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11499");
-                            break;
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11500");
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11501");
-                            break;
-                        case 3:
-                            ppDialogue = ((this.itemPriceAndStock.Count <= 0) ? Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11504") : Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11502", this.itemPriceAndStock.ElementAt(r.Next(this.itemPriceAndStock.Count)).Key.DisplayName));
-                            break;
-                        case 4:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11504");
-                            break;
-                    }
-                    break;
-                case "Marnie":
-                    this.portraitPerson = Game1.getCharacterFromName("Marnie");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11507");
-                    if (r.NextDouble() < 0.0001)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11508");
-                    }
-                    break;
-                case "Gus":
-                    this.portraitPerson = Game1.getCharacterFromName("Gus");
-                    switch (Game1.random.Next(4))
-                    {
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11511");
-                            break;
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11512", this.itemPriceAndStock.ElementAt(r.Next(this.itemPriceAndStock.Count)).Key.DisplayName);
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11513");
-                            break;
-                        case 3:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11514");
-                            break;
-                    }
-                    break;
-                case "Marlon_Recovery":
-                    this.portraitPerson = Game1.getCharacterFromName("Marlon");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ItemRecovery_Description");
-                    break;
-                case "Marlon":
-                    this.portraitPerson = Game1.getCharacterFromName("Marlon");
-                    switch (r.Next(4))
-                    {
-                        case 0:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11517");
-                            break;
-                        case 1:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11518");
-                            break;
-                        case 2:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11519");
-                            break;
-                        case 3:
-                            ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11520");
-                            break;
-                    }
-                    if (r.NextDouble() < 0.001)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11521");
-                    }
-                    break;
-                case "Sandy":
-                    this.portraitPerson = Game1.getCharacterFromName("Sandy");
-                    ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11524");
-                    if (r.NextDouble() < 0.0001)
-                    {
-                        ppDialogue = Game1.content.LoadString("Strings\\StringsFromCSFiles:ShopMenu.cs.11525");
-                    }
-                    break;
-            }
-            this.potraitPersonDialogue = Game1.parseText(ppDialogue, Game1.dialogueFont, 304);
-        }
-
         public bool highlightItemToSell(Item i)
         {
             if (this.heldItem != null)
@@ -782,75 +511,13 @@ namespace StardewOutfitManager.Menus
                 }
             }
             this.currentItemIndex = Math.Max(0, Math.Min(this.forSale.Count - 4, this.currentItemIndex));
-            if (this.heldItem == null && !this.readOnly)
+            if (this.heldItem == null)
             {
                 Item toSell = this.inventory.leftClick(x, y, null, playSound: false);
                 if (toSell != null)
                 {
-                    if (this.onSell != null)
-                    {
-                        if (this.onSell(toSell))
-                        {
-                            toSell = null;
-                        }
-                    }
-                    else
-                    {
-                        int sell_unit_price = (int)((toSell is StardewValley.Object) ? ((float)(toSell as StardewValley.Object).sellToStorePrice(-1L) * this.sellPercentage) : ((float)(toSell.salePrice() / 2) * this.sellPercentage));
-                        ShopMenu.chargePlayer(Game1.player, this.currency, -sell_unit_price * toSell.Stack);
-                        int coins = toSell.Stack / 8 + 2;
-                        for (int j = 0; j < coins; j++)
-                        {
-                            this.animations.Add(new TemporaryAnimatedSprite("TileSheets\\debris", new Rectangle(Game1.random.Next(2) * 16, 64, 16, 16), 9999f, 1, 999, snappedPosition + new Vector2(32f, 32f), flicker: false, flipped: false)
-                            {
-                                alphaFade = 0.025f,
-                                motion = new Vector2(Game1.random.Next(-3, 4), -4f),
-                                acceleration = new Vector2(0f, 0.5f),
-                                delayBeforeAnimationStart = j * 25,
-                                scale = 2f
-                            });
-                            this.animations.Add(new TemporaryAnimatedSprite("TileSheets\\debris", new Rectangle(Game1.random.Next(2) * 16, 64, 16, 16), 9999f, 1, 999, snappedPosition + new Vector2(32f, 32f), flicker: false, flipped: false)
-                            {
-                                scale = 4f,
-                                alphaFade = 0.025f,
-                                delayBeforeAnimationStart = j * 50,
-                                motion = Utility.getVelocityTowardPoint(new Point((int)snappedPosition.X + 32, (int)snappedPosition.Y + 32), new Vector2(base.xPositionOnScreen - 36, base.yPositionOnScreen + base.height - this.inventory.height - 16), 8f),
-                                acceleration = Utility.getVelocityTowardPoint(new Point((int)snappedPosition.X + 32, (int)snappedPosition.Y + 32), new Vector2(base.xPositionOnScreen - 36, base.yPositionOnScreen + base.height - this.inventory.height - 16), 0.5f)
-                            });
-                        }
-                        ISalable buyback_item = null;
-                        if (this.CanBuyback())
-                        {
-                            buyback_item = this.AddBuybackItem(toSell, sell_unit_price, toSell.Stack);
-                        }
-                        if (toSell is StardewValley.Object && (toSell as StardewValley.Object).Edibility != -300)
-                        {
-                            Item stackClone = toSell.getOne();
-                            stackClone.Stack = toSell.Stack;
-                            if (buyback_item != null && this.buyBackItemsToResellTomorrow.ContainsKey(buyback_item))
-                            {
-                                this.buyBackItemsToResellTomorrow[buyback_item].Stack += toSell.Stack;
-                            }
-                            else if (Game1.currentLocation is ShopLocation)
-                            {
-                                if (buyback_item != null)
-                                {
-                                    this.buyBackItemsToResellTomorrow[buyback_item] = stackClone;
-                                }
-                                (Game1.currentLocation as ShopLocation).itemsToStartSellingTomorrow.Add(stackClone);
-                            }
-                        }
-                        toSell = null;
-                        Game1.playSound("sell");
-                        Game1.playSound("purchase");
-                        if (this.inventory.getItemAt(x, y) == null)
-                        {
-                            this.animations.Add(new TemporaryAnimatedSprite(5, snappedPosition + new Vector2(32f, 32f), Color.White)
-                            {
-                                motion = new Vector2(0f, -0.5f)
-                            });
-                        }
-                    }
+                    // Dresser uses onSell callback to deposit items
+                    this.onSell(toSell);
                     this.updateSaleButtonNeighbors();
                 }
             }
@@ -868,18 +535,10 @@ namespace StardewOutfitManager.Menus
                 if (this.forSale[index] != null)
                 {
                     int toBuy = ((!Game1.oldKBState.IsKeyDown(Keys.LeftShift)) ? 1 : Math.Min(Math.Min(Game1.oldKBState.IsKeyDown(Keys.LeftControl) ? 25 : 5, ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) / Math.Max(1, this.itemPriceAndStock[this.forSale[index]][0])), Math.Max(1, this.itemPriceAndStock[this.forSale[index]][1])));
-                    if (this.storeContext == "ReturnedDonations")
-                    {
-                        toBuy = this.itemPriceAndStock[this.forSale[index]][1];
-                    }
                     toBuy = Math.Min(toBuy, this.forSale[index].maximumStackSize());
                     if (toBuy == -1)
                     {
                         toBuy = 1;
-                    }
-                    if (this.canPurchaseCheck != null && !this.canPurchaseCheck(index))
-                    {
-                        return;
                     }
                     if (toBuy > 0 && this.tryToPurchaseItem(this.forSale[index], this.heldItem, toBuy, x, y, index))
                     {
@@ -907,67 +566,6 @@ namespace StardewOutfitManager.Menus
             }
         }
 
-        public virtual bool CanBuyback()
-        {
-            return true;
-        }
-
-        public virtual void BuyBuybackItem(ISalable bought_item, int price, int stack)
-        {
-            Game1.player.totalMoneyEarned -= (uint)price;
-            if (Game1.player.useSeparateWallets)
-            {
-                Game1.player.stats.IndividualMoneyEarned -= (uint)price;
-            }
-            if (this.buyBackItemsToResellTomorrow.ContainsKey(bought_item))
-            {
-                ISalable sold_tomorrow_item = this.buyBackItemsToResellTomorrow[bought_item];
-                sold_tomorrow_item.Stack -= stack;
-                if (sold_tomorrow_item.Stack <= 0)
-                {
-                    this.buyBackItemsToResellTomorrow.Remove(bought_item);
-                    (Game1.currentLocation as ShopLocation).itemsToStartSellingTomorrow.Remove(sold_tomorrow_item as Item);
-                }
-            }
-        }
-
-        public virtual ISalable AddBuybackItem(ISalable sold_item, int sell_unit_price, int stack)
-        {
-            ISalable target = null;
-            while (stack > 0)
-            {
-                target = null;
-                foreach (ISalable buyback_item in this.buyBackItems)
-                {
-                    if (buyback_item.canStackWith(sold_item) && buyback_item.Stack < buyback_item.maximumStackSize())
-                    {
-                        target = buyback_item;
-                        break;
-                    }
-                }
-                if (target == null)
-                {
-                    target = sold_item.GetSalableInstance();
-                    int amount_to_deposit2 = Math.Min(stack, target.maximumStackSize());
-                    this.buyBackItems.Add(target);
-                    this.itemPriceAndStock.Add(target, new int[2] { sell_unit_price, amount_to_deposit2 });
-                    target.Stack = amount_to_deposit2;
-                    stack -= amount_to_deposit2;
-                }
-                else
-                {
-                    int amount_to_deposit = Math.Min(stack, target.maximumStackSize() - target.Stack);
-                    int[] stock_data = this.itemPriceAndStock[target];
-                    stock_data[1] += amount_to_deposit;
-                    this.itemPriceAndStock[target] = stock_data;
-                    target.Stack = stock_data[1];
-                    stack -= amount_to_deposit;
-                }
-            }
-            this.forSale = this.itemPriceAndStock.Keys.ToList();
-            return target;
-        }
-
         public override bool IsAutomaticSnapValid(int direction, ClickableComponent a, ClickableComponent b)
         {
             if (direction == 1 && this.tabButtons.Contains(a) && this.tabButtons.Contains(b))
@@ -990,132 +588,51 @@ namespace StardewOutfitManager.Menus
 
         public virtual void applyTab()
         {
-            if (this.storeContext == "Dresser")
+            // Dresser tab filtering by clothing type
+            if (this.currentTab == 0)
             {
-                if (this.currentTab == 0)
-                {
-                    this.forSale = this.itemPriceAndStock.Keys.ToList();
-                }
-                else
-                {
-                    this.forSale.Clear();
-                    foreach (ISalable key in this.itemPriceAndStock.Keys)
-                    {
-                        if (!(key is Item item3))
-                        {
-                            continue;
-                        }
-                        if (this.currentTab == 1)
-                        {
-                            if (item3.Category == -95)
-                            {
-                                this.forSale.Add(item3);
-                            }
-                        }
-                        else if (this.currentTab == 2)
-                        {
-                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT)
-                            {
-                                this.forSale.Add(item3);
-                            }
-                        }
-                        else if (this.currentTab == 3)
-                        {
-                            if (item3 is Clothing && (item3 as Clothing).clothesType.Value == Clothing.ClothesType.PANTS)
-                            {
-                                this.forSale.Add(item3);
-                            }
-                        }
-                        else if (this.currentTab == 4)
-                        {
-                            if (item3.Category == -97)
-                            {
-                                this.forSale.Add(item3);
-                            }
-                        }
-                        else if (this.currentTab == 5 && item3.Category == -96)
-                        {
-                            this.forSale.Add(item3);
-                        }
-                    }
-                }
+                this.forSale = this.itemPriceAndStock.Keys.ToList();
             }
-            else if (this.storeContext == "Catalogue")
+            else
             {
-                if (this.currentTab == 0)
+                this.forSale.Clear();
+                foreach (ISalable key in this.itemPriceAndStock.Keys)
                 {
-                    this.forSale = this.itemPriceAndStock.Keys.ToList();
-                }
-                else
-                {
-                    this.forSale.Clear();
-                    foreach (ISalable key2 in this.itemPriceAndStock.Keys)
+                    if (!(key is Item item))
                     {
-                        if (!(key2 is Item item2))
-                        {
-                            continue;
-                        }
-                        if (this.currentTab == 1)
-                        {
-                            if (item2 is Wallpaper && (item2 as Wallpaper).isFloor.Value)
-                            {
-                                this.forSale.Add(item2);
-                            }
-                        }
-                        else if (this.currentTab == 2 && item2 is Wallpaper && !(item2 as Wallpaper).isFloor.Value)
-                        {
-                            this.forSale.Add(item2);
-                        }
+                        continue;
                     }
-                }
-            }
-            else if (this.storeContext == "Furniture Catalogue")
-            {
-                if (this.currentTab == 0)
-                {
-                    this.forSale = this.itemPriceAndStock.Keys.ToList();
-                }
-                else
-                {
-                    this.forSale.Clear();
-                    foreach (ISalable key3 in this.itemPriceAndStock.Keys)
+                    if (this.currentTab == 1)
                     {
-                        if (!(key3 is Item item))
-                        {
-                            continue;
-                        }
-                        if (this.currentTab == 1)
-                        {
-                            if (item is Furniture && ((item as Furniture).furniture_type.Value == 5 || (item as Furniture).furniture_type.Value == 4 || (item as Furniture).furniture_type.Value == 11))
-                            {
-                                this.forSale.Add(item);
-                            }
-                        }
-                        else if (this.currentTab == 2)
-                        {
-                            if (item is Furniture && ((item as Furniture).furniture_type.Value == 0 || (item as Furniture).furniture_type.Value == 1 || (item as Furniture).furniture_type.Value == 2 || (item as Furniture).furniture_type.Value == 3))
-                            {
-                                this.forSale.Add(item);
-                            }
-                        }
-                        else if (this.currentTab == 3)
-                        {
-                            if (item is Furniture && ((item as Furniture).furniture_type.Value == 6 || (item as Furniture).furniture_type.Value == 13))
-                            {
-                                this.forSale.Add(item);
-                            }
-                        }
-                        else if (this.currentTab == 4)
-                        {
-                            if (item is Furniture && (item as Furniture).furniture_type.Value == 12)
-                            {
-                                this.forSale.Add(item);
-                            }
-                        }
-                        else if (this.currentTab == 5 && item is Furniture && ((item as Furniture).furniture_type.Value == 7 || (item as Furniture).furniture_type.Value == 17 || (item as Furniture).furniture_type.Value == 10 || (item as Furniture).furniture_type.Value == 8 || (item as Furniture).furniture_type.Value == 9 || (item as Furniture).furniture_type.Value == 14))
+                        if (item.Category == -95) // Hats
                         {
                             this.forSale.Add(item);
                         }
+                    }
+                    else if (this.currentTab == 2)
+                    {
+                        if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.SHIRT)
+                        {
+                            this.forSale.Add(item);
+                        }
+                    }
+                    else if (this.currentTab == 3)
+                    {
+                        if (item is Clothing && (item as Clothing).clothesType.Value == Clothing.ClothesType.PANTS)
+                        {
+                            this.forSale.Add(item);
+                        }
+                    }
+                    else if (this.currentTab == 4)
+                    {
+                        if (item.Category == -97) // Boots
+                        {
+                            this.forSale.Add(item);
+                        }
+                    }
+                    else if (this.currentTab == 5 && item.Category == -96) // Rings
+                    {
+                        this.forSale.Add(item);
                     }
                 }
             }
@@ -1166,10 +683,6 @@ namespace StardewOutfitManager.Menus
 
         private bool tryToPurchaseItem(ISalable item, ISalable held_item, int numberToBuy, int x, int y, int indexInForSaleList)
         {
-            if (this.readOnly)
-            {
-                return false;
-            }
             if (held_item == null)
             {
                 if (this.itemPriceAndStock[item][1] == 0)
@@ -1197,11 +710,7 @@ namespace StardewOutfitManager.Menus
                 {
                     this.heldItem = item.GetSalableInstance();
                     this.heldItem.Stack = numberToBuy;
-                    if (this.storeContext == "QiGemShop" || this.storeContext == "StardewFair")
-                    {
-                        this.heldItem.Stack *= item.Stack;
-                    }
-                    else if (this.itemPriceAndStock[item][1] == int.MaxValue && item.Stack != int.MaxValue)
+                    if (this.itemPriceAndStock[item][1] == int.MaxValue && item.Stack != int.MaxValue)
                     {
                         this.heldItem.Stack *= item.Stack;
                     }
@@ -1216,57 +725,22 @@ namespace StardewOutfitManager.Menus
                         this.itemPriceAndStock[item][1] -= numberToBuy;
                         this.forSale[indexInForSaleList].Stack -= numberToBuy;
                     }
-                    if (this.CanBuyback() && this.buyBackItems.Contains(item))
-                    {
-                        this.BuyBuybackItem(item, price2, numberToBuy);
-                    }
                     ShopMenu.chargePlayer(Game1.player, this.currency, price2);
                     if (extraTradeItem2 != -1)
                     {
                         Game1.player.Items.ReduceId(extraTradeItem2.ToString(), extraTradeItemCount2);
                     }
-                    if (!this._isStorageShop && item.actionWhenPurchased(this.storeContext))
+                    // Dresser is storage shop - play purchase sounds
+                    if (Game1.mouseClickPolling > 300)
                     {
-                        if (this.heldItem is StardewValley.Object && (this.heldItem as StardewValley.Object).IsRecipe)
+                        if (this.purchaseRepeatSound != null)
                         {
-                            string recipeName = this.heldItem.Name.Substring(0, this.heldItem.Name.IndexOf("Recipe") - 1);
-                            try
-                            {
-                                if ((this.heldItem as StardewValley.Object).Category == -7)
-                                {
-                                    Game1.player.cookingRecipes.Add(recipeName, 0);
-                                }
-                                else
-                                {
-                                    Game1.player.craftingRecipes.Add(recipeName, 0);
-                                }
-                                Game1.playSound("newRecipe");
-                            }
-                            catch (Exception)
-                            {
-                            }
+                            Game1.playSound(this.purchaseRepeatSound);
                         }
-                        held_item = null;
-                        this.heldItem = null;
                     }
-                    else
+                    else if (this.purchaseSound != null)
                     {
-                        if (this.heldItem != null && this.heldItem is StardewValley.Object && (this.heldItem as StardewValley.Object).ParentSheetIndex == 858)
-                        {
-                            Game1.player.team.addQiGemsToTeam.Fire(this.heldItem.Stack);
-                            this.heldItem = null;
-                        }
-                        if (Game1.mouseClickPolling > 300)
-                        {
-                            if (this.purchaseRepeatSound != null)
-                            {
-                                Game1.playSound(this.purchaseRepeatSound);
-                            }
-                        }
-                        else if (this.purchaseSound != null)
-                        {
-                            Game1.playSound(this.purchaseSound);
-                        }
+                        Game1.playSound(this.purchaseSound);
                     }
                     if (this.onPurchase != null && this.onPurchase(item, Game1.player, numberToBuy))
                     {
@@ -1321,10 +795,6 @@ namespace StardewOutfitManager.Menus
                             this.itemPriceAndStock[item][1] -= numberToBuy;
                             this.forSale[indexInForSaleList].Stack -= numberToBuy;
                         }
-                        if (this.CanBuyback() && this.buyBackItems.Contains(item))
-                        {
-                            this.BuyBuybackItem(item, price, amountAddedToStack);
-                        }
                         ShopMenu.chargePlayer(Game1.player, this.currency, price);
                         if (Game1.mouseClickPolling > 300)
                         {
@@ -1340,10 +810,6 @@ namespace StardewOutfitManager.Menus
                         if (extraTradeItem != -1)
                         {
                             Game1.player.Items.ReduceId(extraTradeItem.ToString(), extraTradeItemCount);
-                        }
-                        if (!this._isStorageShop && item.actionWhenPurchased(this.storeContext))
-                        {
-                            this.heldItem = null;
                         }
                         if (this.onPurchase != null && this.onPurchase(item, Game1.player, numberToBuy))
                         {
@@ -1362,10 +828,6 @@ namespace StardewOutfitManager.Menus
             }
             if (this.itemPriceAndStock[item][1] <= 0)
             {
-                if (this.buyBackItems.Contains(item))
-                {
-                    this.buyBackItems.Remove(item);
-                }
                 this.hoveredItem = null;
                 return true;
             }
@@ -1375,83 +837,13 @@ namespace StardewOutfitManager.Menus
         public override void receiveRightClick(int x, int y, bool playSound = true)
         {
             Vector2 snappedPosition = this.inventory.snapToClickableComponent(x, y);
-            if (this.heldItem == null && !this.readOnly)
+            if (this.heldItem == null)
             {
                 ISalable toSell = this.inventory.rightClick(x, y, null, playSound: false);
                 if (toSell != null)
                 {
-                    if (this.onSell != null)
-                    {
-                        if (this.onSell(toSell))
-                        {
-                            toSell = null;
-                        }
-                    }
-                    else
-                    {
-                        int sell_unit_price = (int)((toSell is StardewValley.Object) ? ((float)(toSell as StardewValley.Object).sellToStorePrice(-1L) * this.sellPercentage) : ((float)(toSell.salePrice() / 2) * this.sellPercentage));
-                        int sell_stack = toSell.Stack;
-                        ISalable sold_item = toSell;
-                        ShopMenu.chargePlayer(Game1.player, this.currency, -sell_unit_price * sell_stack);
-                        ISalable buyback_item = null;
-                        if (this.CanBuyback())
-                        {
-                            buyback_item = this.AddBuybackItem(toSell, sell_unit_price, sell_stack);
-                        }
-                        toSell = null;
-                        if (Game1.mouseClickPolling > 300)
-                        {
-                            if (this.purchaseRepeatSound != null)
-                            {
-                                Game1.playSound(this.purchaseRepeatSound);
-                            }
-                        }
-                        else if (this.purchaseSound != null)
-                        {
-                            Game1.playSound(this.purchaseSound);
-                        }
-                        int coins = 2;
-                        for (int j = 0; j < coins; j++)
-                        {
-                            this.animations.Add(new TemporaryAnimatedSprite("TileSheets\\debris", new Rectangle(Game1.random.Next(2) * 16, 64, 16, 16), 9999f, 1, 999, snappedPosition + new Vector2(32f, 32f), flicker: false, flipped: false)
-                            {
-                                alphaFade = 0.025f,
-                                motion = new Vector2(Game1.random.Next(-3, 4), -4f),
-                                acceleration = new Vector2(0f, 0.5f),
-                                delayBeforeAnimationStart = j * 25,
-                                scale = 2f
-                            });
-                            this.animations.Add(new TemporaryAnimatedSprite("TileSheets\\debris", new Rectangle(Game1.random.Next(2) * 16, 64, 16, 16), 9999f, 1, 999, snappedPosition + new Vector2(32f, 32f), flicker: false, flipped: false)
-                            {
-                                scale = 4f,
-                                alphaFade = 0.025f,
-                                delayBeforeAnimationStart = j * 50,
-                                motion = Utility.getVelocityTowardPoint(new Point((int)snappedPosition.X + 32, (int)snappedPosition.Y + 32), new Vector2(base.xPositionOnScreen - 36, base.yPositionOnScreen + base.height - this.inventory.height - 16), 8f),
-                                acceleration = Utility.getVelocityTowardPoint(new Point((int)snappedPosition.X + 32, (int)snappedPosition.Y + 32), new Vector2(base.xPositionOnScreen - 36, base.yPositionOnScreen + base.height - this.inventory.height - 16), 0.5f)
-                            });
-                        }
-                        if (buyback_item != null && this.buyBackItemsToResellTomorrow.ContainsKey(buyback_item))
-                        {
-                            this.buyBackItemsToResellTomorrow[buyback_item].Stack += sell_stack;
-                        }
-                        else if (sold_item is StardewValley.Object && (sold_item as StardewValley.Object).Edibility != -300 && Game1.random.NextDouble() < 0.03999999910593033 && Game1.currentLocation is ShopLocation)
-                        {
-                            ISalable sell_back_instance = sold_item.GetSalableInstance();
-                            if (buyback_item != null)
-                            {
-                                this.buyBackItemsToResellTomorrow[buyback_item] = sell_back_instance;
-                            }
-                            (Game1.currentLocation as ShopLocation).itemsToStartSellingTomorrow.Add(sell_back_instance as Item);
-                        }
-                        if (this.inventory.getItemAt(x, y) == null)
-                        {
-                            Game1.playSound("sell");
-                            this.animations.Add(new TemporaryAnimatedSprite(5, snappedPosition + new Vector2(32f, 32f), Color.White)
-                            {
-                                motion = new Vector2(0f, -0.5f)
-                            });
-                        }
-                    }
+                    // Dresser uses onSell callback to deposit items
+                    this.onSell(toSell);
                 }
             }
             else
@@ -1474,20 +866,17 @@ namespace StardewOutfitManager.Menus
                 {
                     toBuy = ((!Game1.oldKBState.IsKeyDown(Keys.LeftShift)) ? 1 : Math.Min(Math.Min(Game1.oldKBState.IsKeyDown(Keys.LeftControl) ? 25 : 5, ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) / this.itemPriceAndStock[this.forSale[index]][0]), this.itemPriceAndStock[this.forSale[index]][1]));
                 }
-                if (this.canPurchaseCheck == null || this.canPurchaseCheck(index))
+                if (toBuy > 0 && this.tryToPurchaseItem(this.forSale[index], this.heldItem, toBuy, x, y, index))
                 {
-                    if (toBuy > 0 && this.tryToPurchaseItem(this.forSale[index], this.heldItem, toBuy, x, y, index))
-                    {
-                        this.itemPriceAndStock.Remove(this.forSale[index]);
-                        this.forSale.RemoveAt(index);
-                    }
-                    if (this.heldItem != null && (this._isStorageShop || Game1.options.SnappyMenus) && Game1.activeClickableMenu != null && Game1.activeClickableMenu is ShopMenu && Game1.player.addItemToInventoryBool(this.heldItem as Item))
-                    {
-                        this.heldItem = null;
-                        DelayedAction.playSoundAfterDelay("coin", 100);
-                    }
-                    this.setScrollBarToCurrentIndex();
+                    this.itemPriceAndStock.Remove(this.forSale[index]);
+                    this.forSale.RemoveAt(index);
                 }
+                if (this.heldItem != null && (this._isStorageShop || Game1.options.SnappyMenus) && Game1.activeClickableMenu != null && Game1.activeClickableMenu is ShopMenu && Game1.player.addItemToInventoryBool(this.heldItem as Item))
+                {
+                    this.heldItem = null;
+                    DelayedAction.playSoundAfterDelay("coin", 100);
+                }
+                this.setScrollBarToCurrentIndex();
                 break;
             }
         }
@@ -1495,7 +884,6 @@ namespace StardewOutfitManager.Menus
         public override void performHoverAction(int x, int y)
         {
             base.performHoverAction(x, y);
-            this.descriptionText = "";
             this.hoverText = "";
             this.hoveredItem = null;
             this.hoverPrice = -1;
@@ -1512,17 +900,14 @@ namespace StardewOutfitManager.Menus
                 if (this.currentItemIndex + i < this.forSale.Count && this.forSaleButtons[i].containsPoint(x, y))
                 {
                     ISalable item = this.forSale[this.currentItemIndex + i];
-                    if (this.canPurchaseCheck == null || this.canPurchaseCheck(this.currentItemIndex + i))
+                    this.hoverText = item.getDescription();
+                    this.boldTitleText = item.DisplayName;
+                    if (!this._isStorageShop)
                     {
-                        this.hoverText = item.getDescription();
-                        this.boldTitleText = item.DisplayName;
-                        if (!this._isStorageShop)
-                        {
-                            this.hoverPrice = ((this.itemPriceAndStock != null && this.itemPriceAndStock.ContainsKey(item)) ? this.itemPriceAndStock[item][0] : item.salePrice());
-                        }
-                        this.hoveredItem = item;
-                        this.forSaleButtons[i].scale = Math.Min(this.forSaleButtons[i].scale + 0.03f, 1.1f);
+                        this.hoverPrice = ((this.itemPriceAndStock != null && this.itemPriceAndStock.ContainsKey(item)) ? this.itemPriceAndStock[item][0] : item.salePrice());
                     }
+                    this.hoveredItem = item;
+                    this.forSaleButtons[i].scale = Math.Min(this.forSaleButtons[i].scale + 0.03f, 1.1f);
                 }
                 else
                 {
@@ -1544,19 +929,10 @@ namespace StardewOutfitManager.Menus
                 {
                     continue;
                 }
-                if (this._isStorageShop)
-                {
-                    this.hoverText = j.getDescription();
-                    this.boldTitleText = j.DisplayName;
-                    this.hoveredItem = j;
-                    continue;
-                }
-                this.hoverText = j.DisplayName + " x" + j.Stack;
-                if (j is StardewValley.Object hovered_object && hovered_object.needsToBeDonated())
-                {
-                    this.hoverText = this.hoverText + "\n\n" + j.getDescription() + "\n";
-                }
-                this.hoverPrice = (int)((j is StardewValley.Object) ? ((float)(j as StardewValley.Object).sellToStorePrice(-1L) * this.sellPercentage) : ((float)(j.salePrice() / 2) * this.sellPercentage)) * j.Stack;
+                // Dresser is always a storage shop
+                this.hoverText = j.getDescription();
+                this.boldTitleText = j.DisplayName;
+                this.hoveredItem = j;
             }
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
@@ -1636,23 +1012,8 @@ namespace StardewOutfitManager.Menus
         {
             base.width = 1000 + IClickableMenu.borderWidth * 2;
             base.height = 600 + IClickableMenu.borderWidth * 2;
-            base.xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
+            base.xPositionOnScreen = Game1.uiViewport.Width / 2 - (1000 + IClickableMenu.borderWidth * 2) / 2;
             base.yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
-            int num = base.xPositionOnScreen - 320;
-            bool has_portrait_to_draw = false;
-            if (this.portraitPerson != null)
-            {
-                has_portrait_to_draw = true;
-            }
-            if (this.potraitPersonDialogue != null && this.potraitPersonDialogue != "")
-            {
-                has_portrait_to_draw = true;
-            }
-            if (!(num > 0 && Game1.options.showMerchantPortraits && has_portrait_to_draw))
-            {
-                base.xPositionOnScreen = Game1.uiViewport.Width / 2 - (1000 + IClickableMenu.borderWidth * 2) / 2;
-                base.yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
-            }
         }
 
         protected override void cleanupBeforeExit()
@@ -1695,6 +1056,8 @@ namespace StardewOutfitManager.Menus
             {
                 item.upNeighborID = -99998;
             }
+            // Reposition top menu tabs
+            menuManager.repositionTopTabButtons(this);
         }
 
         public void setItemPriceAndStock(Dictionary<ISalable, int[]> new_stock)
@@ -1730,11 +1093,6 @@ namespace StardewOutfitManager.Menus
                 {
                     continue;
                 }
-                bool failedCanPurchaseCheck = false;
-                if (this.canPurchaseCheck != null && !this.canPurchaseCheck(this.currentItemIndex + k))
-                {
-                    failedCanPurchaseCheck = true;
-                }
                 IClickableMenu.drawTextureBox(b, purchase_texture, purchase_item_rect, this.forSaleButtons[k].bounds.X, this.forSaleButtons[k].bounds.Y, this.forSaleButtons[k].bounds.Width, this.forSaleButtons[k].bounds.Height, (this.forSaleButtons[k].containsPoint(Game1.getOldMouseX(), Game1.getOldMouseY()) && !this.scrolling) ? purchase_selected_color : Color.White, 4f, drawShadow: false);
                 ISalable item = this.forSale[this.currentItemIndex + k];
                 bool buyInStacks = item.Stack > 1 && item.Stack != int.MaxValue && this.itemPriceAndStock[item][1] == int.MaxValue;
@@ -1762,21 +1120,17 @@ namespace StardewOutfitManager.Menus
                     {
                         b.Draw(purchase_texture, new Vector2(this.forSaleButtons[k].bounds.X + 32 - 12, this.forSaleButtons[k].bounds.Y + 24 - 4), purchase_item_background, Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
                     }
-                    this.forSale[this.currentItemIndex + k].drawInMenu(b, new Vector2(this.forSaleButtons[k].bounds.X + 32 - 8, this.forSaleButtons[k].bounds.Y + 24), 1f, 1f, 0.9f, stackDrawType, Color.White * ((!failedCanPurchaseCheck) ? 1f : 0.25f), drawShadow: true);
-                    if (this.buyBackItems.Contains(this.forSale[this.currentItemIndex + k]))
-                    {
-                        b.Draw(Game1.mouseCursors2, new Vector2(this.forSaleButtons[k].bounds.X + 32 - 8, this.forSaleButtons[k].bounds.Y + 24), new Rectangle(64, 240, 16, 16), Color.White * ((!failedCanPurchaseCheck) ? 1f : 0.25f), 0f, new Vector2(8f, 8f), 4f, SpriteEffects.None, 1f);
-                    }
-                    SpriteText.drawString(b, displayName, this.forSaleButtons[k].bounds.X + 96 + 8, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, failedCanPurchaseCheck ? 0.5f : 1f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
+                    this.forSale[this.currentItemIndex + k].drawInMenu(b, new Vector2(this.forSaleButtons[k].bounds.X + 32 - 8, this.forSaleButtons[k].bounds.Y + 24), 1f, 1f, 0.9f, stackDrawType, Color.White, drawShadow: true);
+                    SpriteText.drawString(b, displayName, this.forSaleButtons[k].bounds.X + 96 + 8, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, 1f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
                 }
                 else
                 {
-                    SpriteText.drawString(b, displayName, this.forSaleButtons[k].bounds.X + 32 + 8, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, failedCanPurchaseCheck ? 0.5f : 1f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
+                    SpriteText.drawString(b, displayName, this.forSaleButtons[k].bounds.X + 32 + 8, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, 1f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
                 }
                 if (this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] > 0)
                 {
-                    SpriteText.drawString(b, this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] + " ", this.forSaleButtons[k].bounds.Right - SpriteText.getWidthOfString(this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] + " ") - 60, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] && !failedCanPurchaseCheck) ? 1f : 0.5f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
-                    Utility.drawWithShadow(b, Game1.mouseCursors, new Vector2(this.forSaleButtons[k].bounds.Right - 52, this.forSaleButtons[k].bounds.Y + 40 - 4), new Rectangle(193 + this.currency * 9, 373, 9, 10), Color.White * ((!failedCanPurchaseCheck) ? 1f : 0.25f), 0f, Vector2.Zero, 4f, flipped: false, 1f, -1, -1, (!failedCanPurchaseCheck) ? 0.35f : 0f);
+                    SpriteText.drawString(b, this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] + " ", this.forSaleButtons[k].bounds.Right - SpriteText.getWidthOfString(this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0] + " ") - 60, this.forSaleButtons[k].bounds.Y + 28, 999999, -1, 999999, (ShopMenu.getPlayerCurrencyAmount(Game1.player, this.currency) >= this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][0]) ? 1f : 0.5f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
+                    Utility.drawWithShadow(b, Game1.mouseCursors, new Vector2(this.forSaleButtons[k].bounds.Right - 52, this.forSaleButtons[k].bounds.Y + 40 - 4), new Rectangle(193 + this.currency * 9, 373, 9, 10), Color.White, 0f, Vector2.Zero, 4f, flipped: false, 1f, -1, -1, 0.35f);
                 }
                 else if (this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]].Length > 2)
                 {
@@ -1787,10 +1141,6 @@ namespace StardewOutfitManager.Menus
                         required_item_count = this.itemPriceAndStock[this.forSale[this.currentItemIndex + k]][3];
                     }
                     bool hasEnoughToTrade = Game1.player.Items.ContainsId(requiredItem.ToString(), required_item_count);
-                    if (this.canPurchaseCheck != null && !this.canPurchaseCheck(this.currentItemIndex + k))
-                    {
-                        hasEnoughToTrade = false;
-                    }
                     float textWidth = SpriteText.getWidthOfString("x" + required_item_count);
                     Utility.drawWithShadow(b, Game1.objectSpriteSheet, new Vector2((float)(this.forSaleButtons[k].bounds.Right - 88) - textWidth, this.forSaleButtons[k].bounds.Y + 28 - 4), Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, requiredItem, 16, 16), Color.White * (hasEnoughToTrade ? 1f : 0.25f), 0f, Vector2.Zero, -1f, flipped: false, -1f, -1, -1, hasEnoughToTrade ? 0.35f : 0f);
                     SpriteText.drawString(b, "x" + required_item_count, this.forSaleButtons[k].bounds.Right - (int)textWidth - 16, this.forSaleButtons[k].bounds.Y + 44, 999999, -1, 999999, hasEnoughToTrade ? 1f : 0.5f, 0.88f, junimoText: false, -1, "", purchase_item_text_color);
@@ -1842,26 +1192,6 @@ namespace StardewOutfitManager.Menus
             if (this.heldItem != null)
             {
                 this.heldItem.drawInMenu(b, new Vector2(Game1.getOldMouseX() + 8, Game1.getOldMouseY() + 8), 1f, 1f, 0.9f, StackDrawType.Draw, Color.White, drawShadow: true);
-            }
-            int portrait_draw_position = base.xPositionOnScreen - 320;
-            if (portrait_draw_position > 0 && Game1.options.showMerchantPortraits)
-            {
-                if (this.portraitPerson != null)
-                {
-                    Utility.drawWithShadow(b, Game1.mouseCursors, new Vector2(portrait_draw_position, base.yPositionOnScreen), new Rectangle(603, 414, 74, 74), Color.White, 0f, Vector2.Zero, 4f, flipped: false, 0.91f);
-                    if (this.portraitPerson.Portrait != null)
-                    {
-                        b.Draw(this.portraitPerson.Portrait, new Vector2(portrait_draw_position + 20, base.yPositionOnScreen + 20), new Rectangle(0, 0, 64, 64), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 0.92f);
-                    }
-                }
-                if (this.potraitPersonDialogue != null)
-                {
-                    portrait_draw_position = base.xPositionOnScreen - (int)Game1.dialogueFont.MeasureString(this.potraitPersonDialogue).X - 64;
-                    if (portrait_draw_position > 0)
-                    {
-                        IClickableMenu.drawHoverText(b, this.potraitPersonDialogue, Game1.dialogueFont, 0, 0, -1, null, -1, null, null, 0, null, -1, portrait_draw_position, base.yPositionOnScreen + ((this.portraitPerson != null) ? 312 : 0));
-                    }
-                }
             }
             base.drawMouse(b);
         }

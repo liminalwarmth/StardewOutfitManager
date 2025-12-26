@@ -40,7 +40,7 @@ namespace StardewOutfitManager
             // Checked events
             helper.Events.Display.RenderingActiveMenu += OnMenuRender;
             helper.Events.Input.ButtonsChanged += OnButtonsChanged;
-            helper.Events.GameLoop.Saved += OnSaved;
+            helper.Events.GameLoop.DayEnding += OnDayEnding;
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
@@ -105,8 +105,8 @@ namespace StardewOutfitManager
             }
         }
 
-        // Save favorites data file after the player saves their game and the object tags have been written into the save
-        private void OnSaved(object sender, SavedEventArgs e)
+        // Save favorites data file at end of day (before save dialog)
+        private void OnDayEnding(object sender, DayEndingEventArgs e)
         {
             playerManager.saveFavoritesDataToFile();
         }

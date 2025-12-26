@@ -173,7 +173,7 @@ namespace StardewOutfitManager.Menus
             {
                 myID = 1000,
                 downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                upNeighborID = 2000, // first top tab
+                upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR, // wrap to Accessory (1005)
                 leftNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 rightNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 region = LABELS
@@ -254,6 +254,7 @@ namespace StardewOutfitManager.Menus
             {
                 myID = 1005,
                 upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR, // wrap to Hat (1000)
                 leftNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 rightNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR,
                 region = LABELS
@@ -414,12 +415,26 @@ namespace StardewOutfitManager.Menus
             {
                 // Label List
                 case LABELS:
-                    // Direction will be 1 (right) or 3 (left) with one exception for these
-                    int change = direction == 1 ? 1 : -1;
-                    // Left and Right Change the Current Item in Slot
-                    if (direction != 2 && direction != 0)
+                    // Direction: 0 = up, 1 = right, 2 = down, 3 = left
+                    if (direction == 1 || direction == 3)
                     {
+                        // Left and Right change the current item in slot
+                        int change = direction == 1 ? 1 : -1;
                         SelectionClick(getCurrentlySnappedComponent().name, change);
+                    }
+                    else if (direction == 0 && oldID == 1000)
+                    {
+                        // Up from Hat (1000) wraps to Accessory (1005)
+                        setCurrentlySnappedComponentTo(1005);
+                        snapCursorToCurrentSnappedComponent();
+                        Game1.playSound("shiny4");
+                    }
+                    else if (direction == 2 && oldID == 1005)
+                    {
+                        // Down from Accessory (1005) wraps to Hat (1000)
+                        setCurrentlySnappedComponentTo(1000);
+                        snapCursorToCurrentSnappedComponent();
+                        Game1.playSound("shiny4");
                     }
                     break;
 
@@ -596,15 +611,67 @@ namespace StardewOutfitManager.Menus
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
-        // *TODO* Game Window Resize
+        // Game Window Resize - reposition all UI elements
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             base.gameWindowSizeChanged(oldBounds, newBounds);
+
+            // Recalculate base menu position
             xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
             yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
 
-            // TODO: Reposition buttons
-            // TODO: Reposition tabs?
+            // Reposition portrait box
+            _portraitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
+
+            // Reposition equipment icons
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
+            equipmentIcons[0].bounds = new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64);           // Hat
+            equipmentIcons[1].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64);      // Shirt
+            equipmentIcons[2].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64); // Pants
+            equipmentIcons[3].bounds = new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64);      // Boots
+            equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
+            equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
+
+            // Reposition selection buttons
+            int selectorBtnsX = xPositionOnScreen + width / 2 + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder - 120;
+            int selectorBtnsY = _portraitBox.Y - 32;
+            int yBtnSpacing = 96;
+            int arrowOffset = 8;
+            int labelSpacing = 4;
+
+            // Direction buttons
+            leftSelectionButtons[0].bounds = new Rectangle(_portraitBox.X - 40, _portraitBox.Bottom - 24, 60, 60);
+            rightSelectionButtons[0].bounds = new Rectangle(_portraitBox.X + 256 - 40, _portraitBox.Bottom - 24, 60, 60);
+
+            // Hat, Shirt, Pants, Shoes, Hair, Accessory buttons and labels (indices 1-6)
+            for (int i = 0; i < 6; i++)
+            {
+                int yOffset = i * yBtnSpacing;
+                leftSelectionButtons[i + 1].bounds = new Rectangle(selectorBtnsX - 64, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48);
+                rightSelectionButtons[i + 1].bounds = new Rectangle(selectorBtnsX + 128, selectorBtnsY + yOffset + 16 + arrowOffset, 48, 48);
+                labels[i].bounds = new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 28, 1, 1);
+                itemLabels[i].bounds = new Rectangle(selectorBtnsX + 128 - 86, selectorBtnsY + yOffset + 69 + labelSpacing, 1, 1);
+            }
+
+            // Reposition OK button
+            okButton.bounds = new Rectangle(xPositionOnScreen + width - borderWidth - spaceToClearSideBorder - 56, yPositionOnScreen + height - borderWidth - spaceToClearTopBorder + 28, 64, 64);
+
+            // Reposition category buttons
+            int catXpos = xPositionOnScreen + width - borderWidth - spaceToClearSideBorder - 280;
+            int catYpos = _portraitBox.Y;
+            categoryButtons[0].bounds = new Rectangle(catXpos, catYpos, 88, 72);
+            categoryButtons[1].bounds = new Rectangle(catXpos + 90, catYpos, 88, 72);
+            categoryButtons[2].bounds = new Rectangle(catXpos + 180, catYpos, 88, 72);
+            categoryButtons[3].bounds = new Rectangle(catXpos + 45, catYpos + 80, 88, 72);
+            categoryButtons[4].bounds = new Rectangle(catXpos + 135, catYpos + 80, 88, 72);
+
+            // Reposition save favorite button
+            saveFavoriteBox = new Rectangle(catXpos + 45, catYpos + 160, 178, 72);
+            saveFavoriteButton.bounds = saveFavoriteBox;
+
+            // Reposition top tabs
+            menuManager.repositionTopTabButtons(this);
         }
 
         // ** DRAW **

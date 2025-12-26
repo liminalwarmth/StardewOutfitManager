@@ -229,6 +229,23 @@ namespace StardewOutfitManager.Managers
             }
         }
 
+        // Reposition top tab buttons on window resize
+        public void repositionTopTabButtons(IClickableMenu baseMenu)
+        {
+            if (topbarButtons.Count >= 3)
+            {
+                tabYPosition = baseMenu.yPositionOnScreen - IClickableMenu.spaceToClearTopBorder + 32;
+                int baseX = baseMenu.xPositionOnScreen + baseMenu.width - IClickableMenu.spaceToClearSideBorder - 192;
+
+                wardrobeButton.bounds = new Rectangle(baseX, tabYPosition, 64, 64);
+                favoritesButton.bounds = new Rectangle(baseX + 64, tabYPosition, 64, 64);
+                dresserButton.bounds = new Rectangle(baseX + 128, tabYPosition, 64, 64);
+
+                // Re-apply active tab offset
+                positionActiveTab(currentTab);
+            }
+        }
+
         // Universal Menu Controls
 
         // Set up this cleanup behavior in the menus so that the top tabs are always cleared

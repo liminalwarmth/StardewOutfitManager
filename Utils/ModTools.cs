@@ -176,13 +176,13 @@ namespace StardewOutfitManager.Utils
                     hairstyleSourceRect = new Rectangle(hair_metadata.tileX * 16, hair_metadata.tileY * 16, 16, 32);
                 }
                 Rectangle accessorySourceRect = ((int)who.accessory.Value >= 0) ? accessorySourceRect = new Rectangle((int)who.accessory.Value * 16 % FarmerRenderer.accessoriesTexture.Width, (int)who.accessory.Value * 16 / FarmerRenderer.accessoriesTexture.Width * 32, 16, 16) : new Rectangle();
-                // SDV 1.6: Hat now uses string ItemId, get sprite index by parsing ItemId (base game hats use numeric IDs)
-                int hatSpriteIndex = 0;
-                if (who.hat.Value != null && int.TryParse(who.hat.Value.ItemId, out int parsedIndex))
+                // SDV 1.6: Use ParentSheetIndex for hat sprite (works for both base game and modded hats)
+                Rectangle hatSourceRect = new Rectangle();
+                if (who.hat.Value != null)
                 {
-                    hatSpriteIndex = parsedIndex;
+                    int hatSpriteIndex = who.hat.Value.ParentSheetIndex;
+                    hatSourceRect = new Rectangle(20 * hatSpriteIndex % FarmerRenderer.hatsTexture.Width, 20 * hatSpriteIndex / FarmerRenderer.hatsTexture.Width * 20 * 4, 20, 20);
                 }
-                Rectangle hatSourceRect = (who.hat.Value != null) ? new Rectangle(20 * hatSpriteIndex % FarmerRenderer.hatsTexture.Width, 20 * hatSpriteIndex / FarmerRenderer.hatsTexture.Width * 20 * 4, 20, 20) : new Rectangle();
                 Rectangle dyed_shirt_source_rect = shirtSourceRect;
                 float dye_layer_offset = 1E-07f;
                 float hair_draw_layer = 2.2E-05f;
