@@ -270,6 +270,10 @@ namespace StardewOutfitManager.Menus
 
         // ** FAVORITES MENU CLASS **
 
+        // Layout constants
+        private const int OUTFITS_PER_ROW = 4;
+        private const int VISIBLE_ROWS = 2;
+
         // Reference Dresser Object
         internal StorageFurniture dresserObject = StardewOutfitManager.playerManager.menuManager.Value.dresserObject;
         // Reference Top Tab Menu Manager
@@ -663,38 +667,39 @@ namespace StardewOutfitManager.Menus
                 else { outfitButtons[i].visible = false; }
             }
             
-            // Set navigation to visible if there are more than 8 outfits
-            upArrow.visible = outfitSlotsFiltered.Count > 8;
-            downArrow.visible = outfitSlotsFiltered.Count > 8;
-            scrollBar.visible = outfitSlotsFiltered.Count > 8;
-            
+            // Set navigation to visible if there are more outfits than fit on screen
+            int visibleSlots = OUTFITS_PER_ROW * VISIBLE_ROWS;
+            upArrow.visible = outfitSlotsFiltered.Count > visibleSlots;
+            downArrow.visible = outfitSlotsFiltered.Count > visibleSlots;
+            scrollBar.visible = outfitSlotsFiltered.Count > visibleSlots;
+
             // If the outfit index is 0 (top of outfits)...
             if (currentOutfitIndex == 0)
             {
                 // Set the top row to auto-snap up
-                for (int i = 0; i < 4; i++) { outfitButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
-                // If there are more than 8 slots, set the bottom row to custom snap down
-                if (outfitSlotsFiltered.Count > 8) { for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; } }
+                for (int i = 0; i < OUTFITS_PER_ROW; i++) { outfitButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
+                // If there are more than visible slots, set the bottom row to custom snap down
+                if (outfitSlotsFiltered.Count > visibleSlots) { for (int i = OUTFITS_PER_ROW; i < visibleSlots; i++) { outfitButtons[i].downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; } }
                 // Otherwise set them to auto-snap down
-                else { for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; } }
+                else { for (int i = OUTFITS_PER_ROW; i < visibleSlots; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; } }
             }
             // If we're at the bottom of the index but it's not 0
-            else if (currentOutfitIndex + 4 >= outfitSlotsFiltered.Count - 4)
+            else if (currentOutfitIndex + OUTFITS_PER_ROW >= outfitSlotsFiltered.Count - OUTFITS_PER_ROW)
             {
                 // Set the top row to custom snap up
-                for (int i = 0; i < 4; i++) { outfitButtons[i].upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; }
+                for (int i = 0; i < OUTFITS_PER_ROW; i++) { outfitButtons[i].upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR; }
                 // Set the bottom row to auto-snap down
-                for (int i = 4; i < 8; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
+                for (int i = OUTFITS_PER_ROW; i < visibleSlots; i++) { outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC; }
             }
             // Otherwise the top row should custom snap up and auto-snap down and the bottom row should custom snap down and auto-snap up
             else
             {
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < OUTFITS_PER_ROW; i++)
                 {
                     outfitButtons[i].upNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR;
                     outfitButtons[i].downNeighborID = ClickableComponent.SNAP_AUTOMATIC;
                 }
-                for (int i = 4; i < 8; i++)
+                for (int i = OUTFITS_PER_ROW; i < visibleSlots; i++)
                 {
                     outfitButtons[i].upNeighborID = ClickableComponent.SNAP_AUTOMATIC;
                     outfitButtons[i].downNeighborID = ClickableComponent.CUSTOM_SNAP_BEHAVIOR;
@@ -953,10 +958,11 @@ namespace StardewOutfitManager.Menus
                 if (scrollRange > 0)
                 {
                     float percentage = (float)(scrollBar.bounds.Y - scrollBarRunner.Y) / scrollRange;
-                    int totalRows = (int)Math.Ceiling((float)outfitSlotsFiltered.Count / 4);
-                    int scrollableRows = Math.Max(0, totalRows - 2); // 2 visible rows
-                    int newIndex = (int)(scrollableRows * percentage) * 4;
-                    newIndex = Math.Max(0, Math.Min(newIndex, Math.Max(0, outfitSlotsFiltered.Count - 8)));
+                    int totalRows = (int)Math.Ceiling((float)outfitSlotsFiltered.Count / OUTFITS_PER_ROW);
+                    int scrollableRows = Math.Max(0, totalRows - VISIBLE_ROWS);
+                    int newIndex = (int)(scrollableRows * percentage) * OUTFITS_PER_ROW;
+                    int maxIndex = Math.Max(0, outfitSlotsFiltered.Count - (OUTFITS_PER_ROW * VISIBLE_ROWS));
+                    newIndex = Math.Max(0, Math.Min(newIndex, maxIndex));
 
                     if (newIndex != currentOutfitIndex)
                     {
@@ -976,14 +982,15 @@ namespace StardewOutfitManager.Menus
         public override void receiveScrollWheelAction(int direction)
         {
             base.receiveScrollWheelAction(direction);
-            if (outfitSlotsFiltered.Count > 8)
+            int visibleSlots = OUTFITS_PER_ROW * VISIBLE_ROWS;
+            if (outfitSlotsFiltered.Count > visibleSlots)
             {
                 if (direction > 0 && currentOutfitIndex > 0)
                 {
                     this.upArrowPressed();
                     Game1.playSound("shiny4");
                 }
-                else if (direction < 0 && currentOutfitIndex + 4 < outfitSlotsFiltered.Count - 4)
+                else if (direction < 0 && currentOutfitIndex + OUTFITS_PER_ROW < outfitSlotsFiltered.Count - OUTFITS_PER_ROW)
                 {
                     this.downArrowPressed();
                     Game1.playSound("shiny4");
@@ -994,9 +1001,9 @@ namespace StardewOutfitManager.Menus
         private void downArrowPressed()
         {
             downArrow.scale = downArrow.baseScale;
-            if (currentOutfitIndex + 4 < outfitSlotsFiltered.Count - 4)
+            if (currentOutfitIndex + OUTFITS_PER_ROW < outfitSlotsFiltered.Count - OUTFITS_PER_ROW)
             {
-                currentOutfitIndex += 4;
+                currentOutfitIndex += OUTFITS_PER_ROW;
             }
             setScrollBarToCurrentIndex();
             UpdateOutfitButtonsAndSlots();
@@ -1007,7 +1014,7 @@ namespace StardewOutfitManager.Menus
             upArrow.scale = upArrow.baseScale;
             if (currentOutfitIndex > 0)
             {
-                currentOutfitIndex -= 4;
+                currentOutfitIndex -= OUTFITS_PER_ROW;
             }
             setScrollBarToCurrentIndex();
             UpdateOutfitButtonsAndSlots();
@@ -1015,9 +1022,9 @@ namespace StardewOutfitManager.Menus
 
         private void setScrollBarToCurrentIndex()
         {
-            int totalRows = (int)Math.Ceiling((float)outfitSlotsFiltered.Count / 4);
-            int scrollableRows = Math.Max(1, totalRows - 2); // 2 visible rows
-            int currentRow = currentOutfitIndex / 4;
+            int totalRows = (int)Math.Ceiling((float)outfitSlotsFiltered.Count / OUTFITS_PER_ROW);
+            int scrollableRows = Math.Max(1, totalRows - VISIBLE_ROWS);
+            int currentRow = currentOutfitIndex / OUTFITS_PER_ROW;
             float percentage = Math.Min(1f, (float)currentRow / scrollableRows);
             int scrollRange = scrollBarRunner.Height - scrollBar.bounds.Height;
             scrollBar.bounds.Y = scrollBarRunner.Y + (int)(scrollRange * percentage);
