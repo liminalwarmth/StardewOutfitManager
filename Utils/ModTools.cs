@@ -29,7 +29,7 @@ namespace StardewOutfitManager.Utils
                 position = new Vector2((float)Math.Floor(position.X), (float)Math.Floor(position.Y));
                 var rotationAdjustment = Vector2.Zero;
                 var positionOffset = new Vector2(animationFrame.xOffset * 4 * scale, animationFrame.positionOffset * 4 * scale);
-                var baseTexture = AccessTools.FieldRefAccess<FarmerRenderer, Texture2D>(Game1.player.FarmerRenderer, "baseTexture");
+                var baseTexture = AccessTools.FieldRefAccess<FarmerRenderer, Texture2D>(who.FarmerRenderer, "baseTexture");
                 var pantsTexture = FarmerRenderer.pantsTexture;
 
                 // Draw Body
