@@ -4,6 +4,125 @@ Entries are listed newest-first. Review this before starting any task.
 
 ---
 
+## 2025-12-25 19:00 - Feature Requests from idea.txt
+
+**Task:** Implement remaining items from idea.txt (#8, #9, #10)
+
+### Changes Made
+
+**1. Save Favorites at End of Day** (`StardewOutfitManager.cs`)
+- Changed from `GameLoop.Saved` event to `GameLoop.DayEnding` event
+- Favorites now save before the save dialog appears, ensuring data is persisted even if the game crashes during save
+
+**2. Label Cycling Wrap-Around** (`WardrobeMenu.cs`)
+- Gamepad navigation now wraps: pressing up on Hat (top) goes to Accessory (bottom), and vice versa
+- Updated `customSnapBehavior()` to handle direction 0 (up) and 2 (down) for wrap-around
+- Added `CUSTOM_SNAP_BEHAVIOR` to Hat's `upNeighborID` and Accessory's `downNeighborID`
+- Play "shiny4" sound on wrap for feedback
+
+**3. Season Default Category** - Already Implemented
+- Verified: `FavoritesMenu.cs:397` correctly sets default category to current season when menu opens
+- Spring/Summer/Fall/Winter detected via `Game1.IsSpring` etc., falls back to "All Outfits"
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-25 18:00 - Bug Fixes & Improvements
+
+**Task:** Fix bugs and issues identified during codebase review
+
+### Bug Fixes
+
+**1. Outfit Slot Click Bounds Check** (`FavoritesMenu.cs:868`)
+- Added bounds check before accessing `outfitSlotsFiltered` array to prevent index out of bounds crash
+
+**2. Sorting Logic Inverted** (`FavoritesMenu.cs:650-653`)
+- Fixed: `isFavorite == false` items were going to `favorited` list (backwards)
+- Now correctly sorts: favorited → regular → unavailable+favorited → unavailable
+
+**3. Custom Hat Sprite Lookup** (`ModTools.cs:183`)
+- Changed from parsing `Hat.ItemId` string to using `Hat.ParentSheetIndex`
+- Now works correctly with modded hats that have non-numeric ItemIds
+
+**4. Hover Display Using Wrong Data** (`FavoritesMenu.cs:142-184`)
+- Hover infobox was checking `Game1.player` equipment instead of the outfit slot's data
+- Now uses `outfitAvailabileItems` dictionary from the slot being hovered
+
+### Code Cleanup
+
+**5. Removed Unused AssetManager Fields**
+- Removed: `wardrobeBackgroundTexture`, `bgTextureSpring`, `bgTextureSummer`, `bgTextureFall`, `bgTextureWinter`
+- Removed: Empty `AssembleHairIndex()` method stub
+- Removed: Unused `using` statements
+
+### Feature Implementation
+
+**6. Window Resize Handling** (All menus)
+- **FavoritesMenu**: Full reposition of portrait, rotation buttons, OK button, outfit box, navigation arrows, scrollbar, category buttons, outfit buttons
+- **WardrobeMenu**: Full reposition of portrait, equipment icons, selection buttons, labels, category buttons, save favorite button
+- **NewDresserMenu**: Added top tab repositioning to existing resize handler
+- **MenuManager**: Added `repositionTopTabButtons()` method for consistent tab positioning
+
+### Multiplayer Compatibility
+- All fixes maintain split-screen local co-op support through `PerScreen<>` state management
+- No changes to dresser mutex locking behavior
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-25 17:00 - SDV 1.6 ShopMenu Comparison
+
+**Task:** Compare cleaned NewDresserMenu against SDV 1.6 ShopMenu for potential improvements
+
+### Conclusion: No Changes Needed
+
+SDV 1.6's ShopMenu improvements (`ItemStockInformation` struct, `ShopTabClickableTextureComponent` with Filter lambdas, safety timer) are designed for commerce shops with prices/trades. Our dresser is a free inventory view - these patterns don't apply.
+
+The dresser tab is tangential to the mod's core value (Wardrobe/Favorites). Current implementation works correctly post-cleanup.
+
+---
+
+## 2025-12-25 16:00 - NewDresserMenu.cs Cleanup
+
+**Task:** Remove dead code from cloned ShopMenu (SDV 1.5.6)
+
+### Summary
+Aggressive refactor of `NewDresserMenu.cs` to remove all cruft that was irrelevant to the Dresser use case. The file was originally copied from SDV 1.5.6's ShopMenu and contained code for NPCs, other store contexts, currency types, buyback systems, etc.
+
+**Lines removed:** ~673 (1870 → 1197, 36% reduction)
+
+### Changes Made
+
+**Removed Unused Fields:**
+- `descriptionText`, `canPurchaseCheck`, `readOnly` (fixed build warnings)
+- `portraitPerson`, `potraitPersonDialogue` (NPC portraits never used)
+- `sellPercentage` (always 1.0)
+- `buyBackItems`, `buyBackItemsToResellTomorrow` (dresser bypasses buyback)
+
+**Removed Dead Methods:**
+- `setUpShopOwner()` - 230+ lines of NPC dialogue for Robin, Clint, Willy, Pierre, etc.
+- `CanBuyback()`, `BuyBuybackItem()`, `AddBuybackItem()` - buyback system not used
+
+**Removed Dead Code Blocks:**
+- Portrait drawing in `draw()` and `updatePosition()`
+- Default sell behavior in `receiveLeftClick()` and `receiveRightClick()` - dresser uses `onSell` callback
+- Non-Dresser `storeContext` checks (Catalogue, Furniture Catalogue, QiGemShop, etc.)
+- `actionWhenPurchased()` calls - always skipped for storage shops
+
+**Simplified:**
+- `applyTab()` - removed Catalogue/Furniture Catalogue logic, kept only Dresser tab filtering
+- `performHoverAction()` - removed non-storage-shop sell price display
+
+**Files Modified:** `Menus/NewDresserMenu.cs`
+
+**Build Status:** Compiles with no warnings in NewDresserMenu.cs
+
+---
+
 ## 2025-12-25 - PR Review Fixes
 
 **Task:** Address PR review feedback for cleaner code

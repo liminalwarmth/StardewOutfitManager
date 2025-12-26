@@ -134,82 +134,52 @@ namespace StardewOutfitManager.Menus
                 if (isHovered)
                 {
                     // Draw box
-                    
+
                     // Draw outfit name
 
                     // Draw last worn text
 
-                    // Draw item availability
+                    // Draw item availability using outfit slot's data (not Game1.player)
                     foreach (ClickableComponent c in itemAvailabilityIcons)
                     {
-                        switch (c.name)
+                        // Map component names to outfit availability dictionary keys
+                        string slotKey = c.name switch
                         {
-                            case "Hat":
-                                if (Game1.player.hat.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.hat.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 42), Color.White);
-                                }
-                                break;
-                            case "Right Ring":
-                                if (Game1.player.rightRing.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.rightRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
-                                }
-                                break;
-                            case "Left Ring":
-                                if (Game1.player.leftRing.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.leftRing.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 41), Color.White);
-                                }
-                                break;
-                            case "Boots":
-                                if (Game1.player.boots.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.boots.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 40), Color.White);
-                                }
-                                break;
-                            case "Shirt":
-                                if (Game1.player.shirtItem.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.shirtItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 69), Color.White);
-                                }
-                                break;
-                            case "Pants":
-                                if (Game1.player.pantsItem.Value != null)
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                                    Game1.player.pantsItem.Value.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale);
-                                }
-                                else
-                                {
-                                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 68), Color.White);
-                                }
-                                break;
+                            "Hat" => "Hat",
+                            "Shirt" => "Shirt",
+                            "Pants" => "Pants",
+                            "Boots" => "Shoes",
+                            "Left Ring" => "LeftRing",
+                            "Right Ring" => "RightRing",
+                            _ => null
+                        };
+
+                        // Get the item from this outfit slot's availability (or null if not in outfit/unavailable)
+                        Item slotItem = null;
+                        if (slotKey != null && outfitAvailabileItems.ContainsKey(slotKey))
+                        {
+                            slotItem = outfitAvailabileItems[slotKey];
+                        }
+
+                        // Get the empty slot icon based on slot type
+                        int emptySlotIcon = c.name switch
+                        {
+                            "Hat" => 42,
+                            "Shirt" => 69,
+                            "Pants" => 68,
+                            "Boots" => 40,
+                            "Left Ring" or "Right Ring" => 41,
+                            _ => 10
+                        };
+
+                        if (slotItem != null)
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                            slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
+                        }
+                        else
+                        {
+                            b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White);
                         }
                     }
                 }
@@ -636,7 +606,7 @@ namespace StardewOutfitManager.Menus
                     filtered = spring.Concat(summer).Concat(fall).Concat(winter).Concat(special).ToList();
                 }
 
-                // Sort filtered list (can nest this conditionally if desired because it changes filtered)
+                // Sort filtered list: favorited first, then regular, then unavailable (favorited unavailable before regular unavailable)
                 if (filtered.Count > 0)
                 {
                     List<OutfitSlot> favorited = new();
@@ -645,12 +615,12 @@ namespace StardewOutfitManager.Menus
                     List<OutfitSlot> unavailable = new();
                     foreach (OutfitSlot slot in filtered)
                     {
-                        if (slot.isAvailable == false && slot.isFavorite == true) { unavailableAndFavorite.Add(slot); }
-                        else if (slot.isAvailable == false) { unavailable.Add(slot); }
-                        else if (slot.isFavorite == false) { favorited.Add(slot); }
+                        if (!slot.isAvailable && slot.isFavorite) { unavailableAndFavorite.Add(slot); }
+                        else if (!slot.isAvailable) { unavailable.Add(slot); }
+                        else if (slot.isFavorite) { favorited.Add(slot); }
                         else { regular.Add(slot); }
                     }
-                    filtered = regular.Concat(favorited).Concat(unavailableAndFavorite).Concat(unavailable).ToList();
+                    filtered = favorited.Concat(regular).Concat(unavailableAndFavorite).Concat(unavailable).ToList();
                 }
 
                 // Set the filtered list to the ordered slots
@@ -864,8 +834,11 @@ namespace StardewOutfitManager.Menus
             // Outfit Slot Buttons
             for (int i = 0; i < 8; i++)
             {
-                // Set this outfit to the selected outfit
-                if (outfitButtons[i].containsPoint(x, y)) { outfitSlotsFiltered[currentOutfitIndex + i].Select(); }
+                // Set this outfit to the selected outfit (with bounds check for safety)
+                if (outfitButtons[i].containsPoint(x, y) && currentOutfitIndex + i < outfitSlotsFiltered.Count)
+                {
+                    outfitSlotsFiltered[currentOutfitIndex + i].Select();
+                }
             }
 
             // Category buttons
@@ -942,16 +915,55 @@ namespace StardewOutfitManager.Menus
             menuManager.handleTopBarOnHover(x, y, ref hoverText);
         }
 
-        // *TODO* Game Window Resize
-            // Make this happen
+        // Game Window Resize - reposition all UI elements
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
             base.gameWindowSizeChanged(oldBounds, newBounds);
+
+            // Recalculate base menu position
             xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
             yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
 
-            // TODO: Reposition buttons
-            // TODO: Reposition tabs?
+            // Reposition portrait and farmer display
+            _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
+            leftRotationButton.bounds = new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60);
+            rightRotationButton.bounds = new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60);
+
+            // Reposition OK button
+            okButton.bounds = new Rectangle(xPositionOnScreen + width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, yPositionOnScreen + height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64);
+
+            // Reposition outfit box and navigation
+            outfitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder + 342, yPositionOnScreen + 120, 592, 436);
+            upArrow.bounds = new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + 16, 44, 48);
+            downArrow.bounds = new Rectangle(outfitBox.X + outfitBox.Width + 18, outfitBox.Y + outfitBox.Height - 56, 44, 48);
+            scrollBar.bounds = new Rectangle(upArrow.bounds.X + 8, upArrow.bounds.Y + upArrow.bounds.Height + 4, 24, 40);
+            scrollBarRunner = new Rectangle(scrollBar.bounds.X, upArrow.bounds.Y + upArrow.bounds.Height + 4, scrollBar.bounds.Width, outfitBox.Height - 64 - upArrow.bounds.Height - 20);
+
+            // Reposition category buttons
+            int catYoffset = 78;
+            categoryButtons[0].bounds = new Rectangle(outfitBox.X, outfitBox.Y - catYoffset, 88, 72);
+            categoryButtons[1].bounds = new Rectangle(outfitBox.X + 90, outfitBox.Y - catYoffset, 88, 72);
+            categoryButtons[2].bounds = new Rectangle(outfitBox.X + 180, outfitBox.Y - catYoffset, 88, 72);
+            categoryButtons[3].bounds = new Rectangle(outfitBox.X + 270, outfitBox.Y - catYoffset, 88, 72);
+            categoryButtons[4].bounds = new Rectangle(outfitBox.X + 360, outfitBox.Y - catYoffset, 88, 72);
+            categoryButtons[5].bounds = new Rectangle(outfitBox.X + 450, outfitBox.Y - catYoffset, 88, 72);
+
+            // Reposition outfit buttons (2 rows x 4 columns)
+            for (int j = 0; j < 2; j++)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    int btnIndex = i + (j * 4);
+                    outfitButtons[btnIndex].bounds = new Rectangle(outfitBox.X + 22 + (i * 128) + (i * 12), outfitBox.Y + 20 + (j * 192) + (j * 12), 128, 192);
+                }
+            }
+
+            // Update outfit slot positions to match buttons
+            UpdateOutfitButtonsAndSlots();
+            setScrollBarToCurrentIndex();
+
+            // Reposition top tabs
+            menuManager.repositionTopTabButtons(this);
         }
 
         // Handle rotation actions
