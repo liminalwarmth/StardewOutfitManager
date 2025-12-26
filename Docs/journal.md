@@ -4,6 +4,249 @@ Entries are listed newest-first. Review this before starting any task.
 
 ---
 
+## 2025-12-26 - Tab Persistence & Outfit Card Facing Direction
+
+**Task:** Remember last tab across dresser sessions and fix outfit card facing direction
+
+### Changes Made
+
+**1. Remember Last Tab Across Dresser Sessions** (`PlayerManager.cs`, `StardewOutfitManager.cs`)
+- Added `lastUsedTab` PerScreen field to PlayerManager (persists across dresser opens within a play session)
+- Save current tab to `lastUsedTab` when menu is closed via `cleanMenuExit()`
+- Open dresser to last used tab instead of always opening to Wardrobe
+- Works across different dressers - if you close on Favorites tab, any dresser you open will start on Favorites
+
+**2. Outfit Card Farmers Always Face Forward** (`FavoritesMenu.cs`)
+- OutfitSlot constructor now sets `modelFarmer.faceDirection(2)` after creating the farmer
+- This overrides the shared `farmerFacingDirection` setting from MenuManager
+- Main display farmer (left side) still respects user's rotation setting
+- Outfit preview cards in the grid always show farmer facing forward for consistency
+
+### Files Modified
+- `Managers/PlayerManager.cs`
+- `StardewOutfitManager.cs`
+- `Menus/FavoritesMenu.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - Shared Season Selection & Dresser Display Name
+
+**Task:** Share season selection across tabs and display actual dresser name
+
+### Changes Made
+
+**1. Shared Season Selection Across Tabs** (`MenuManager.cs`, `WardrobeMenu.cs`, `FavoritesMenu.cs`)
+- Added `selectedCategory` field to MenuManager to share season selection across all tabs
+- Added `GetCurrentSeasonCategory()` helper method to get current in-game season as category string
+- Initialized to current in-game season when dresser is first opened
+- WardrobeMenu and FavoritesMenu now read from and write to shared state
+- Special handling: If "All Outfits" (FavoritesMenu-only) is selected when switching to WardrobeMenu, falls back to current in-game season
+
+**2. Dresser Display Name** (`MenuManager.cs`, `StardewOutfitManager.cs`, `NewDresserMenu.cs`)
+- Added `dresserDisplayName` field to MenuManager (e.g., "Junimo Dresser")
+- Captured from `originalDresser.DisplayName` when dresser is opened
+- Tab hover text now shows actual dresser name instead of "Dresser"
+- NewDresserMenu scroll title now shows actual dresser name
+
+### Files Modified
+- `Managers/MenuManager.cs`
+- `StardewOutfitManager.cs`
+- `Menus/WardrobeMenu.cs`
+- `Menus/FavoritesMenu.cs`
+- `Menus/NewDresserMenu.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - Support Dyed Clothing Variations in Outfits
+
+**Task:** Allow same clothing item with different dye colors to be saved as separate outfits
+
+### Problem
+When a player re-dyes a clothing item and tries to save a new outfit, the duplicate detection would block it because it only compared item tags (GUIDs), not the actual dye color. This meant you couldn't save two outfits that differed only by the color of the same pants.
+
+### Solution
+Added clothing color tracking to outfit saving and comparison:
+
+**1. Data Model Update** (`Models/FavoritesModel.cs`)
+- Added `ItemColors` dictionary to `FavoriteOutfit` class
+- Stores dye colors for Shirt and Pants as "R,G,B,A" strings
+
+**2. Save Logic Update** (`Utils/FavoritesMethods.cs`)
+- Added `getClothingColorString()` helper to extract color from dyeable Clothing items
+- `SaveNewOutfit()` now captures clothing colors when saving
+
+**3. Comparison Logic Update** (`Utils/FavoritesMethods.cs`)
+- Added `getItemColor()` helper for backwards-compatible color retrieval
+- `outfitExistsInFavorites()` now compares Shirt and Pants colors in addition to item tags
+- Handles legacy outfits without color data (null == null comparison)
+
+### Behavior
+- Same item with different dye = different outfit (can save both)
+- Same item with same dye = duplicate (blocked as before)
+- Legacy outfits without color data continue to work
+
+### Files Modified
+- `Models/FavoritesModel.cs`
+- `Utils/FavoritesMethods.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - Hide Scroll Arrows in NewDresserMenu
+
+**Task:** Hide scroll arrows when no scrolling is needed in dresser tab
+
+### Fix Made
+
+**Hide Scroll Arrows When All Items Fit** (`NewDresserMenu.cs`)
+- Moved `upArrow.draw(b)` and `downArrow.draw(b)` inside the `if (forSale.Count > 4)` block
+- Now arrows, scrollbar runner, and scrollbar only appear when there are more than 4 items
+- Previously arrows were always visible even when filtering to a small category (e.g., 3 hats)
+
+### Files Modified
+- `Menus/NewDresserMenu.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - UI Polish: Facing Direction & Standard Tooltips
+
+**Task:** Two usability tweaks from testing
+
+### Changes Made
+
+**1. Maintain Farmer Facing Direction Across Tabs/Outfits** (`MenuManager.cs`, `WardrobeMenu.cs`, `FavoritesMenu.cs`, `Utils/FavoritesMethods.cs`)
+- Added `farmerFacingDirection` field to MenuManager for shared state
+- All menus now read from `menuManager.farmerFacingDirection` instead of hardcoded `faceDirection(2)`
+- Rotation button clicks save the new direction to MenuManager
+- Removed hardcoded `faceDirection(2)` from `dressDisplayFarmerWithAvailableOutfitPieces()` - facing direction is now managed by the calling menu
+- Direction persists when switching tabs, selecting outfits, or resetting outfit selection
+- Only resets when completely exiting the wardrobe system
+
+**2. Standard Item Tooltips for Equipment Icons** (`WardrobeMenu.cs`, `FavoritesMenu.cs`)
+- Added `hoveredItem` field to track actual Item objects on hover
+- Created `GetEquipmentSlotItem()` method in FavoritesMenu (replaces text-building approach)
+- Updated draw methods to use `IClickableMenu.drawToolTip()` with the item
+- Equipment slot hover now displays the exact same tooltip as inventory/shop items
+- Empty slots still show "Empty X Slot" text using standard hover text
+
+### Files Modified
+- `Managers/MenuManager.cs`
+- `Menus/WardrobeMenu.cs`
+- `Menus/FavoritesMenu.cs`
+- `Utils/FavoritesMethods.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - More Bug Fixes from Testing
+
+**Task:** Address 3 issues from continued testing
+
+### Fixes Made
+
+**1. WardrobeMenu Disappearing on Resize** (`WardrobeMenu.cs`, `FavoritesMenu.cs`)
+- Fixed by calling `base.gameWindowSizeChanged()` FIRST, then setting our custom centered position
+- Manually reposition close button after setting position
+- Applied same fix to FavoritesMenu for consistency
+
+**2. Rotation Button Position Alignment** (`WardrobeMenu.cs`)
+- Updated direction button positions to match FavoritesMenu
+- Changed from `-40` / `+256-40` to `-42` / `+256-38` for slightly more spacing
+- Updated both constructor and resize handler
+
+**3. Hat Display in 2x Farmer Preview** (`Utils/ModTools.cs`)
+- Updated to use SDV 1.6's ItemRegistry API for hat texture lookup
+- Changed from `who.hat.Value.ParentSheetIndex` to `ItemRegistry.GetDataOrErrorItem(who.hat.Value.QualifiedItemId)`
+- Now uses `hatItemData.SpriteIndex` and `hatItemData.GetTexture()` for proper hat rendering
+- Added `StardewValley.ItemTypeDefinitions` using directive
+
+### Files Modified
+- `Menus/WardrobeMenu.cs`
+- `Menus/FavoritesMenu.cs`
+- `Utils/ModTools.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - Additional UI Polish Fixes
+
+**Task:** Address 3 more issues from manual testing
+
+### Fixes Made
+
+**1. Hide Scroll Arrows When No Scrolling Available** (`FavoritesMenu.cs`)
+- Wrapped scroll arrow and scrollbar drawing in `if (scrollBar.visible)` check
+- Arrows now only appear when there are more outfits than fit on screen
+
+**2. Show Current Equipment Before Outfit Selected** (`FavoritesMenu.cs`)
+- Equipment icons below portrait now show player's current equipment when no outfit is selected
+- Once an outfit is selected, shows that outfit's items instead
+- Updated `GetEquipmentSlotHoverText()` to also handle both cases for hover text
+
+**3. Remove Extra Background from Dresser Tab** (`NewDresserMenu.cs`)
+- Removed redundant full-size background box at line 1078
+- The inventory and item list already have their own background boxes
+
+### Files Modified
+- `Menus/FavoritesMenu.cs`
+- `Menus/NewDresserMenu.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-26 - Bug Fixes from Manual Testing
+
+**Task:** Address 5 issues found during manual testing of UI improvements
+
+### Fixes Made
+
+**1. Window Re-centering on Resize** (`WardrobeMenu.cs`, `FavoritesMenu.cs`)
+- Used `Utility.getTopLeftPositionForCenteringOnScreen()` to properly center menu
+- Called `base.gameWindowSizeChanged()` AFTER setting position so close button repositions correctly
+
+**2. Hat Display in 2x Farmer Preview** (`Utils/ModTools.cs`)
+- Hat position offsets now multiplied by scale factor
+- Fixed `hatXOffset` and `hatYOffset` calculations to scale properly at 2x
+
+**3. Item Icon Centering in Hover Preview** (`FavoritesMenu.cs`)
+- Changed hover infobox grid from 48x48 to 64x64 item slots
+- Now matches WardrobeMenu pattern where items draw at scale 1.0
+
+**4. Hover Text for WardrobeMenu Equipment Icons** (`WardrobeMenu.cs`)
+- Added equipment icon hover detection in `performHoverAction()`
+- Shows item tooltip when mouse hovers over equipment slots
+
+**5. Full Item Description in Hover Text** (`FavoritesMenu.cs`, `WardrobeMenu.cs`)
+- Changed from `DisplayName` only to `DisplayName + getDescription()`
+- Both menus now show full item info on hover
+
+### Files Modified
+- `Menus/FavoritesMenu.cs`
+- `Menus/WardrobeMenu.cs`
+- `Utils/ModTools.cs`
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
 ## 2025-12-25 21:00 - Outfit Hover Infobox
 
 **Task:** Add hover infobox to outfit cards showing outfit name and item preview grid

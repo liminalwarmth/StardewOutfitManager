@@ -49,6 +49,8 @@ namespace StardewOutfitManager.Menus
                 bgBox = new Rectangle(menu.xPositionOnScreen, menu.yPositionOnScreen, 128, 192);
                 bgSprite = GetCategoryBackground(modelOutfit);
                 modelFarmer = menu.CreateFakeModelFarmer(player);
+                // Outfit card preview farmers always face forward regardless of main display farmer direction
+                modelFarmer.faceDirection(2);
 
                 // Set whether this is a favorited outfit among all outfits
                 isFavorite = modelOutfit.isFavorite;
@@ -208,6 +210,7 @@ namespace StardewOutfitManager.Menus
         private Rectangle _portraitBox;
         private Farmer _displayFarmer;
         private string hoverText = "";
+        private Item hoveredItem = null;
         private Rectangle outFitDisplayBG = new Rectangle(0, 0, 128, 192);
 
         // Portrait Box Backgrounds
@@ -279,7 +282,7 @@ namespace StardewOutfitManager.Menus
             // Set up portrait and farmer
             _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
             _displayFarmer = CreateFakeModelFarmer(Game1.player);
-            _displayFarmer.faceDirection(2);
+            _displayFarmer.faceDirection(menuManager.farmerFacingDirection);
             _displayFarmer.FarmerSprite.StopAnimation();
 
             // Player display window movement buttons
@@ -391,8 +394,9 @@ namespace StardewOutfitManager.Menus
                 categoryButtons[i].region = CATEGORIES;
             }
             
-            // Set default category to current game season
-            categorySelected = Game1.IsSpring ? categoryButtons[1] : Game1.IsSummer ? categoryButtons[2] : Game1.IsFall ? categoryButtons[3] : Game1.IsWinter ? categoryButtons[4] : categoryButtons[0];
+            // Set category from shared menu manager state (persists across tab switches)
+            // If "All Outfits" was selected on this menu, keep it; otherwise find the matching season category
+            categorySelected = categoryButtons.FirstOrDefault(c => c.name == menuManager.selectedCategory) ?? categoryButtons[1];
 
             // Generate available player items and build lookup dictionary for efficient outfit checks
             GeneratePlayerOwnedItemList();
@@ -531,7 +535,7 @@ namespace StardewOutfitManager.Menus
             farmer.accessory.Set(player.accessory.Value);
             farmer.changeEyeColor(player.newEyeColor.Value);
             farmer.UpdateClothing();
-            farmer.faceDirection(2);
+            farmer.faceDirection(menuManager.farmerFacingDirection);
             farmer.FarmerSprite.StopAnimation();
             return farmer;
         }
@@ -560,7 +564,7 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.pantsColor.Set(player.pantsColor.Value);
             _displayFarmer.accessory.Set(player.accessory.Value);
             _displayFarmer.UpdateClothing();
-            _displayFarmer.faceDirection(2);
+            _displayFarmer.faceDirection(menuManager.farmerFacingDirection);
             _displayFarmer.FarmerSprite.StopAnimation();
         }
 
@@ -703,6 +707,9 @@ namespace StardewOutfitManager.Menus
             {
                 // Update the category setting
                 categorySelected = newCategory;
+                // Save to shared menu manager state (unless "All Outfits" which only exists here)
+                // When switching to Wardrobe tab, "All Outfits" will fall back to current season
+                menuManager.selectedCategory = newCategory.name;
                 // Filter the list of favorite outfits to the correct category and sort it
                 FilterOutfitSlotsByCategoryAndSort(outfitSlots);
                 // Update the outfit buttons with the new slots
@@ -923,12 +930,17 @@ namespace StardewOutfitManager.Menus
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
 
-            // Equipment icon hover - show item name
+            // Equipment icon hover - track hovered item for standard tooltip display
+            hoveredItem = null;
             foreach (ClickableComponent c in equipmentIcons)
             {
                 if (c.containsPoint(x, y))
                 {
-                    hoverText = GetEquipmentSlotHoverText(c);
+                    hoveredItem = GetEquipmentSlotItem(c);
+                    if (hoveredItem == null)
+                    {
+                        hoverText = $"Empty {c.name} Slot";
+                    }
                     break;
                 }
             }
@@ -939,11 +951,19 @@ namespace StardewOutfitManager.Menus
         // Game Window Resize - reposition all UI elements
         public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
         {
+            // Call base first to handle standard menu repositioning
             base.gameWindowSizeChanged(oldBounds, newBounds);
 
-            // Recalculate base menu position
-            xPositionOnScreen = Game1.uiViewport.Width / 2 - (800 + IClickableMenu.borderWidth * 2) / 2;
-            yPositionOnScreen = Game1.uiViewport.Height / 2 - (600 + IClickableMenu.borderWidth * 2) / 2;
+            // Then recalculate our menu position to center it properly
+            Vector2 topLeft = Utility.getTopLeftPositionForCenteringOnScreen(width, height);
+            xPositionOnScreen = (int)topLeft.X;
+            yPositionOnScreen = (int)topLeft.Y;
+
+            // Reposition close button after we've set our position
+            if (upperRightCloseButton != null)
+            {
+                upperRightCloseButton.bounds = new Rectangle(xPositionOnScreen + width - 36, yPositionOnScreen - 8, 48, 48);
+            }
 
             // Reposition portrait and farmer display
             _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
@@ -1000,7 +1020,9 @@ namespace StardewOutfitManager.Menus
         // Handle rotation actions
         private void rotationClick(int change)
         {
-            _displayFarmer.faceDirection((_displayFarmer.FacingDirection - change + 4) % 4);
+            int newDirection = (_displayFarmer.FacingDirection - change + 4) % 4;
+            _displayFarmer.faceDirection(newDirection);
+            menuManager.farmerFacingDirection = newDirection;
             _displayFarmer.FarmerSprite.StopAnimation();
             _displayFarmer.completelyStopAnimatingOrDoingAction();
             Game1.playSound("stoneStep");
@@ -1095,27 +1117,40 @@ namespace StardewOutfitManager.Menus
             scrollBar.bounds.Y = Math.Min(scrollBarRunner.Y + scrollRange, Math.Max(scrollBarRunner.Y, scrollBar.bounds.Y));
         }
 
-        // Get hover text for equipment slot (for mouse and gamepad)
-        private string GetEquipmentSlotHoverText(ClickableComponent c)
+        // Get the item in an equipment slot (for mouse and gamepad hover)
+        private Item GetEquipmentSlotItem(ClickableComponent c)
         {
-            if (outfitSlotSelected == null) return "";
-
-            string slotKey = c.name switch
+            if (outfitSlotSelected != null)
             {
-                "Hat" => "Hat",
-                "Shirt" => "Shirt",
-                "Pants" => "Pants",
-                "Boots" => "Shoes",
-                "Left Ring" => "LeftRing",
-                "Right Ring" => "RightRing",
-                _ => null
-            };
-
-            Item slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
-                ? outfitSlotSelected.outfitAvailabileItems[slotKey]
-                : null;
-
-            return slotItem?.DisplayName ?? $"Empty {c.name} Slot";
+                // Get item from selected outfit
+                string slotKey = c.name switch
+                {
+                    "Hat" => "Hat",
+                    "Shirt" => "Shirt",
+                    "Pants" => "Pants",
+                    "Boots" => "Shoes",
+                    "Left Ring" => "LeftRing",
+                    "Right Ring" => "RightRing",
+                    _ => null
+                };
+                return slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
+                    ? outfitSlotSelected.outfitAvailabileItems[slotKey]
+                    : null;
+            }
+            else
+            {
+                // Get player's currently equipped item
+                return c.name switch
+                {
+                    "Hat" => Game1.player.hat.Value,
+                    "Shirt" => Game1.player.shirtItem.Value,
+                    "Pants" => Game1.player.pantsItem.Value,
+                    "Boots" => Game1.player.boots.Value,
+                    "Left Ring" => Game1.player.leftRing.Value,
+                    "Right Ring" => Game1.player.rightRing.Value,
+                    _ => null
+                };
+            }
         }
 
         // Draw outfit hover infobox with name and item grid
@@ -1123,11 +1158,13 @@ namespace StardewOutfitManager.Menus
         {
             if (slot == null) return;
 
-            // Infobox dimensions
-            int boxWidth = 220;
-            int boxHeight = 180;
+            // Infobox dimensions - use 64x64 slots like WardrobeMenu for proper item alignment
+            int itemSize = 64;
             int padding = 16;
-            int itemSize = 48;
+            int gridSpacing = 0;
+            int gridWidth = 3 * itemSize + 2 * gridSpacing;
+            int boxWidth = gridWidth + padding * 2;
+            int boxHeight = padding + 32 + 2 * itemSize + gridSpacing + padding;
 
             // Position to the right of the hovered slot, or left if it would clip
             int boxX = slot.bgBox.Right + 8;
@@ -1155,9 +1192,8 @@ namespace StardewOutfitManager.Menus
             Utility.drawTextWithShadow(b, displayName, Game1.smallFont, new Vector2(boxX + padding, boxY + padding), Game1.textColor, nameScale);
 
             // Draw 2x3 item grid below the name
-            int gridX = boxX + padding + 12;
+            int gridX = boxX + padding;
             int gridY = boxY + padding + 32;
-            int gridSpacing = 4;
 
             // Slot keys in order: Hat, Shirt, Left Ring (top row), Boots, Pants, Right Ring (bottom row)
             string[] slotKeys = { "Hat", "Shirt", "LeftRing", "Shoes", "Pants", "RightRing" };
@@ -1176,7 +1212,7 @@ namespace StardewOutfitManager.Menus
                 if (slotItem != null)
                 {
                     b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                    slotItem.drawInMenu(b, new Vector2(itemX, itemY), 0.75f, 1f, 0.866f, StackDrawType.Hide);
+                    slotItem.drawInMenu(b, new Vector2(itemX, itemY), 1f, 1f, 0.866f, StackDrawType.Hide);
                 }
                 else
                 {
@@ -1210,12 +1246,13 @@ namespace StardewOutfitManager.Menus
             leftRotationButton.draw(b);
             rightRotationButton.draw(b);
 
-            // Draw equipment icons for selected outfit
-            if (outfitSlotSelected != null)
+            // Draw equipment icons - show selected outfit items, or current equipment if no outfit selected
+            foreach (ClickableComponent c in equipmentIcons)
             {
-                foreach (ClickableComponent c in equipmentIcons)
+                Item slotItem;
+                if (outfitSlotSelected != null)
                 {
-                    // Map component name to outfit dictionary key
+                    // Show items from selected outfit
                     string slotKey = c.name switch
                     {
                         "Hat" => "Hat",
@@ -1226,30 +1263,43 @@ namespace StardewOutfitManager.Menus
                         "Right Ring" => "RightRing",
                         _ => null
                     };
-
-                    Item slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
+                    slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
                         ? outfitSlotSelected.outfitAvailabileItems[slotKey]
                         : null;
-
-                    int emptySlotIcon = c.name switch
+                }
+                else
+                {
+                    // Show player's currently equipped items
+                    slotItem = c.name switch
                     {
-                        "Hat" => 42,
-                        "Shirt" => 69,
-                        "Pants" => 68,
-                        "Boots" => 40,
-                        "Left Ring" or "Right Ring" => 41,
-                        _ => 10
+                        "Hat" => Game1.player.hat.Value,
+                        "Shirt" => Game1.player.shirtItem.Value,
+                        "Pants" => Game1.player.pantsItem.Value,
+                        "Boots" => Game1.player.boots.Value,
+                        "Left Ring" => Game1.player.leftRing.Value,
+                        "Right Ring" => Game1.player.rightRing.Value,
+                        _ => null
                     };
+                }
 
-                    if (slotItem != null)
-                    {
-                        b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
-                        slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
-                    }
-                    else
-                    {
-                        b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White);
-                    }
+                int emptySlotIcon = c.name switch
+                {
+                    "Hat" => 42,
+                    "Shirt" => 69,
+                    "Pants" => 68,
+                    "Boots" => 40,
+                    "Left Ring" or "Right Ring" => 41,
+                    _ => 10
+                };
+
+                if (slotItem != null)
+                {
+                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                    slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
+                }
+                else
+                {
+                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White);
                 }
             }
 
@@ -1286,11 +1336,14 @@ namespace StardewOutfitManager.Menus
             }
             DrawOutfitHoverInfobox(b, hoverSlot);
 
-            // Draw navigation
-            if (scrollBar.visible) { drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false); }
-            scrollBar.draw(b);
-            upArrow.draw(b);
-            downArrow.draw(b);
+            // Draw navigation (only if scrolling is available)
+            if (scrollBar.visible)
+            {
+                drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), scrollBarRunner.X, scrollBarRunner.Y, scrollBarRunner.Width, scrollBarRunner.Height, Color.White, 4f, false);
+                scrollBar.draw(b);
+                upArrow.draw(b);
+                downArrow.draw(b);
+            }
 
             // Draw TopBar
             menuManager.drawTopBar(b);
@@ -1306,18 +1359,28 @@ namespace StardewOutfitManager.Menus
                 Utility.drawTextWithShadow(b, c.name, Game1.smallFont, new Vector2((c.bounds.X + 21) - Game1.smallFont.MeasureString(c.name).X / 2f, c.bounds.Y + 5f), color);
             }
 
-            // If using gamepad and snapped to equipment icon, show its hover text
-            if (Game1.options.gamepadControls && string.IsNullOrEmpty(hoverText))
+            // If using gamepad and snapped to equipment icon, get the hovered item
+            if (Game1.options.gamepadControls && hoveredItem == null && string.IsNullOrEmpty(hoverText))
             {
                 ClickableComponent snapped = getCurrentlySnappedComponent();
                 if (snapped?.region == EQUIPMENT)
                 {
-                    hoverText = GetEquipmentSlotHoverText(snapped);
+                    hoveredItem = GetEquipmentSlotItem(snapped);
+                    if (hoveredItem == null)
+                    {
+                        hoverText = $"Empty {snapped.name} Slot";
+                    }
                 }
             }
 
-            // Draw hover text
-            if (!hoverText.Equals(""))
+            // Draw hover text or item tooltip
+            if (hoveredItem != null)
+            {
+                b.End();
+                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+                IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), hoveredItem.DisplayName, hoveredItem);
+            }
+            else if (!hoverText.Equals(""))
             {
                 b.End();
                 b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);

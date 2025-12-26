@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.ItemTypeDefinitions;
 using StardewValley.Objects;
 using StardewValley.Tools;
 using System;
@@ -176,12 +177,15 @@ namespace StardewOutfitManager.Utils
                     hairstyleSourceRect = new Rectangle(hair_metadata.tileX * 16, hair_metadata.tileY * 16, 16, 32);
                 }
                 Rectangle accessorySourceRect = ((int)who.accessory.Value >= 0) ? accessorySourceRect = new Rectangle((int)who.accessory.Value * 16 % FarmerRenderer.accessoriesTexture.Width, (int)who.accessory.Value * 16 / FarmerRenderer.accessoriesTexture.Width * 32, 16, 16) : new Rectangle();
-                // SDV 1.6: Use ParentSheetIndex for hat sprite (works for both base game and modded hats)
+                // SDV 1.6: Use ItemRegistry to get correct hat texture and sprite index
                 Rectangle hatSourceRect = new Rectangle();
+                Texture2D hatTexture = FarmerRenderer.hatsTexture;
                 if (who.hat.Value != null)
                 {
-                    int hatSpriteIndex = who.hat.Value.ParentSheetIndex;
-                    hatSourceRect = new Rectangle(20 * hatSpriteIndex % FarmerRenderer.hatsTexture.Width, 20 * hatSpriteIndex / FarmerRenderer.hatsTexture.Width * 20 * 4, 20, 20);
+                    ParsedItemData hatItemData = ItemRegistry.GetDataOrErrorItem(who.hat.Value.QualifiedItemId);
+                    int hatSpriteIndex = hatItemData.SpriteIndex;
+                    hatTexture = hatItemData.GetTexture();
+                    hatSourceRect = new Rectangle(20 * hatSpriteIndex % hatTexture.Width, 20 * hatSpriteIndex / hatTexture.Width * 20 * 4, 20, 20);
                 }
                 Rectangle dyed_shirt_source_rect = shirtSourceRect;
                 float dye_layer_offset = 1E-07f;
@@ -304,20 +308,23 @@ namespace StardewOutfitManager.Utils
                 {
                     bool flip = who.FarmerSprite.CurrentAnimationFrame.flip;
                     float layer_offset = 3.9E-05f;
+                    // Hat position offsets need to be scaled
+                    float hatXOffset = (-8 + ((!flip) ? 1 : (-1)) * FarmerRenderer.featureXOffsetPerFrame[currentFrame] * 4) * scale;
+                    float hatYOffset = (-16 + FarmerRenderer.featureYOffsetPerFrame[currentFrame] * 4 + ((!who.hat.Value.ignoreHairstyleOffset.Value) ? FarmerRenderer.hairstyleHatOffset[(int)who.hair.Value % 16] : 0) + 4 + (int)heightOffset) * scale;
                     if (who.hat.Value.isMask && facingDirection == 0)
                     {
                         Rectangle mask_draw_rect = hatSourceRect;
                         mask_draw_rect.Height -= 11;
                         mask_draw_rect.Y += 11;
-                        b.Draw(FarmerRenderer.hatsTexture, position + origin + positionOffset + (new Vector2(0f, 44f) + new Vector2(-8 + ((!flip) ? 1 : (-1)) * FarmerRenderer.featureXOffsetPerFrame[currentFrame] * 4, -16 + FarmerRenderer.featureYOffsetPerFrame[currentFrame] * 4 + ((!who.hat.Value.ignoreHairstyleOffset.Value) ? FarmerRenderer.hairstyleHatOffset[(int)who.hair.Value % 16] : 0) + 4 + (int)heightOffset)) * scale, mask_draw_rect, Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
+                        b.Draw(hatTexture, position + origin + positionOffset + new Vector2(hatXOffset, hatYOffset + 44f * scale), mask_draw_rect, Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
                         mask_draw_rect = hatSourceRect;
                         mask_draw_rect.Height = 11;
                         layer_offset = -1E-06f;
-                        b.Draw(FarmerRenderer.hatsTexture, position + origin + positionOffset + new Vector2(-8 + ((!flip) ? 1 : (-1)) * FarmerRenderer.featureXOffsetPerFrame[currentFrame] * 4, -16 + FarmerRenderer.featureYOffsetPerFrame[currentFrame] * 4 + ((!who.hat.Value.ignoreHairstyleOffset.Value) ? FarmerRenderer.hairstyleHatOffset[(int)who.hair.Value % 16] : 0) + 4 + (int)heightOffset) * scale, mask_draw_rect, who.hat.Value.isPrismatic.Value ? Utility.GetPrismaticColor() : Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
+                        b.Draw(hatTexture, position + origin + positionOffset + new Vector2(hatXOffset, hatYOffset), mask_draw_rect, who.hat.Value.isPrismatic.Value ? Utility.GetPrismaticColor() : Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
                     }
                     else
                     {
-                        b.Draw(FarmerRenderer.hatsTexture, position + origin + positionOffset + new Vector2(-8 + ((!flip) ? 1 : (-1)) * FarmerRenderer.featureXOffsetPerFrame[currentFrame] * 4, -16 + FarmerRenderer.featureYOffsetPerFrame[currentFrame] * 4 + ((!who.hat.Value.ignoreHairstyleOffset.Value) ? FarmerRenderer.hairstyleHatOffset[(int)who.hair.Value % 16] : 0) + 4 + (int)heightOffset) * scale, hatSourceRect, who.hat.Value.isPrismatic.Value ? Utility.GetPrismaticColor() : Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
+                        b.Draw(hatTexture, position + origin + positionOffset + new Vector2(hatXOffset, hatYOffset), hatSourceRect, who.hat.Value.isPrismatic.Value ? Utility.GetPrismaticColor() : Color.White, rotation, origin, 4f * scale, SpriteEffects.None, layerDepth + layer_offset);
                     }
                 }
             }
