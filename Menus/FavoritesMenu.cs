@@ -11,7 +11,6 @@ using StardewValley;
 using StardewOutfitManager.Managers;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Data;
-using System.Reflection.Metadata.Ecma335;
 using static StardewValley.Menus.LoadGameMenu;
 using StardewValley.Characters;
 
@@ -259,6 +258,37 @@ namespace StardewOutfitManager.Menus
         internal const int PORTRAIT = 30000;        // Start at 3000
         internal const int OUTFITSETTINGS = 40000;  // Start at 4000
         internal const int EQUIPMENT = 50000;       // Start at 5000
+
+        // Empty slot icon indices (from Game1.menuTexture tile sheet)
+        private const int EMPTY_HAT_ICON = 42;
+        private const int EMPTY_SHIRT_ICON = 69;
+        private const int EMPTY_PANTS_ICON = 68;
+        private const int EMPTY_BOOTS_ICON = 40;
+        private const int EMPTY_RING_ICON = 41;
+        private const int FILLED_SLOT_ICON = 10;
+
+        // Map equipment component names to outfit data keys
+        private static string GetSlotKey(string componentName) => componentName switch
+        {
+            "Hat" => "Hat",
+            "Shirt" => "Shirt",
+            "Pants" => "Pants",
+            "Boots" => "Shoes",
+            "Left Ring" => "LeftRing",
+            "Right Ring" => "RightRing",
+            _ => null
+        };
+
+        // Get empty slot icon for a given equipment component
+        private static int GetEmptySlotIcon(string componentName) => componentName switch
+        {
+            "Hat" => EMPTY_HAT_ICON,
+            "Shirt" => EMPTY_SHIRT_ICON,
+            "Pants" => EMPTY_PANTS_ICON,
+            "Boots" => EMPTY_BOOTS_ICON,
+            "Left Ring" or "Right Ring" => EMPTY_RING_ICON,
+            _ => FILLED_SLOT_ICON
+        };
 
         // Additional Buttons
         public ClickableTextureComponent leftRotationButton;
@@ -1123,19 +1153,10 @@ namespace StardewOutfitManager.Menus
             if (outfitSlotSelected != null)
             {
                 // Get item from selected outfit
-                string slotKey = c.name switch
-                {
-                    "Hat" => "Hat",
-                    "Shirt" => "Shirt",
-                    "Pants" => "Pants",
-                    "Boots" => "Shoes",
-                    "Left Ring" => "LeftRing",
-                    "Right Ring" => "RightRing",
-                    _ => null
-                };
-                return slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
-                    ? outfitSlotSelected.outfitAvailabileItems[slotKey]
-                    : null;
+                string slotKey = GetSlotKey(c.name);
+                if (slotKey != null && outfitSlotSelected.outfitAvailabileItems.TryGetValue(slotKey, out Item item))
+                    return item;
+                return null;
             }
             else
             {
@@ -1197,7 +1218,7 @@ namespace StardewOutfitManager.Menus
 
             // Slot keys in order: Hat, Shirt, Left Ring (top row), Boots, Pants, Right Ring (bottom row)
             string[] slotKeys = { "Hat", "Shirt", "LeftRing", "Shoes", "Pants", "RightRing" };
-            int[] emptyIcons = { 42, 69, 41, 40, 68, 41 };
+            int[] emptyIcons = { EMPTY_HAT_ICON, EMPTY_SHIRT_ICON, EMPTY_RING_ICON, EMPTY_BOOTS_ICON, EMPTY_PANTS_ICON, EMPTY_RING_ICON };
 
             for (int i = 0; i < 6; i++)
             {
@@ -1207,11 +1228,11 @@ namespace StardewOutfitManager.Menus
                 int itemY = gridY + row * (itemSize + gridSpacing);
 
                 Rectangle itemBounds = new Rectangle(itemX, itemY, itemSize, itemSize);
-                Item slotItem = slot.outfitAvailabileItems.ContainsKey(slotKeys[i]) ? slot.outfitAvailabileItems[slotKeys[i]] : null;
+                slot.outfitAvailabileItems.TryGetValue(slotKeys[i], out Item slotItem);
 
                 if (slotItem != null)
                 {
-                    b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                    b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, FILLED_SLOT_ICON), Color.White);
                     slotItem.drawInMenu(b, new Vector2(itemX, itemY), 1f, 1f, 0.866f, StackDrawType.Hide);
                 }
                 else
@@ -1249,52 +1270,12 @@ namespace StardewOutfitManager.Menus
             // Draw equipment icons - show selected outfit items, or current equipment if no outfit selected
             foreach (ClickableComponent c in equipmentIcons)
             {
-                Item slotItem;
-                if (outfitSlotSelected != null)
-                {
-                    // Show items from selected outfit
-                    string slotKey = c.name switch
-                    {
-                        "Hat" => "Hat",
-                        "Shirt" => "Shirt",
-                        "Pants" => "Pants",
-                        "Boots" => "Shoes",
-                        "Left Ring" => "LeftRing",
-                        "Right Ring" => "RightRing",
-                        _ => null
-                    };
-                    slotItem = slotKey != null && outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey)
-                        ? outfitSlotSelected.outfitAvailabileItems[slotKey]
-                        : null;
-                }
-                else
-                {
-                    // Show player's currently equipped items
-                    slotItem = c.name switch
-                    {
-                        "Hat" => Game1.player.hat.Value,
-                        "Shirt" => Game1.player.shirtItem.Value,
-                        "Pants" => Game1.player.pantsItem.Value,
-                        "Boots" => Game1.player.boots.Value,
-                        "Left Ring" => Game1.player.leftRing.Value,
-                        "Right Ring" => Game1.player.rightRing.Value,
-                        _ => null
-                    };
-                }
-
-                int emptySlotIcon = c.name switch
-                {
-                    "Hat" => 42,
-                    "Shirt" => 69,
-                    "Pants" => 68,
-                    "Boots" => 40,
-                    "Left Ring" or "Right Ring" => 41,
-                    _ => 10
-                };
+                Item slotItem = GetEquipmentSlotItem(c);
+                int emptySlotIcon = GetEmptySlotIcon(c.name);
 
                 if (slotItem != null)
                 {
-                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, 10), Color.White);
+                    b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, FILLED_SLOT_ICON), Color.White);
                     slotItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
                 }
                 else
@@ -1376,14 +1357,10 @@ namespace StardewOutfitManager.Menus
             // Draw hover text or item tooltip
             if (hoveredItem != null)
             {
-                b.End();
-                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
                 IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), hoveredItem.DisplayName, hoveredItem);
             }
             else if (!hoverText.Equals(""))
             {
-                b.End();
-                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
                 drawHoverText(b, hoverText, Game1.smallFont);
             }
 

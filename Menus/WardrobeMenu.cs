@@ -291,7 +291,8 @@ namespace StardewOutfitManager.Menus
             }
 
             // Set category from shared menu manager state (persists across tab switches)
-            // If "All Outfits" was selected in FavoritesMenu, fall back to current in-game season
+            // "All Outfits" is a FavoritesMenu-only category that doesn't exist in WardrobeMenu,
+            // so we fall back to the current in-game season when switching from FavoritesMenu
             string category = menuManager.selectedCategory;
             if (category == "All Outfits")
             {
@@ -874,14 +875,10 @@ namespace StardewOutfitManager.Menus
             // Draw hover text or item tooltip
             if (hoveredItem != null)
             {
-                b.End();
-                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
                 IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), hoveredItem.DisplayName, hoveredItem);
             }
             else if (!hoverText.Equals(""))
             {
-                b.End();
-                b.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
                 IClickableMenu.drawHoverText(b, hoverText, Game1.smallFont);
             }
 
