@@ -336,15 +336,15 @@ We verified the following are NOT used (safe for SDV 1.6):
 ## Testing Checklist
 
 ### Build Phase
-- [ ] Project compiles with .NET 6.0
-- [ ] No SMAPI loading errors
+- [x] Project compiles with .NET 6.0
+- [x] No SMAPI loading errors
 
 ### Basic Functionality
-- [ ] Dresser interaction opens WardrobeMenu (not vanilla ShopMenu)
-- [ ] Can cycle through hats, shirts, pants, shoes with arrow buttons
-- [ ] Can cycle through hair styles and accessories
-- [ ] Farmer preview renders correctly at 2x scale
-- [ ] Equipment icons display correctly
+- [x] Dresser interaction opens WardrobeMenu (not vanilla ShopMenu)
+- [x] Can cycle through hats, shirts, pants, shoes with arrow buttons
+- [x] Can cycle through hair styles and accessories
+- [x] Farmer preview renders correctly at 2x scale
+- [x] Equipment icons display correctly
 
 ### Favorites System
 - [ ] Can save a new favorite outfit
@@ -353,7 +353,7 @@ We verified the following are NOT used (safe for SDV 1.6):
 
 ### Edge Cases
 - [ ] Works in local co-op (per-screen data isolation)
-- [ ] Menu closes properly (mutex release, cleanup)
+- [x] Menu closes properly (mutex release, cleanup)
 - [ ] Gamepad controls work
 
 ---
@@ -374,21 +374,21 @@ These existed before and should be addressed after compatibility is achieved:
 
 ### Phase 0: Development Setup
 - [x] Create `CLAUDE.md` with project rules and research requirements
-- [ ] Create `deploy.sh` script for build/test workflow
-  - [ ] Create the script file
-  - [ ] Make it executable with `chmod +x`
-  - [ ] Test that it runs (even if build fails initially)
+- [x] Create `deploy.sh` script for build/test workflow
+  - [x] Create the script file
+  - [x] Make it executable with `chmod +x`
+  - [x] Test that it runs (even if build fails initially)
 
 ### Phase 1: Critical Build Fixes
-- [ ] Update `StardewOutfitManager.csproj`
-  - [ ] Change TargetFramework from net5.0 to net6.0
-  - [ ] Update Pathoschild.Stardew.ModBuildConfig to 4.1.1
-- [ ] Update `manifest.json`
-  - [ ] Change MinimumApiVersion from 3.0.0 to 4.0.0
-- [ ] Fix `StardewOutfitManager.cs`
-  - [ ] Change `storeContext` to `ShopId` on line 50
+- [x] Update `StardewOutfitManager.csproj`
+  - [x] Change TargetFramework from net5.0 to net6.0
+  - [x] Update Pathoschild.Stardew.ModBuildConfig to 4.1.1
+- [x] Update `manifest.json`
+  - [x] Change MinimumApiVersion from 3.0.0 to 4.0.0
+- [x] Fix `StardewOutfitManager.cs`
+  - [x] Change `storeContext` to `ShopId` on line 50
 
-### Phase 2: Build and Fix Compilation Errors (40 errors found)
+### Phase 2: Build and Fix Compilation Errors (40 errors found) - COMPLETE
 
 #### 2.1 clothesType Enum Changes (2 errors)
 **Files:** `WardrobeMenu.cs:118,122`, `FavoritesMenu.cs:502`
@@ -435,35 +435,35 @@ Major API changes from cloning SDV 1.5.6 ShopMenu:
 
 **Strategy:** Fix these in groups, building after each to verify
 
-### Phase 3: Deploy and Test Basic Loading
-- [ ] Run `./deploy.sh` successfully
-- [ ] Launch Stardew Valley
-- [ ] Verify mod loads without SMAPI errors
-- [ ] Check SMAPI console output
+### Phase 3: Deploy and Test Basic Loading - COMPLETE
+- [x] Run `./deploy.sh` successfully
+- [x] Launch Stardew Valley
+- [x] Verify mod loads without SMAPI errors
+- [x] Check SMAPI console output
 
-### Phase 4: Test Core Functionality
-- [ ] Test dresser interaction opens WardrobeMenu
-- [ ] Test cycling through hats
-- [ ] Test cycling through shirts
-- [ ] Test cycling through pants
-- [ ] Test cycling through shoes
-- [ ] Test cycling through hair styles
-- [ ] Test cycling through accessories
-- [ ] Test farmer preview renders correctly
+### Phase 4: Test Core Functionality - COMPLETE
+- [x] Test dresser interaction opens WardrobeMenu
+- [x] Test cycling through hats
+- [x] Test cycling through shirts
+- [x] Test cycling through pants
+- [x] Test cycling through shoes
+- [x] Test cycling through hair styles
+- [x] Test cycling through accessories
+- [x] Test farmer preview renders correctly
 
 ### Phase 5: Test Advanced Features
 - [ ] Test saving a favorite outfit
 - [ ] Test loading a favorite outfit
 - [ ] Test favorites persist after save/load
-- [ ] Test menu closes properly (mutex release)
+- [x] Test menu closes properly (mutex release)
 - [ ] Test gamepad controls if applicable
 
-### Phase 6: Fix Issues Found During Testing
-- [ ] Document any runtime errors from SMAPI console
-- [ ] Fix FarmerRenderer reflection if broken
-  - [ ] Consider Harmony reverse patch pattern
-  - [ ] Consider SMAPI reflection helper pattern
-- [ ] Fix any other issues found
+### Phase 6: Fix Issues Found During Testing - N/A (no issues found)
+- [x] Document any runtime errors from SMAPI console - None found
+- [x] Fix FarmerRenderer reflection if broken - Worked as-is
+  - [ ] Consider Harmony reverse patch pattern - Not needed
+  - [ ] Consider SMAPI reflection helper pattern - Not needed
+- [x] Fix any other issues found - None found
 
 ### Phase 7: (Optional) Address Pre-existing Bugs
 - [ ] FavoritesMenu display bug
