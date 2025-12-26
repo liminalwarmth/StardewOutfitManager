@@ -65,7 +65,7 @@ namespace StardewOutfitManager.Menus
                 isAvailable = !outfitAvailabileItems.ContainsValue(null);
 
                 // Set the on-hover attributes and outfit item availability displays
-                outfitName = modelOutfit.Name;
+                outfitName = GetDisplayName();
                 lastWorn = modelOutfit.LastWorn.ToString();
                 int eqIconXOffset = hoverBox.X;
                 int eqIconYOffset = hoverBox.Y;
@@ -265,6 +265,26 @@ namespace StardewOutfitManager.Menus
                         break;
                 }
                 return background;
+            }
+
+            // Get display name for outfit (custom name or auto-generated from roster position)
+            private string GetDisplayName()
+            {
+                // If user set a custom name, use it
+                if (!string.IsNullOrEmpty(modelOutfit.Name))
+                    return modelOutfit.Name;
+
+                // Otherwise, compute name based on position within category
+                int position = 1;
+                foreach (var fav in menu.favoritesData.Favorites)
+                {
+                    if (fav.Category == modelOutfit.Category)
+                    {
+                        if (fav == modelOutfit) break;
+                        position++;
+                    }
+                }
+                return $"{modelOutfit.Category} Outfit {position}";
             }
         }
 

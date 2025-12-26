@@ -126,12 +126,6 @@ namespace StardewOutfitManager.Utils
             return true;
         }
 
-        // Backwards-compatible overload that builds lookup internally (less efficient for multiple calls)
-        public static bool isAvailable(this FavoriteOutfit f, List<Item> playerOwnedItems)
-        {
-            return isAvailable(f, BuildItemTagLookup(playerOwnedItems));
-        }
-
         // Given a pre-built lookup dictionary, returns the items for any non-null slots that are available and null for any that are not
         public static Dictionary<string, Item> GetOutfitItemAvailability(this FavoriteOutfit f, Dictionary<string, Item> itemTagLookup)
         {
@@ -151,32 +145,11 @@ namespace StardewOutfitManager.Utils
             return itemAvailability;
         }
 
-        // Backwards-compatible overload that builds lookup internally (less efficient for multiple calls)
-        public static Dictionary<string, Item> GetOutfitItemAvailability(this FavoriteOutfit f, List<Item> playerOwnedItems)
-        {
-            return GetOutfitItemAvailability(f, BuildItemTagLookup(playerOwnedItems));
-        }
-
         // Looks up the actual item in a pre-built lookup dictionary by tag reference ID (or null if not found)
         public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, Dictionary<string, Item> itemTagLookup)
         {
             itemTagLookup.TryGetValue(id, out Item foundItem);
             return foundItem;
-        }
-
-        // Backwards-compatible overload that searches a list (less efficient)
-        public static Item GetItemByReferenceID(this FavoriteOutfit f, string id, List<Item> itemListToCheck)
-        {
-            foreach (Item item in itemListToCheck)
-            {
-                if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
-                {
-                   if (item.modData["StardewOutfitManagerFavoriteItem"] == id) {
-                        return item;
-                   }
-                }
-            }
-            return null;
         }
 
         // Tag an item as a favorite Items for easy storage and retrieval

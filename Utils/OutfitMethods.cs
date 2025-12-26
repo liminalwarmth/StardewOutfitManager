@@ -95,32 +95,6 @@ namespace StardewOutfitManager.Utils
             // Play the item pickup sound
             if (playSound) Game1.playSound("pickUpItem");
         }
-
-        // Equips the available pieces of a favorite outfit onto the player (and unequips any slot that's supposed to be part of it and isn't available)
-        /* - replaced by equipFavoriteOutfit in favorites
-        public static void WearFavoriteOutfit(this IClickableMenu m, StorageFurniture dresserObject, Farmer farmer, FavoriteOutfit outfit, List<Item> playerOwnedItems)
-        {
-            // If the outfit is available
-            if (outfit.isAvailable(playerOwnedItems)) {
-                // Check each item slot that the outfit should equip
-                foreach (string itemSlot in outfit.Items.Keys)
-                {
-                    // Need to check if the player is currently wearing this item (if so, no action required)
-                    if (!outfit.isWearingThis(itemSlot, outfit.Items[itemSlot], farmer))
-                    {
-                        // If not, get the reference to the actual item we want from the player's existing items in the dresser or on their person (TODO: rings issue)
-                        Item equippingItem = outfit.GetItemByReferenceID(outfit.Items[itemSlot], playerOwnedItems);
-                        // Perform the necessary swap to wear the right item for this outfit (and don't play the sound)
-                        ItemExchange(m, dresserObject, farmer, itemSlot, equippingItem, null, false);
-                    }
-                }
-                // Change hair and accessory to match outfit settings
-                farmer.changeHairStyle(outfit.Hair);
-                farmer.accessory.Set(outfit.Accessory);
-            }
-        }
-        */
-
     }
     
     // Extension methods to IClickableMenu for farmer hair and accessory management
