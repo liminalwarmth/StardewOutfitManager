@@ -4,6 +4,34 @@ Entries are listed newest-first. Review this before starting any task.
 
 ---
 
+## 2025-12-25 - PR Review Fixes
+
+**Task:** Address PR review feedback for cleaner code
+
+### Dynamic Outfit Naming - CHANGED
+**Files:** `Menus/WardrobeMenu.cs:505-521`, `Menus/FavoritesMenu.cs:270-288`
+- **Problem:** Outfit names stored at save time (e.g., "Spring Outfit 3") left gaps when outfits were deleted
+- **Fix:** Save outfits with empty Name, compute display names dynamically based on roster position
+- Added `GetDisplayName()` helper to OutfitSlot class
+- Custom names still respected; empty string triggers auto-naming from category position
+
+### Backwards-Compatible List Overloads - REMOVED
+**File:** `Utils/FavoritesMethods.cs`
+- Deleted 3 List-based overloads that built Dictionary internally:
+  - `isAvailable(List<Item>)`
+  - `GetOutfitItemAvailability(List<Item>)`
+  - `GetItemByReferenceID(string, List<Item>)`
+- All active code already uses efficient Dictionary-based lookups
+
+### Dead Code Cleanup
+**File:** `Utils/OutfitMethods.cs:99-122`
+- Deleted commented-out `WearFavoriteOutfit` method (replaced by `equipFavoriteOutfit`)
+
+### Build Status
+- **Build succeeded** with same 8 pre-existing warnings
+
+---
+
 ## 2025-12-25 - Migration Complete & Enhancement Plans
 
 **Task:** Archive completed migration plan and create future enhancement documents
