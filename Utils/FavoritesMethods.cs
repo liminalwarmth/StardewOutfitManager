@@ -83,7 +83,8 @@ namespace StardewOutfitManager.Utils
                 {
                     if (checkName == true)
                     {
-                        if (!outfit.Name.Equals(favorite.Name)) { return false; }
+                        // Use string.Equals for null-safe comparison
+                        if (!string.Equals(outfit.Name, favorite.Name)) { return false; }
                     }
                     return true;
                 }

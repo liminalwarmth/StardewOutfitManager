@@ -110,19 +110,23 @@ namespace StardewOutfitManager
                     // Double check a prior button didn't already close the menu
                     if (menuManager.activeManagedMenu != null)
                     {
+                        // Check if there's a child menu (like NamingMenu) active - if so, don't intercept input
+                        bool hasChildMenu = menuManager.activeManagedMenu.GetChildMenu() != null;
+
                         // TODO: Suppressing this might not be necessary once I rewrite the new DresserMenu class since I can route close actions directly to cleanup
                         // Suppress the menu/cancel buttons and keys so that I can control menu exit and handle cleanup
-                        if (Game1.options.cancelButton.Any((InputButton p) => p.ToSButton() == btn) ||
+                        // But only if there's no child menu active (child menus like NamingMenu handle their own input)
+                        if (!hasChildMenu && (Game1.options.cancelButton.Any((InputButton p) => p.ToSButton() == btn) ||
                         Game1.options.menuButton.Any((InputButton p) => p.ToSButton() == btn) ||
                         btn == Buttons.Y.ToSButton() || btn == Buttons.Start.ToSButton() ||
-                        btn == Buttons.Back.ToSButton() || btn == Buttons.B.ToSButton())
+                        btn == Buttons.Back.ToSButton() || btn == Buttons.B.ToSButton()))
                         {
-                            // Supress the key and perform clean exit of all menus
+                            // Suppress the key and perform clean exit of all menus
                             Helper.Input.Suppress(btn);
                             playerManager.cleanMenuExit();
                         }
                         // Else pass the buttons on to the menuManager to process its own button press events (alongside the active menu)
-                        else { menuManager.handleTopBarInput(btn, (int)cursorPos.X, (int)cursorPos.Y); }
+                        else if (!hasChildMenu) { menuManager.handleTopBarInput(btn, (int)cursorPos.X, (int)cursorPos.Y); }
                     }
                 }
             }
