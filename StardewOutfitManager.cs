@@ -67,7 +67,18 @@ namespace StardewOutfitManager
                 save: () => Helper.WriteConfig(Config)
             );
 
-            // Add config options
+            // Wardrobe Options section (placeholder for future options)
+            configMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => "Wardrobe Options"
+            );
+
+            // New Dresser Types section
+            configMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => "New Dresser Types (Mirror & Small)"
+            );
+
             configMenu.AddBoolOption(
                 mod: ModManifest,
                 getValue: () => Config.StartingDresser,
@@ -80,7 +91,7 @@ namespace StardewOutfitManager
                 mod: ModManifest,
                 getValue: () => Config.RobinSellsDressers,
                 setValue: value => Config.RobinSellsDressers = value,
-                name: () => "Robin Sells Dressers",
+                name: () => "Robin Sells",
                 tooltip: () => "When enabled, Robin's Carpenter Shop will stock custom Mirror Dressers and Small Dressers on a rotating daily schedule. Mirror Dressers appear Monday through Wednesday, while Small Dressers appear Thursday through Saturday. Requires a game restart to take effect."
             );
 
@@ -88,8 +99,14 @@ namespace StardewOutfitManager
                 mod: ModManifest,
                 getValue: () => Config.TravelingMerchantSellsDressers,
                 setValue: value => Config.TravelingMerchantSellsDressers = value,
-                name: () => "Traveling Merchant Sells Dressers",
+                name: () => "Travel Merchant Sells",
                 tooltip: () => "When enabled, Mirror Dressers can randomly appear in the Traveling Merchant's inventory on Fridays and Sundays. The cart picks one random furniture item per visit, so dressers won't appear every time. Prices range from 250g to 2500g regardless of base value. Requires a game restart to take effect."
+            );
+
+            // Clothes Options section (placeholder for future options)
+            configMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => "Clothes Options"
             );
         }
 
