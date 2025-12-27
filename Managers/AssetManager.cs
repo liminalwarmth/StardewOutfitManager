@@ -96,6 +96,10 @@ namespace StardewOutfitManager.Managers
                 {
                     e.LoadFromModFile<Texture2D>(texturePath, AssetLoadPriority.Medium);
                 }
+                else
+                {
+                    StardewOutfitManager.ModMonitor.Log($"Missing texture for furniture: {textureName}", LogLevel.Warn);
+                }
             }
 
             // Patch Data/Shops to add custom dressers to Robin's Carpenter shop (if enabled)
@@ -107,120 +111,51 @@ namespace StardewOutfitManager.Managers
 
                     if (shops.TryGetValue("Carpenter", out var carpenterShop))
                     {
-                        // Add Mirror Dressers to Robin's rotation (spread across Mon/Tue/Wed)
-                        // Monday: Oak, Birch, Gold Mirror Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_OakMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_OakMirrorDresser",
-                            Price = 7000,
-                            Condition = "DAY_OF_WEEK Monday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_BirchMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_BirchMirrorDresser",
-                            Price = 7000,
-                            Condition = "DAY_OF_WEEK Monday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_GoldMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_GoldMirrorDresser",
-                            Price = 9500,
-                            Condition = "DAY_OF_WEEK Monday"
-                        });
+                        // Robin sells 2 different random dressers per day
+                        // Uses SYNCED_CHOICE to pick consistently for all players, changes daily
+                        // Robin is closed Tuesday and Sunday, so items only show on open days
+                        // Dressers are split into two groups to guarantee variety (no duplicates)
 
-                        // Tuesday: Walnut, Mahogany Mirror Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_WalnutMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_WalnutMirrorDresser",
-                            Price = 7000,
-                            Condition = "DAY_OF_WEEK Tuesday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_MahoganyMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_MahoganyMirrorDresser",
-                            Price = 7000,
-                            Condition = "DAY_OF_WEEK Tuesday"
-                        });
+                        string openDays = "!DAY_OF_WEEK Tuesday, !DAY_OF_WEEK Sunday";
 
-                        // Wednesday: Modern, White Mirror Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_ModernMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_ModernMirrorDresser",
-                            Price = 8000,
-                            Condition = "DAY_OF_WEEK Wednesday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_WhiteMirrorDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_WhiteMirrorDresser",
-                            Price = 7000,
-                            Condition = "DAY_OF_WEEK Wednesday"
-                        });
+                        // Slot A - picks from group 1 (4 mirror + 3 small dressers)
+                        // 1=Oak Mirror, 2=Birch Mirror, 3=Walnut Mirror, 4=Mahogany Mirror
+                        // 5=Oak Small, 6=Birch Small, 7=Walnut Small
+                        AddDresserWithChoice(carpenterShop, "OakMirrorDresser", 7000, openDays, "SOM_DresserA", 1, 7);
+                        AddDresserWithChoice(carpenterShop, "BirchMirrorDresser", 7000, openDays, "SOM_DresserA", 2, 7);
+                        AddDresserWithChoice(carpenterShop, "WalnutMirrorDresser", 7000, openDays, "SOM_DresserA", 3, 7);
+                        AddDresserWithChoice(carpenterShop, "MahoganyMirrorDresser", 7000, openDays, "SOM_DresserA", 4, 7);
+                        AddDresserWithChoice(carpenterShop, "SmallOakDresser", 3000, openDays, "SOM_DresserA", 5, 7);
+                        AddDresserWithChoice(carpenterShop, "SmallBirchDresser", 3000, openDays, "SOM_DresserA", 6, 7);
+                        AddDresserWithChoice(carpenterShop, "SmallWalnutDresser", 3000, openDays, "SOM_DresserA", 7, 7);
 
-                        // Add Small Dressers to Robin's rotation (spread across Thu/Fri/Sat)
-                        // Thursday: Oak, Birch, Gold Small Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallOakDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallOakDresser",
-                            Price = 3000,
-                            Condition = "DAY_OF_WEEK Thursday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallBirchDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallBirchDresser",
-                            Price = 3000,
-                            Condition = "DAY_OF_WEEK Thursday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallGoldDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallGoldDresser",
-                            Price = 5500,
-                            Condition = "DAY_OF_WEEK Thursday"
-                        });
-
-                        // Friday: Walnut, Mahogany Small Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallWalnutDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallWalnutDresser",
-                            Price = 3000,
-                            Condition = "DAY_OF_WEEK Friday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallMahoganyDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallMahoganyDresser",
-                            Price = 3000,
-                            Condition = "DAY_OF_WEEK Friday"
-                        });
-
-                        // Saturday: Modern, White Small Dressers
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallModernDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallModernDresser",
-                            Price = 4000,
-                            Condition = "DAY_OF_WEEK Saturday"
-                        });
-                        carpenterShop.Items.Add(new ShopItemData
-                        {
-                            Id = "LiminalWarmth.StardewOutfitManager_SmallWhiteDresser_Shop",
-                            ItemId = "(F)LiminalWarmth.StardewOutfitManager_SmallWhiteDresser",
-                            Price = 3000,
-                            Condition = "DAY_OF_WEEK Saturday"
-                        });
+                        // Slot B - picks from group 2 (3 mirror + 4 small dressers)
+                        // 1=Modern Mirror, 2=White Mirror, 3=Gold Mirror
+                        // 4=Mahogany Small, 5=Modern Small, 6=White Small, 7=Gold Small
+                        AddDresserWithChoice(carpenterShop, "ModernMirrorDresser", 8000, openDays, "SOM_DresserB", 1, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "WhiteMirrorDresser", 7000, openDays, "SOM_DresserB", 2, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "GoldMirrorDresser", 9500, openDays, "SOM_DresserB", 3, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "SmallMahoganyDresser", 3000, openDays, "SOM_DresserB", 4, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "SmallModernDresser", 4000, openDays, "SOM_DresserB", 5, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "SmallWhiteDresser", 3000, openDays, "SOM_DresserB", 6, 7, "_B");
+                        AddDresserWithChoice(carpenterShop, "SmallGoldDresser", 5500, openDays, "SOM_DresserB", 7, 7, "_B");
                     }
                 });
             }
+        }
+
+        /// <summary>
+        /// Helper to add a dresser shop entry with SYNCED_CHOICE condition.
+        /// </summary>
+        private static void AddDresserWithChoice(ShopData shop, string dresserName, int price, string baseDayCondition, string choiceKey, int choiceValue, int maxChoice, string idSuffix = "")
+        {
+            shop.Items.Add(new ShopItemData
+            {
+                Id = $"LiminalWarmth.StardewOutfitManager_{dresserName}_Shop{idSuffix}",
+                ItemId = $"(F)LiminalWarmth.StardewOutfitManager_{dresserName}",
+                Price = price,
+                Condition = $"{baseDayCondition}, SYNCED_CHOICE day {choiceKey} 1 {maxChoice} {choiceValue}"
+            });
         }
 
         /// <summary>
