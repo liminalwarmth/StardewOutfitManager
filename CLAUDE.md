@@ -28,13 +28,33 @@ Each farmer has their own favorites data stored separately (keyed by player name
 
 ## Development Journal
 
-**IMPORTANT:** Before starting any task, review `Docs/journal.md` to understand recent changes and context.
+Development journals are stored per-branch in `Docs/journals/` to avoid merge conflicts.
 
-After completing any task, add a new entry to the TOP of the journal with:
-- Date and timestamp (format: `## YYYY-MM-DD HH:MM - Task Title`)
-- Brief bulleted summary of changes made
-- Files modified
-- Any issues encountered or decisions made
+### Journal Naming Format
+
+Files are named: `YYYY-MM-DD_branch-name.md`
+
+Examples:
+- `2025-12-27_delete-outfit-button.md`
+- `2025-12-26_config-shop-integration.md`
+
+### Before Starting Work
+
+1. **Read recent journals**: Check `Docs/journals/` for the 2-3 most recent files (by date prefix) to understand recent changes
+2. **Check for your branch's journal**: If continuing work on an existing branch, read that branch's journal first
+3. **Review `_archive.md`**: Contains historical entries from before per-branch journaling was adopted
+
+### Logging Your Work
+
+When completing tasks, add entries to your branch's journal file:
+- Create the file if it doesn't exist: `YYYY-MM-DD_your-branch-name.md`
+- Add a brief description of the branch at the top
+- Add entries with format: `## YYYY-MM-DD HH:MM - Task Title`
+- Include: changes made, files modified, issues encountered
+
+### Why Per-Branch Journals?
+
+This prevents merge conflicts when multiple branches add journal entries. Each branch's work stays in its own file, and you can review recent work across branches by reading the dated files.
 
 ## Before Starting Any Task
 
