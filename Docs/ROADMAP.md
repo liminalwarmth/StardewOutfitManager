@@ -24,6 +24,12 @@
 - More dresser options and filtering
 - Sorting/categorization improvements
 
+### Starting Dresser Delivery
+- Consider switching from direct inventory add to mail-based delivery
+- Would provide a welcome letter with the dresser attached
+- More thematic/discoverable for new players
+- Uses `Data/Mail` and `Data/TriggerActions` instead of `OnSaveLoaded` code
+
 ---
 
 ## Content Additions
