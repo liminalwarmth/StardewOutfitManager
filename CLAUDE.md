@@ -70,6 +70,7 @@ Before reporting that any task is complete, you MUST:
 - Uses **Harmony** for patching game internals
 - Key APIs: FarmerRenderer (custom drawing), StorageFurniture (dresser), IClickableMenu (UI)
 - Deploy script: `./deploy.sh` builds and copies to Mods folder for testing
+- **Config file**: `config.json` contains mod settings (editable via GMCM or manually). Use config options for conditional logic when implementing features that should be toggleable.
 
 ## Testing Workflow
 

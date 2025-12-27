@@ -9,6 +9,7 @@ using StardewOutfitManager.Menus;
 using StardewOutfitManager.Managers;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Data;
+using StardewOutfitManager.Models;
 using StardewValley.Objects;
 using HarmonyLib;
 using Microsoft.Xna.Framework.Input;
@@ -26,9 +27,15 @@ namespace StardewOutfitManager
         // Set up managers for each local player (per-screen handles local co-op)
         internal static PlayerManager playerManager;
 
+        // Mod configuration
+        internal static ModConfig Config;
+
         // Mod Entry
         public override void Entry(IModHelper helper)
         {
+            // Load configuration
+            Config = helper.ReadConfig<ModConfig>();
+
             // Set up global manager functions
             assetManager = new AssetManager(helper);
             playerManager = new PlayerManager(helper);
@@ -41,6 +48,81 @@ namespace StardewOutfitManager
             helper.Events.Display.RenderingActiveMenu += OnMenuRender;
             helper.Events.Input.ButtonsChanged += OnButtonsChanged;
             helper.Events.GameLoop.DayEnding += OnDayEnding;
+            helper.Events.Content.AssetRequested += OnAssetRequested;
+            helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+        }
+
+        // Register with Generic Mod Config Menu if available
+        private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+        {
+            var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (configMenu is null)
+                return;
+
+            // Register mod
+            configMenu.Register(
+                mod: ModManifest,
+                reset: () => Config = new ModConfig(),
+                save: () => Helper.WriteConfig(Config)
+            );
+
+            // Add config options
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.StartingDresser,
+                setValue: value => Config.StartingDresser = value,
+                name: () => "Starting Dresser",
+                tooltip: () => "When enabled, new farmers will receive a free Small Oak Dresser in their starting inventory. This gives players immediate access to the outfit management system without needing to purchase or find a dresser first. In multiplayer, each farmer receives their own dresser once."
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.RobinSellsDressers,
+                setValue: value => Config.RobinSellsDressers = value,
+                name: () => "Robin Sells Dressers",
+                tooltip: () => "When enabled, Robin's Carpenter Shop will stock custom Mirror Dressers and Small Dressers on a rotating daily schedule. Mirror Dressers appear Monday through Wednesday, while Small Dressers appear Thursday through Saturday. Requires a game restart to take effect."
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.TravelingMerchantSellsDressers,
+                setValue: value => Config.TravelingMerchantSellsDressers = value,
+                name: () => "Traveling Merchant Sells Dressers",
+                tooltip: () => "When enabled, Mirror Dressers can randomly appear in the Traveling Merchant's inventory on Fridays and Sundays. The cart picks one random furniture item per visit, so dressers won't appear every time. Prices range from 250g to 2500g regardless of base value. Requires a game restart to take effect."
+            );
+        }
+
+        // Give starting dresser to new farmers if enabled (per-farmer in multiplayer)
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            if (!Config.StartingDresser)
+                return;
+
+            // Get the current farmer's unique multiplayer ID
+            long farmerId = Game1.player.UniqueMultiplayerID;
+
+            // Check if this specific farmer has already received the starting dresser
+            var saveData = Helper.Data.ReadSaveData<ModSaveData>("starting-dresser-given") ?? new ModSaveData();
+
+            if (!saveData.FarmersWithStartingDresser.Contains(farmerId))
+            {
+                // Create and give the Small Oak Dresser
+                var dresser = ItemRegistry.Create("(F)LiminalWarmth.StardewOutfitManager_SmallOakDresser");
+                Game1.player.addItemToInventory(dresser);
+
+                // Mark this farmer as having received the dresser
+                saveData.FarmersWithStartingDresser.Add(farmerId);
+                Helper.Data.WriteSaveData("starting-dresser-given", saveData);
+
+                Monitor.Log($"Gave starting Small Oak Dresser to farmer {Game1.player.Name}.", LogLevel.Info);
+            }
+        }
+
+        // Handle content API requests for custom furniture
+        private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
+        {
+            assetManager.HandleAssetRequested(e);
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
