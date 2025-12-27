@@ -38,3 +38,10 @@ The build automatically deploys to your Mods folder.
 ## Credits
 
 **Author**: Liminal Warmth
+
+**Special thanks to:**
+- Jinxiewinxie and Advize for the Get Dressed Mod which inspired this one
+- Elizabeth at the Stardew Valley Discord for base game hair name list
+- Minakie for the [Get Dressed dresser retextures](https://www.nexusmods.com/stardewvalley/mods/648)
+- Zilchaz for permission to use their beautiful Seasonal Display Backgrounds on the favorites tab
+- Atravita, Pathoschild, and the SDV modding Discord community for answering questions and sharing code examples during development

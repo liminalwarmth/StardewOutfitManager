@@ -1,21 +1,33 @@
 # Stardew Outfit Manager - Known Bugs
 
-## Display Farmer Recolor Bug
+No known bugs at this time.
 
-**Status:** Open  
-**Location:** `Utils/ModTools.cs` - `drawFarmerScaled()` method
+---
 
-**Issue:** Reflection call to `executeRecolorActions` not working correctly on display farmer (fake farmers created via `CreateFakeModelFarmer`).
+## Bug Report Template
 
-**Analysis:**
-- `executeRecolorActions` is called (lines 28, 167) but texture pixel modifications may not apply
-- `baseTexture` may not initialize correctly for fake farmers
-- Duplicate call exists (commented line 27, active line 28)
+When logging a new bug, use this format:
 
-**Possible Fixes to Try:**
-1. Check if `baseTexture` is null before drawing and force initialization
-2. Call `farmer.FarmerRenderer.draw()` once before custom draw to force baseTexture setup
-3. Use a reverse patch pattern like FashionSense does
-4. Explicitly set dirty flags after `changeSkinColor`/`changeEyeColor` calls
+```markdown
+## [Short Description]
 
-**Needs:** In-game testing to verify exact symptom (wrong colors? missing body parts? grayscale?)
+**Status:** Open | In Progress | Fixed
+**Location:** `Path/To/File.cs` - `methodName()` (if known)
+
+**Issue:** Clear description of the problem.
+
+**Steps to Reproduce:**
+1. Step one
+2. Step two
+3. Observe issue
+
+**Expected:** What should happen
+**Actual:** What actually happens
+
+**Analysis:** (optional)
+- Technical notes about the cause
+- Relevant code references
+
+**Possible Fixes:** (optional)
+1. Potential solution approach
+```
