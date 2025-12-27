@@ -48,9 +48,37 @@ Examples:
 
 When completing tasks, add entries to your branch's journal file:
 - Create the file if it doesn't exist: `YYYY-MM-DD_your-branch-name.md`
-- Add a brief description of the branch at the top
-- Add entries with format: `## YYYY-MM-DD HH:MM - Task Title`
-- Include: changes made, files modified, issues encountered
+- Add a brief description of the branch at the top (1-2 sentences)
+- Add entries in reverse chronological order (newest first)
+
+### Entry Format
+
+```markdown
+## YYYY-MM-DD HH:MM - Task Title
+
+**Task:** Brief description of what was done
+
+### Changes Made
+
+**1. First Change** (`filename.cs`)
+- Bullet points describing specific changes
+- Include technical details that would help future readers
+
+**2. Second Change** (`other-file.cs`)
+- More bullet points
+
+### Files Modified
+- `path/to/file.cs` - Brief note on what changed
+
+### Build Status
+- **Build succeeded with 0 warnings** (or note any issues)
+```
+
+Key points:
+- Use `**bold**` for numbered changes and file references in parentheses
+- Group related changes under numbered headings
+- Always include build status at the end
+- Be specific enough that someone can understand what changed without reading the code
 
 ### Why Per-Branch Journals?
 
