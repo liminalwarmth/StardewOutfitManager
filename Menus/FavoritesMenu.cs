@@ -16,6 +16,19 @@ using StardewValley.Characters;
 
 namespace StardewOutfitManager.Menus
 {
+    /// <summary>
+    /// Subclass of NamingMenu that allows empty names (minLength=0).
+    /// Used for outfit naming where empty string means "reset to auto-name".
+    /// </summary>
+    internal class OutfitNamingMenu : NamingMenu
+    {
+        public OutfitNamingMenu(doneNamingBehavior b, string title, string defaultName = null)
+            : base(b, title, defaultName)
+        {
+            minLength = 0;  // Allow empty names (protected field in base class)
+        }
+    }
+
     // This class defines the Favorites outfit selection menu
     internal class FavoritesMenu : IClickableMenu
     {
@@ -172,7 +185,7 @@ namespace StardewOutfitManager.Menus
             }
 
             // Get display name for outfit (custom name or auto-generated from roster position)
-            private string GetDisplayName()
+            internal string GetDisplayName()
             {
                 // If user set a custom name, use it
                 if (!string.IsNullOrEmpty(modelOutfit.Name))
@@ -294,6 +307,11 @@ namespace StardewOutfitManager.Menus
         public ClickableTextureComponent leftRotationButton;
         public ClickableTextureComponent rightRotationButton;
         public ClickableTextureComponent okButton;
+        public ClickableTextureComponent renameButton;
+        public ClickableTextureComponent deleteButton;
+
+        // Weapons texture for Maru's Wrench icon (rename button)
+        private Texture2D weaponsTexture;
 
         // Equipment Icons (for selected outfit display)
         public List<ClickableComponent> equipmentIcons = new();
@@ -315,9 +333,36 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.faceDirection(menuManager.farmerFacingDirection);
             _displayFarmer.FarmerSprite.StopAnimation();
 
+            // Load weapons texture for Maru's Wrench icon
+            weaponsTexture = Game1.content.Load<Texture2D>("TileSheets/weapons");
+
             // Player display window movement buttons
             leftRotationButton = new ClickableTextureComponent("LeftRotate", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f);
             rightRotationButton = new ClickableTextureComponent("RightRotate", new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 33), 1.25f);
+
+            // Rename button - positioned to the right of the portrait box, top-aligned (56x56)
+            // Uses Maru's Wrench weapon sprite (ID 36) from weapons texture
+            // Same box background style as delete button for visual consistency
+            // baseScale=1f so hover scaling (+0.1) gives visible 10% growth
+            renameButton = new ClickableTextureComponent("Rename", new Rectangle(_portraitBox.Right + 8, _portraitBox.Y, 56, 56), null, "Rename Outfit", weaponsTexture, new Rectangle(64, 64, 16, 16), 1f)
+            {
+                myID = 9997,
+                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                downNeighborID = 9998,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC
+            };
+
+            // Delete button - positioned below rename button with gap (56x56)
+            // baseScale=1f so hover scaling (+0.1) gives visible 10% growth
+            deleteButton = new ClickableTextureComponent("Delete", new Rectangle(_portraitBox.Right + 8, _portraitBox.Y + 56 + 8, 56, 56), null, "Delete Outfit", Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 1f)
+            {
+                myID = 9998,
+                upNeighborID = 9997,
+                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC
+            };
 
             // Equipment icons for selected outfit display (below portrait)
             // Layout: [Hat][Shirt][Left Ring]
@@ -598,15 +643,41 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.FarmerSprite.StopAnimation();
         }
 
+        // Callback for NamingMenu when player finishes renaming an outfit
+        public void OnOutfitRenamed(string newName)
+        {
+            // Clear the child menu (NamingMenu) so we return to this menu
+            SetChildMenu(null);
+
+            // Update the outfit name in the data model
+            if (outfitSlotSelected != null)
+            {
+                // Trim the name; if empty/whitespace, set to null to use auto-naming
+                string trimmedName = newName?.Trim();
+                if (string.IsNullOrEmpty(trimmedName))
+                {
+                    // Clear custom name - outfit will use auto-generated name (e.g., "Spring 1")
+                    outfitSlotSelected.modelOutfit.Name = null;
+                    outfitSlotSelected.outfitName = outfitSlotSelected.GetDisplayName();
+                }
+                else
+                {
+                    outfitSlotSelected.modelOutfit.Name = trimmedName;
+                    outfitSlotSelected.outfitName = trimmedName;
+                }
+                Game1.playSound("coin");
+            }
+        }
+
         public void FilterOutfitSlotsByCategoryAndSort(List<OutfitSlot> list)
         {
+            // Filter to the given category
+            List<OutfitSlot> filtered = new();
             if (list.Count > 0)
             {
-                // Filter to the given category
-                List<OutfitSlot> filtered = new();
                 if (categorySelected.name == "All Outfits")
                 {
-                    filtered = list;
+                    filtered = list.ToList(); // Make a copy to avoid reference issues
                 }
                 else
                 {
@@ -654,12 +725,11 @@ namespace StardewOutfitManager.Menus
                     }
                     filtered = favorited.Concat(regular).Concat(unavailableAndFavorite).Concat(unavailable).ToList();
                 }
-
-                // Set the filtered list to the ordered slots
-                outfitSlotsFiltered = filtered;
-                // Update the current outfit index
-                currentOutfitIndex = 0;
             }
+
+            // Always update the filtered list (even if empty) and reset index
+            outfitSlotsFiltered = filtered;
+            currentOutfitIndex = 0;
         }
 
         // Update the outfit buttons to the correct slots based on current outfit index
@@ -793,12 +863,22 @@ namespace StardewOutfitManager.Menus
         // Key press
         public override void receiveKeyPress(Keys key)
         {
+            // Don't process key presses when a child menu (like NamingMenu) is active
+            if (GetChildMenu() != null)
+            {
+                return;
+            }
             base.receiveKeyPress(key);
         }
 
-        // Game pad buttons 
+        // Game pad buttons
         public override void receiveGamePadButton(Buttons b)
         {
+            // Don't process gamepad buttons when a child menu (like NamingMenu) is active
+            if (GetChildMenu() != null)
+            {
+                return;
+            }
             base.receiveGamePadButton(b);
             if (b == Buttons.RightShoulder)
             {
@@ -823,6 +903,12 @@ namespace StardewOutfitManager.Menus
         // Left click action
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
+            // Don't process clicks when a child menu (like NamingMenu) is active
+            if (GetChildMenu() != null)
+            {
+                return;
+            }
+
             // Rotation Buttons
             if (leftRotationButton.containsPoint(x, y))
             {
@@ -883,7 +969,66 @@ namespace StardewOutfitManager.Menus
             }
 
             // Outfit Customization
-            
+
+            // Rename button - only active when an outfit is selected
+            if (renameButton.containsPoint(x, y) && outfitSlotSelected != null)
+            {
+                renameButton.scale -= 0.25f;
+                renameButton.scale = Math.Max(0.75f, renameButton.scale);
+                Game1.playSound("smallSelect");
+                // Reset scale to neutral before opening child menu (so button doesn't stay depressed)
+                renameButton.scale = renameButton.baseScale;
+                // Clear hover text immediately so it doesn't persist while child menu is open
+                hoverText = "";
+                // Open the naming menu as a child menu (overlay) with the current outfit name
+                // Use OutfitNamingMenu subclass which allows empty names (minLength=0)
+                OutfitNamingMenu namingMenu = new OutfitNamingMenu(
+                    OnOutfitRenamed,
+                    "Name This Outfit",
+                    outfitSlotSelected.modelOutfit.Name
+                );
+                // Increase the character limit and textbox width to allow longer outfit names
+                namingMenu.textBox.textLimit = 32;  // Allow up to 32 characters (default textbox is ~12-14)
+                namingMenu.textBox.limitWidth = false; // Prevent text truncation when set
+                namingMenu.textBox.Width = 384;     // Increase from 256 to 384 to fit more characters
+                // Re-set the text now that limitWidth is disabled (to avoid truncation from constructor)
+                namingMenu.textBox.Text = outfitSlotSelected.modelOutfit.Name ?? "";
+
+                // Center just the textbox (not the full assembly with buttons)
+                // The TextBox has a visual border that extends ~16px beyond its Width property
+                int textBoxVisualWidth = namingMenu.textBox.Width + 16;  // Account for right border decoration
+                int gapAfterTextBox = 16;  // Gap between textbox visual edge and OK button
+                int doneButtonWidth = namingMenu.doneNamingButton.bounds.Width;
+                int gapAfterDone = 8;
+
+                // Center just the textbox relative to screen (buttons go to the right)
+                int textBoxCenterX = Game1.uiViewport.Width / 2 - textBoxVisualWidth / 2;
+                namingMenu.textBox.X = textBoxCenterX;
+                namingMenu.doneNamingButton.bounds.X = textBoxCenterX + textBoxVisualWidth + gapAfterTextBox;
+                namingMenu.randomButton.bounds.X = namingMenu.doneNamingButton.bounds.X + doneButtonWidth + gapAfterDone;
+
+                // Move textbox and buttons up to reduce gap with title banner
+                // Banner is drawn at height/2 - 128, is 72px tall, so bottom is at height/2 - 56
+                // TextBox default is at height/2, so we shift up by 40px to create 16px gap
+                // Note: Gamepad virtual keyboard (TextEntryMenu) handles its own positioning independently
+                int verticalShift = 40;
+                namingMenu.textBox.Y -= verticalShift;
+                namingMenu.doneNamingButton.bounds.Y -= verticalShift;
+                namingMenu.randomButton.bounds.Y -= verticalShift;
+
+                SetChildMenu(namingMenu);
+            }
+
+            // Delete button - only active when an outfit is selected
+            if (deleteButton.containsPoint(x, y) && outfitSlotSelected != null)
+            {
+                deleteButton.scale -= 0.25f;
+                deleteButton.scale = Math.Max(0.75f, deleteButton.scale);
+                // Delete the selected outfit (this calls ResetSelectedOutfit internally)
+                outfitSlotSelected.Delete();
+                Game1.playSound("trashcan");
+            }
+
             // OK button
             if (okButton.containsPoint(x, y))
             {
@@ -904,6 +1049,14 @@ namespace StardewOutfitManager.Menus
         // Handle on-hover and resetting button states
         public override void performHoverAction(int x, int y)
         {
+            // Don't update hover text when a child menu (like NamingMenu) is active
+            if (GetChildMenu() != null)
+            {
+                hoverText = "";
+                outfitSlotHovered = null;
+                return;
+            }
+
             hoverText = "";
             outfitSlotHovered = null;
 
@@ -960,6 +1113,28 @@ namespace StardewOutfitManager.Menus
                 okButton.scale = Math.Max(okButton.scale - 0.02f, okButton.baseScale);
             }
 
+            // Rename button hover - only active when outfit is selected
+            if (outfitSlotSelected != null && renameButton.containsPoint(x, y))
+            {
+                renameButton.scale = Math.Min(renameButton.scale + 0.02f, renameButton.baseScale + 0.1f);
+                hoverText = "Rename Outfit";
+            }
+            else
+            {
+                renameButton.scale = Math.Max(renameButton.scale - 0.02f, renameButton.baseScale);
+            }
+
+            // Delete button hover - only active when outfit is selected
+            if (outfitSlotSelected != null && deleteButton.containsPoint(x, y))
+            {
+                deleteButton.scale = Math.Min(deleteButton.scale + 0.02f, deleteButton.baseScale + 0.1f);
+                hoverText = "Delete Outfit";
+            }
+            else
+            {
+                deleteButton.scale = Math.Max(deleteButton.scale - 0.02f, deleteButton.baseScale);
+            }
+
             // Equipment icon hover - track hovered item for standard tooltip display
             hoveredItem = null;
             foreach (ClickableComponent c in equipmentIcons)
@@ -999,6 +1174,8 @@ namespace StardewOutfitManager.Menus
             _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
             leftRotationButton.bounds = new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60);
             rightRotationButton.bounds = new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60);
+            renameButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y, 56, 56);
+            deleteButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y + 56 + 8, 56, 56);
 
             // Reposition equipment icons
             int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
@@ -1096,6 +1273,11 @@ namespace StardewOutfitManager.Menus
 
         public override void receiveScrollWheelAction(int direction)
         {
+            // Don't process scroll when a child menu (like NamingMenu) is active
+            if (GetChildMenu() != null)
+            {
+                return;
+            }
             base.receiveScrollWheelAction(direction);
             int visibleSlots = OUTFITS_PER_ROW * VISIBLE_ROWS;
             if (outfitSlotsFiltered.Count > visibleSlots)
@@ -1184,7 +1366,13 @@ namespace StardewOutfitManager.Menus
             int padding = 16;
             int gridSpacing = 0;
             int gridWidth = 3 * itemSize + 2 * gridSpacing;
-            int boxWidth = gridWidth + padding * 2;
+
+            // Measure the outfit name to determine if we need a wider box
+            string displayName = slot.outfitName;
+            Vector2 nameSize = Game1.smallFont.MeasureString(displayName);
+            int minBoxWidthForGrid = gridWidth + padding * 2;
+            int minBoxWidthForName = (int)nameSize.X + padding * 2;
+            int boxWidth = Math.Max(minBoxWidthForGrid, minBoxWidthForName);
             int boxHeight = padding + 32 + 2 * itemSize + gridSpacing + padding;
 
             // Position to the right of the hovered slot, or left if it would clip
@@ -1206,14 +1394,11 @@ namespace StardewOutfitManager.Menus
             // Draw background box
             drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60), boxX, boxY, boxWidth, boxHeight, Color.White, 1f, false);
 
-            // Draw outfit name
-            string displayName = slot.outfitName;
-            Vector2 nameSize = Game1.smallFont.MeasureString(displayName);
-            float nameScale = Math.Min(1f, (boxWidth - padding * 2) / nameSize.X);
-            Utility.drawTextWithShadow(b, displayName, Game1.smallFont, new Vector2(boxX + padding, boxY + padding), Game1.textColor, nameScale);
+            // Draw outfit name left-aligned within the box
+            Utility.drawTextWithShadow(b, displayName, Game1.smallFont, new Vector2(boxX + padding, boxY + padding), Game1.textColor);
 
-            // Draw 2x3 item grid below the name
-            int gridX = boxX + padding;
+            // Draw 2x3 item grid below the name, centered if box is wider than grid
+            int gridX = boxX + (boxWidth - gridWidth) / 2;
             int gridY = boxY + padding + 32;
 
             // Slot keys in order: Hat, Shirt, Left Ring (top row), Boots, Pants, Right Ring (bottom row)
@@ -1267,6 +1452,50 @@ namespace StardewOutfitManager.Menus
             leftRotationButton.draw(b);
             rightRotationButton.draw(b);
 
+            // Draw rename and delete buttons only when an outfit is selected
+            if (outfitSlotSelected != null)
+            {
+                // Calculate scaled dimensions for rename button (scale factor relative to base)
+                float renameScaleFactor = renameButton.scale / renameButton.baseScale;
+                int renameScaledWidth = (int)(renameButton.bounds.Width * renameScaleFactor);
+                int renameScaledHeight = (int)(renameButton.bounds.Height * renameScaleFactor);
+                int renameOffsetX = (renameButton.bounds.Width - renameScaledWidth) / 2;
+                int renameOffsetY = (renameButton.bounds.Height - renameScaledHeight) / 2;
+                int renameIconSize = (int)(32 * renameScaleFactor);
+                int renameIconPadding = (renameScaledWidth - renameIconSize) / 2;
+
+                // Draw rename button with beveled button background (scaled)
+                // Using menuTexture Rectangle(0, 256, 60, 60) - standard button with built-in shading
+                drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                    renameButton.bounds.X + renameOffsetX, renameButton.bounds.Y + renameOffsetY,
+                    renameScaledWidth, renameScaledHeight, Color.White, 1f, false);
+                // Draw Maru's Wrench icon centered (weapon ID 36: row 4, col 4 in 8-wide grid = 64, 64)
+                b.Draw(weaponsTexture, new Rectangle(
+                    renameButton.bounds.X + renameOffsetX + renameIconPadding,
+                    renameButton.bounds.Y + renameOffsetY + renameIconPadding,
+                    renameIconSize, renameIconSize), new Rectangle(64, 64, 16, 16), Color.White);
+
+                // Calculate scaled dimensions for delete button
+                float deleteScaleFactor = deleteButton.scale / deleteButton.baseScale;
+                int deleteScaledWidth = (int)(deleteButton.bounds.Width * deleteScaleFactor);
+                int deleteScaledHeight = (int)(deleteButton.bounds.Height * deleteScaleFactor);
+                int deleteOffsetX = (deleteButton.bounds.Width - deleteScaledWidth) / 2;
+                int deleteOffsetY = (deleteButton.bounds.Height - deleteScaledHeight) / 2;
+                int deleteIconSize = (int)(32 * deleteScaleFactor);
+                int deleteIconPadding = (deleteScaledWidth - deleteIconSize) / 2;
+
+                // Draw delete button with beveled button background (scaled)
+                // Using menuTexture Rectangle(0, 256, 60, 60) - standard button with built-in shading
+                drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 256, 60, 60),
+                    deleteButton.bounds.X + deleteOffsetX, deleteButton.bounds.Y + deleteOffsetY,
+                    deleteScaledWidth, deleteScaledHeight, Color.White, 1f, false);
+                // Draw X icon centered (scaled)
+                b.Draw(Game1.mouseCursors, new Rectangle(
+                    deleteButton.bounds.X + deleteOffsetX + deleteIconPadding,
+                    deleteButton.bounds.Y + deleteOffsetY + deleteIconPadding,
+                    deleteIconSize, deleteIconSize), new Rectangle(322, 498, 12, 12), Color.White);
+            }
+
             // Draw equipment icons - show selected outfit items, or current equipment if no outfit selected
             foreach (ClickableComponent c in equipmentIcons)
             {
@@ -1300,9 +1529,25 @@ namespace StardewOutfitManager.Menus
             okButton.draw(b);
 
             // Draw Outfit Display Slots (only draw 8 or fewer based on current index)
-            foreach (OutfitSlot slot in outfitSlotsFiltered)
+            if (outfitSlotsFiltered.Count > 0)
             {
-                if (slot.isVisible) { slot.Draw(b); }
+                foreach (OutfitSlot slot in outfitSlotsFiltered)
+                {
+                    if (slot.isVisible) { slot.Draw(b); }
+                }
+            }
+            else
+            {
+                // Draw "No Saved [Season] Outfits" text centered in the outfit box
+                string emptyText = categorySelected.name == "All Outfits"
+                    ? "No Saved Outfits"
+                    : $"No Saved {categorySelected.name} Outfits";
+                Vector2 textSize = Game1.smallFont.MeasureString(emptyText);
+                Vector2 textPos = new Vector2(
+                    outfitBox.X + (outfitBox.Width - textSize.X) / 2,
+                    outfitBox.Y + (outfitBox.Height - textSize.Y) / 2
+                );
+                Utility.drawTextWithShadow(b, emptyText, Game1.smallFont, textPos, Game1.textColor);
             }
 
             // Draw outfit hover infobox (for mouse hover or gamepad snap)
