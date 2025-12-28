@@ -141,7 +141,7 @@ namespace StardewOutfitManager.Utils
         {
             // Get all valid accessory indices based on config
             List<int> validAccessories = AccessoryMethods.GetAllAccessoryIndices(
-                StardewOutfitManager.Config.IncludeBeardsAsAccessories,
+                StardewOutfitManager.Config.IncludeFacialHair,
                 StardewOutfitManager.Config.IncludeModdedAccessories
             );
 

@@ -13,10 +13,8 @@ namespace StardewOutfitManager.Utils
     {
         // Vanilla accessory constants based on SDV 1.6 source code (FarmerRenderer.isAccessoryFacialHair)
         // Facial hair (uses hair color for tinting): 0-5 and 19-22
-        // Duckbill (19) is facial hair but always excluded from picker
         // The game draws accessories dynamically from texture, no hardcoded max
         public const int ACCESSORY_NONE = -1;
-        public const int DUCKBILL_INDEX = 19;
 
         // Vanilla texture: 4 rows x 8 columns = 32 slots (indices 0-31)
         // However, indices 30 and 31 are empty slots with no visual
@@ -24,23 +22,22 @@ namespace StardewOutfitManager.Utils
         // VANILLA_MAX_INDEX is used to distinguish vanilla vs modded when filtering
         public const int VANILLA_MAX_INDEX = 29;  // Last actual accessory in vanilla
 
-        // Set of indices that are beards/mustaches (excluded unless IncludeBeardsAsAccessories is true)
+        // Set of indices that are facial hair (excluded unless IncludeFacialHair is true)
         // Based on FarmerRenderer.isAccessoryFacialHair: returns true for 0-5 and 19-22
-        // Note: 19 (Duckbill) is always excluded separately, so we include it here for completeness
-        private static readonly HashSet<int> BeardIndices = new HashSet<int>
+        // Includes beards, mustaches, and other facial hair options
+        private static readonly HashSet<int> FacialHairIndices = new HashSet<int>
         {
             0, 1, 2, 3, 4, 5,     // Original facial hair accessories
-            19, 20, 21, 22        // New 1.6 facial hair: includes Duckbill (19) which is excluded separately
+            19, 20, 21, 22        // SDV 1.6 facial hair additions
         };
 
         // Accessory sprite dimensions (from Characters/Farmer/accessories texture)
-        private const int ACCESSORY_SPRITE_WIDTH = 16;
         private const int ACCESSORY_SPRITE_HEIGHT = 32;
         private const int ACCESSORIES_PER_ROW = 8;
 
         // Cache for performance
         private static List<int> _cachedAccessoryIndices = null;
-        private static bool _cachedIncludeBeards = false;
+        private static bool _cachedIncludeFacialHair = false;
         private static bool _cachedIncludeModded = true;
         private static int _cachedMaxIndex = -1;
 
@@ -48,23 +45,23 @@ namespace StardewOutfitManager.Utils
         /// Get all valid accessory indices based on current config settings.
         /// Results are cached for performance.
         /// </summary>
-        /// <param name="includeBeards">Whether to include beard accessories (indices 0-5 and 20-22)</param>
+        /// <param name="includeFacialHair">Whether to include facial hair accessories (indices 0-5 and 19-22)</param>
         /// <param name="includeModded">Whether to include modded accessories (beyond vanilla index 29)</param>
         /// <returns>List of valid accessory indices</returns>
-        public static List<int> GetAllAccessoryIndices(bool includeBeards, bool includeModded)
+        public static List<int> GetAllAccessoryIndices(bool includeFacialHair, bool includeModded)
         {
             // Return cached list if config unchanged
             if (_cachedAccessoryIndices != null &&
-                _cachedIncludeBeards == includeBeards &&
+                _cachedIncludeFacialHair == includeFacialHair &&
                 _cachedIncludeModded == includeModded)
             {
                 return _cachedAccessoryIndices;
             }
 
             // Log when regenerating
-            StardewOutfitManager.ModMonitor?.Log($"[AccessoryMethods] Regenerating accessory list: includeBeards={includeBeards}, includeModded={includeModded}", StardewModdingAPI.LogLevel.Debug);
+            StardewOutfitManager.ModMonitor?.Log($"[AccessoryMethods] Regenerating accessory list: includeFacialHair={includeFacialHair}, includeModded={includeModded}", StardewModdingAPI.LogLevel.Debug);
 
-            _cachedIncludeBeards = includeBeards;
+            _cachedIncludeFacialHair = includeFacialHair;
             _cachedIncludeModded = includeModded;
 
             var indices = new List<int> { ACCESSORY_NONE }; // -1 = none
@@ -75,12 +72,8 @@ namespace StardewOutfitManager.Utils
             // Add all accessories from 0 to max, filtering based on config
             for (int i = 0; i <= maxIndex; i++)
             {
-                // Always skip duckbill
-                if (i == DUCKBILL_INDEX)
-                    continue;
-
-                // Skip beards/mustaches unless config allows them
-                if (BeardIndices.Contains(i) && !includeBeards)
+                // Skip facial hair unless config allows it
+                if (FacialHairIndices.Contains(i) && !includeFacialHair)
                     continue;
 
                 // Skip modded accessories (beyond vanilla range) if not enabled
@@ -126,6 +119,9 @@ namespace StardewOutfitManager.Utils
                 {
                     // Modded texture - calculate based on total slots
                     // Each row has 8 accessories, max index = total slots - 1
+                    // Note: This assumes modded textures fill all slots. If a mod adds rows with
+                    // empty trailing slots (like vanilla's 30-31), those will still be included.
+                    // Mod authors should ensure their textures are fully populated.
                     int totalSlots = rows * ACCESSORIES_PER_ROW;
                     _cachedMaxIndex = totalSlots - 1;
                     StardewOutfitManager.ModMonitor?.Log($"[AccessoryMethods] Modded accessories detected: rows={rows}, maxIndex={_cachedMaxIndex}", StardewModdingAPI.LogLevel.Debug);

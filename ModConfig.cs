@@ -28,10 +28,11 @@ namespace StardewOutfitManager
         public bool IncludeRingsInOutfits { get; set; } = true;
 
         /// <summary>
-        /// If enabled, beards/facial hair (accessory indices 0-5 and 20-22) are included as selectable accessories.
+        /// If enabled, facial hair (accessory indices 0-5 and 19-22) are included as selectable accessories.
+        /// This includes beards, mustaches, and other facial hair options.
         /// When disabled, only non-facial-hair accessories are available in the accessory picker.
         /// </summary>
-        public bool IncludeBeardsAsAccessories { get; set; } = false;
+        public bool IncludeFacialHair { get; set; } = false;
 
         /// <summary>
         /// If enabled, modded hairstyles are included in the hair picker.

@@ -131,13 +131,13 @@ namespace StardewOutfitManager
 
             configMenu.AddBoolOption(
                 mod: ModManifest,
-                getValue: () => Config.IncludeBeardsAsAccessories,
+                getValue: () => Config.IncludeFacialHair,
                 setValue: value => {
-                    Config.IncludeBeardsAsAccessories = value;
+                    Config.IncludeFacialHair = value;
                     Utils.AccessoryMethods.InvalidateCache();
                 },
-                name: () => "Include Beards",
-                tooltip: () => "When enabled, beards (facial hair accessories 0-6) appear in the accessory picker. When disabled, only non-beard accessories like glasses and earrings are available."
+                name: () => "Include Facial Hair",
+                tooltip: () => "When enabled, facial hair (beards, mustaches, etc.) appear in the accessory picker. When disabled, only non-facial-hair accessories like glasses and earrings are available."
             );
 
             configMenu.AddBoolOption(
