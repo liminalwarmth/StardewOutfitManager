@@ -11,13 +11,25 @@ using StardewValley;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Managers;
 using StardewOutfitManager.Data;
-using System.Xml.Linq;
 
 namespace StardewOutfitManager.Utils
 {
     // Extension methods to FavoritesData data model for player favorites management
     public static class FavoritesDataMethods
     {
+        // modData key for tagging items as favorites (prefixed with UniqueID per SMAPI convention)
+        internal const string FavoriteItemTagKey = "LiminalWarmth.StardewOutfitManager/FavoriteItem";
+
+        // Ensure an item has a tracking tag (creates one if missing, returns existing if present)
+        // This is called when items are equipped through the wardrobe to enable outfit matching
+        public static void EnsureItemTagged(Item item)
+        {
+            if (item != null && !item.modData.ContainsKey(FavoriteItemTagKey))
+            {
+                item.modData[FavoriteItemTagKey] = item.Name + "_" + Guid.NewGuid().ToString();
+            }
+        }
+
         // Create a new favorite outfit in the data model--returns false if this outfit already exists
         public static bool SaveNewOutfit(this FavoritesData f, Farmer player, string category, string name)
         {
@@ -70,8 +82,12 @@ namespace StardewOutfitManager.Utils
         // Check if the Favorites model contains a given FavoriteOutfit, looking only at the category, hair, accessory, and equipment slots (name optional for delete)
         internal static bool outfitExistsInFavorites(this FavoritesData f, FavoriteOutfit outfit, bool checkName = false)
         {
+            if (f?.Favorites == null) return false;
+
             foreach (FavoriteOutfit favorite in f.Favorites)
             {
+                if (favorite?.Items == null || outfit?.Items == null) continue;
+
                 // Check rings only if config option is enabled (use GetValueOrDefault for null-safe access)
                 bool ringsMatch = !StardewOutfitManager.Config.IncludeRingsInOutfits ||
                     (outfit.Items.GetValueOrDefault("LeftRing") == favorite.Items.GetValueOrDefault("LeftRing") &&
@@ -97,6 +113,82 @@ namespace StardewOutfitManager.Utils
                 }
             }
             return false;
+        }
+
+        // Safely get item tag from outfit's Items dictionary (handles missing keys)
+        private static string getItemTag(FavoriteOutfit outfit, string slot)
+        {
+            if (outfit?.Items != null && outfit.Items.TryGetValue(slot, out string tag))
+            {
+                return tag;
+            }
+            return null;
+        }
+
+        // Check if the player's current outfit (given category) already exists as a saved favorite
+        // This is used to check BEFORE opening the naming dialog to avoid wasting the player's time
+        public static bool PlayerOutfitAlreadyExists(this FavoritesData f, Farmer player, string category)
+        {
+            return FindMatchingOutfitName(f, player, category) != null;
+        }
+
+        // Find a matching outfit for the player's current equipment and return its name (or null if no match)
+        // Used to display the outfit name above the preview and to detect existing outfits
+        public static string FindMatchingOutfitName(this FavoritesData f, Farmer player, string category)
+        {
+            // Safety check for null/empty favorites
+            if (f?.Favorites == null || f.Favorites.Count == 0)
+                return null;
+
+            // Get the item tags for the player's current equipment (without creating/tagging new items)
+            string hatTag = getExistingItemTag(player.hat.Value);
+            string shirtTag = getExistingItemTag(player.shirtItem.Value);
+            string pantsTag = getExistingItemTag(player.pantsItem.Value);
+            string shoesTag = getExistingItemTag(player.boots.Value);
+            string leftRingTag = getExistingItemTag(player.leftRing.Value);
+            string rightRingTag = getExistingItemTag(player.rightRing.Value);
+
+            // Get clothing colors
+            string shirtColor = getClothingColorString(player.shirtItem.Value);
+            string pantsColor = getClothingColorString(player.pantsItem.Value);
+
+            // Check against all existing favorites
+            foreach (FavoriteOutfit favorite in f.Favorites)
+            {
+                // Skip malformed favorites (missing Items dictionary)
+                if (favorite?.Items == null)
+                    continue;
+
+                // Check rings only if config option is enabled
+                bool ringsMatch = !StardewOutfitManager.Config.IncludeRingsInOutfits ||
+                    (getItemTag(favorite, "LeftRing") == leftRingTag &&
+                     getItemTag(favorite, "RightRing") == rightRingTag);
+
+                if (favorite.Category == category &&
+                    getItemTag(favorite, "Hat") == hatTag &&
+                    getItemTag(favorite, "Shirt") == shirtTag &&
+                    getItemTag(favorite, "Pants") == pantsTag &&
+                    getItemTag(favorite, "Shoes") == shoesTag &&
+                    ringsMatch &&
+                    favorite.Hair == player.hair.Value &&
+                    favorite.Accessory == player.accessory.Value &&
+                    getItemColor(favorite, "Shirt") == shirtColor &&
+                    getItemColor(favorite, "Pants") == pantsColor)
+                {
+                    return favorite.Name ?? $"{favorite.Category} Outfit";
+                }
+            }
+            return null;
+        }
+
+        // Get existing item tag without creating a new one (returns null if item has no tag or is null)
+        private static string getExistingItemTag(Item item)
+        {
+            if (item != null && item.modData.TryGetValue(FavoriteItemTagKey, out string tag))
+            {
+                return tag;
+            }
+            return null;
         }
 
         // Get clothing color string from an outfit's ItemColors dictionary (handles missing keys for backwards compatibility)
@@ -130,7 +222,7 @@ namespace StardewOutfitManager.Utils
             var lookup = new Dictionary<string, Item>();
             foreach (Item item in items)
             {
-                if (item.modData.TryGetValue("StardewOutfitManagerFavoriteItem", out string tag))
+                if (item.modData.TryGetValue(FavoritesDataMethods.FavoriteItemTagKey, out string tag))
                 {
                     // Only store first occurrence if duplicate tags exist
                     if (!lookup.ContainsKey(tag))
@@ -236,15 +328,15 @@ namespace StardewOutfitManager.Utils
             if (item != null && item is Item)
             {
                 // If this item is already tagged with a favorite item ID, just return the ID
-                if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
+                if (item.modData.ContainsKey(FavoritesDataMethods.FavoriteItemTagKey))
                 {
-                    return item.modData["StardewOutfitManagerFavoriteItem"];
+                    return item.modData[FavoritesDataMethods.FavoriteItemTagKey];
                 }
                 // Otherwise we generate a new tag, tag it, and return the new ID
                 else
                 {
                     string tag = item.Name + "_" + Guid.NewGuid().ToString();
-                    item.modData["StardewOutfitManagerFavoriteItem"] = tag;
+                    item.modData[FavoritesDataMethods.FavoriteItemTagKey] = tag;
                     return tag;
                 }
             }
@@ -290,9 +382,9 @@ namespace StardewOutfitManager.Utils
         {
             if (item != null && item is Item)
             {
-                if (item.modData.ContainsKey("StardewOutfitManagerFavoriteItem"))
+                if (item.modData.ContainsKey(FavoritesDataMethods.FavoriteItemTagKey))
                 {
-                    if (item.modData["StardewOutfitManagerFavoriteItem"] == itemTag)
+                    if (item.modData[FavoritesDataMethods.FavoriteItemTagKey] == itemTag)
                     {
                         return true;
                     }

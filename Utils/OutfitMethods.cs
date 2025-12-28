@@ -78,7 +78,10 @@ namespace StardewOutfitManager.Utils
                 else { farmer.rightRing.Set(itemToEquip as Ring); }
                 if (itemLabel != null) itemLabel.name = (farmer.rightRing.Value != null) ? farmer.rightRing.Value.DisplayName : "None";
             }
-            
+
+            // Tag the equipped item so it can be matched to saved outfits
+            FavoritesDataMethods.EnsureItemTagged(itemToEquip);
+
             // Update the clothing display
             farmer.UpdateClothing();
             farmer.completelyStopAnimatingOrDoingAction();

@@ -48,8 +48,38 @@ namespace StardewOutfitManager.Managers
 
         public void loadFavoritesDataFromFile()
         {
-            // Check if a local favorites file exists for this player and create a new FavoritesData model to store it does not        
-            favoritesData.Value = modHelper.Data.ReadJsonFile<FavoritesData>($"favoritesData/{Game1.player.Name}_{Constants.SaveFolderName}_{Game1.player.UniqueMultiplayerID}.json") ?? new FavoritesData();
+            string filePath = $"favoritesData/{Game1.player.Name}_{Constants.SaveFolderName}_{Game1.player.UniqueMultiplayerID}.json";
+            try
+            {
+                // Try to load existing favorites data
+                var loadedData = modHelper.Data.ReadJsonFile<FavoritesData>(filePath);
+
+                // Validate the loaded data - if it's malformed, start fresh
+                if (loadedData?.Favorites == null)
+                {
+                    StardewOutfitManager.ModMonitor.Log($"Favorites data was null or malformed, creating new data for {Game1.player.Name}", LogLevel.Info);
+                    favoritesData.Value = new FavoritesData();
+                    return;
+                }
+
+                // Filter out any malformed outfits (missing Items dictionary)
+                int originalCount = loadedData.Favorites.Count;
+                loadedData.Favorites.RemoveAll(outfit => outfit?.Items == null);
+                int removedCount = originalCount - loadedData.Favorites.Count;
+
+                if (removedCount > 0)
+                {
+                    StardewOutfitManager.ModMonitor.Log($"Removed {removedCount} malformed outfit(s) from favorites data", LogLevel.Warn);
+                }
+
+                favoritesData.Value = loadedData;
+            }
+            catch (System.Exception ex)
+            {
+                // If loading fails for any reason, start fresh
+                StardewOutfitManager.ModMonitor.Log($"Failed to load favorites data: {ex.Message}. Creating new data.", LogLevel.Warn);
+                favoritesData.Value = new FavoritesData();
+            }
         }
 
         public void saveFavoritesDataToFile()
