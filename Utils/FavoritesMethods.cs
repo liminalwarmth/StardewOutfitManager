@@ -239,10 +239,14 @@ namespace StardewOutfitManager.Utils
             }
             else if (category == "LeftRing")
             {
+                // Skip ring check if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits) { return false; }
                 if (favoriteItemTagMatches(f, farmer.leftRing.Value, itemTag)) { return true; }
             }
             else if (category == "RightRing")
             {
+                // Skip ring check if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits) { return false; }
                 if (favoriteItemTagMatches(f, farmer.rightRing.Value, itemTag)) { return true; }
             }
             return false;
