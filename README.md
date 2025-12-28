@@ -1,18 +1,33 @@
 # Stardew Outfit Manager
 
-A wardrobe management mod for Stardew Valley that replaces the default dresser menu with a more visual, outfit-focused interface.
+A visual wardrobe mod for Stardew Valley inspired by Get Dressed. Design outfits from all of your clothes, hats, and shoes. Save favorites by season. Quickly swap favorite outfits at your dresser.
+
+## Why This Mod?
+
+A different approach from Fashion Sense. I wanted to keep using Stardew's built-in clothing system—discovering hats in the mines, earning festival gear, buying from the mouse—but with better tools to organize what I'd collected into outfits. This mod works with native game systems rather than replacing them, so your existing wardrobe stays intact and it's more performant.
 
 ## What It Does
 
-When you interact with a dresser, instead of the standard shop-style menu, you get a three-tab wardrobe system that makes it easier to put together outfits and save your favorites.
+Replaces the vanilla dresser interface with a three-tab system:
 
-The **Wardrobe** tab gives you a visual clothing picker. You see your farmer in a live preview on the left, and you can cycle through all the hats, shirts, pants, shoes, and rings in your dresser using arrow buttons. Pick a seasonal category, put together a look you like, and save it as a favorite.
+**Wardrobe** — Cycle through hats, shirts, pants, shoes, and rings with arrow buttons while watching your farmer update in a live preview. Change hairstyles and accessories too. Put together a look and save it as a favorite.
 
-The **Favorites** tab is where your saved outfits live. Each outfit shows up as a card with a preview of what the farmer looks like wearing it. Outfits are organized by season—Spring, Summer, Fall, Winter, or Special—so you can keep your beach looks separate from your winter festival gear. Click an outfit to preview it, then equip it with one button. If any pieces are missing from your dresser (maybe you sold those pants), the outfit shows as unavailable until you get them back.
+**Favorites** — Your saved outfits organized by season (Spring, Summer, Fall, Winter, Special). Each outfit displays as a card showing your farmer wearing it. Missing a piece? Visual indicators show what's unavailable. Click to preview, one button to equip. Outfits get randomly generated seasonal names, or rename them yourself.
 
-The **Dresser** tab is your dresser's inventory, similar to the vanilla menu but with category filters for quickly finding what you're looking for.
+**Dresser** — Your dresser inventory with category filters for quickly finding specific items.
 
-The mod remembers your preferences as you use it—which tab you were on, which season you had selected, which direction your farmer was facing in the preview. It also works in multiplayer, with each player having their own saved outfits and dresser access handled properly so you're not fighting over the same furniture.
+## Features
+
+- **New dresser furniture** — 14 new dresser variants including mirror dressers and small dressers for more decorating options. Robin sells them, the Traveling Merchant occasionally stocks mirrors, and new players start with a small dresser.
+- **Dresser sharing** — Configure whether dressers have individual inventories, share when touching, or share across an entire building.
+- **Modded content support** — Works with modded hairstyles and accessories (configurable). Facial hair toggle available.
+- **Rings in outfits** — Optionally include rings when saving and equipping outfits.
+- **Multiplayer support** — Each player has their own saved outfits. Mutex locking prevents conflicts.
+- **Gamepad support** — Full controller navigation.
+
+## Configuration
+
+Edit `config.json` or use [Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mods/5098) to adjust dresser sharing, modded content inclusion, ring handling, and shop integration.
 
 ## Installation
 
