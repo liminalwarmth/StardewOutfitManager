@@ -30,6 +30,11 @@ namespace StardewOutfitManager.Data
 
         public Dictionary<string, string> Items { get; set; } = new Dictionary<string, string>();
 
+        // Stores QualifiedItemIds for recreating items when missing from dresser
+        // Keys: "Hat", "Shirt", "Pants", "Shoes", "LeftRing", "RightRing"
+        // Values: QualifiedItemId like "(H)6", "(S)1001", "(P)0", "(B)505", "(R)516"
+        public Dictionary<string, string> ItemIds { get; set; } = new Dictionary<string, string>();
+
         // Stores clothing dye colors for dyeable items (Shirt, Pants) - format: "R,G,B,A"
         // This allows the same item with different dye colors to be saved as different outfits
         public Dictionary<string, string> ItemColors { get; set; } = new Dictionary<string, string>();
