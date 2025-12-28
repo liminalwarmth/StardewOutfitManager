@@ -17,15 +17,55 @@ using StardewValley.Characters;
 namespace StardewOutfitManager.Menus
 {
     /// <summary>
-    /// Subclass of NamingMenu that allows empty names (minLength=0).
-    /// Used for outfit naming where empty string means "reset to auto-name".
+    /// Custom NamingMenu for outfit naming with season-specific random name suggestions.
+    /// Overrides the dice button to use outfit names instead of pet names.
     /// </summary>
     internal class OutfitNamingMenu : NamingMenu
     {
-        public OutfitNamingMenu(doneNamingBehavior b, string title, string defaultName = null)
-            : base(b, title, defaultName)
+        private readonly string _outfitCategory;
+        private readonly Action _onCancelCallback;
+
+        /// <summary>
+        /// Creates a new outfit naming menu.
+        /// </summary>
+        /// <param name="onDone">Callback when naming is complete</param>
+        /// <param name="title">Title displayed above the text box</param>
+        /// <param name="defaultName">Initial name in the text box</param>
+        /// <param name="category">Season category for random name suggestions (Spring, Summer, Fall, Winter, Special)</param>
+        /// <param name="onCancel">Optional callback when the user cancels (Escape key)</param>
+        public OutfitNamingMenu(doneNamingBehavior onDone, string title, string defaultName, string category, Action onCancel = null)
+            : base(onDone, title, defaultName)
         {
-            minLength = 0;  // Allow empty names (protected field in base class)
+            _outfitCategory = category;
+            _onCancelCallback = onCancel;
+            minLength = 1;  // Require non-empty names
+        }
+
+        public override void receiveLeftClick(int x, int y, bool playSound = true)
+        {
+            // Intercept random button click to use our season-specific names
+            if (randomButton.containsPoint(x, y))
+            {
+                string randomName = StardewOutfitManager.outfitNameManager.GetRandomName(_outfitCategory);
+                textBox.Text = randomName;
+                Game1.playSound("drumkit6");
+                return; // Don't call base - we handled it
+            }
+
+            base.receiveLeftClick(x, y, playSound);
+        }
+
+        public override void receiveKeyPress(Keys key)
+        {
+            // Handle Escape to cancel
+            if (key == Keys.Escape)
+            {
+                Game1.playSound("bigDeSelect");
+                _onCancelCallback?.Invoke();
+                return;
+            }
+
+            base.receiveKeyPress(key);
         }
     }
 
@@ -184,24 +224,12 @@ namespace StardewOutfitManager.Menus
                 return background;
             }
 
-            // Get display name for outfit (custom name or auto-generated from roster position)
+            // Get display name for outfit
+            // All new outfits now have explicit names from the naming dialog.
+            // Fallback for backwards compatibility with saved data that had empty names.
             internal string GetDisplayName()
             {
-                // If user set a custom name, use it
-                if (!string.IsNullOrEmpty(modelOutfit.Name))
-                    return modelOutfit.Name;
-
-                // Otherwise, compute name based on position within category
-                int position = 1;
-                foreach (var fav in menu.favoritesData.Favorites)
-                {
-                    if (fav.Category == modelOutfit.Category)
-                    {
-                        if (fav == modelOutfit) break;
-                        position++;
-                    }
-                }
-                return $"{modelOutfit.Category} Outfit {position}";
+                return modelOutfit.Name ?? $"{modelOutfit.Category} Outfit";
             }
         }
 
@@ -327,8 +355,8 @@ namespace StardewOutfitManager.Menus
             xPositionOnScreen = (int)topLeft.X;
             yPositionOnScreen = (int)topLeft.Y;
 
-            // Set up portrait and farmer
-            _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 64, 256, 384);
+            // Set up portrait and farmer (shifted down 24px to make room for name label above)
+            _portraitBox = new Rectangle(base.xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, base.yPositionOnScreen + 88, 256, 384);
             _displayFarmer = CreateFakeModelFarmer(Game1.player);
             _displayFarmer.faceDirection(menuManager.farmerFacingDirection);
             _displayFarmer.FarmerSprite.StopAnimation();
@@ -652,21 +680,22 @@ namespace StardewOutfitManager.Menus
             // Update the outfit name in the data model
             if (outfitSlotSelected != null)
             {
-                // Trim the name; if empty/whitespace, set to null to use auto-naming
+                // With minLength=1, empty strings won't reach here, but validate anyway
                 string trimmedName = newName?.Trim();
-                if (string.IsNullOrEmpty(trimmedName))
-                {
-                    // Clear custom name - outfit will use auto-generated name (e.g., "Spring 1")
-                    outfitSlotSelected.modelOutfit.Name = null;
-                    outfitSlotSelected.outfitName = outfitSlotSelected.GetDisplayName();
-                }
-                else
+                if (!string.IsNullOrEmpty(trimmedName))
                 {
                     outfitSlotSelected.modelOutfit.Name = trimmedName;
                     outfitSlotSelected.outfitName = trimmedName;
+                    Game1.playSound("coin");
                 }
-                Game1.playSound("coin");
             }
+        }
+
+        // Callback for when player cancels the rename dialog (Escape key)
+        private void OnRenameCancelled()
+        {
+            // Clear the child menu without making any changes
+            SetChildMenu(null);
         }
 
         public void FilterOutfitSlotsByCategoryAndSort(List<OutfitSlot> list)
@@ -981,18 +1010,26 @@ namespace StardewOutfitManager.Menus
                 // Clear hover text immediately so it doesn't persist while child menu is open
                 hoverText = "";
                 // Open the naming menu as a child menu (overlay) with the current outfit name
-                // Use OutfitNamingMenu subclass which allows empty names (minLength=0)
+                // Use OutfitNamingMenu with category for season-specific random names
+                string currentName = outfitSlotSelected.modelOutfit.Name;
+                // If existing outfit has no name, suggest a random one
+                if (string.IsNullOrEmpty(currentName))
+                {
+                    currentName = StardewOutfitManager.outfitNameManager.GetRandomName(outfitSlotSelected.modelOutfit.Category);
+                }
                 OutfitNamingMenu namingMenu = new OutfitNamingMenu(
                     OnOutfitRenamed,
                     "Name This Outfit",
-                    outfitSlotSelected.modelOutfit.Name
+                    currentName,
+                    outfitSlotSelected.modelOutfit.Category,
+                    OnRenameCancelled
                 );
-                // Increase the character limit and textbox width to allow longer outfit names
-                namingMenu.textBox.textLimit = 32;  // Allow up to 32 characters (default textbox is ~12-14)
+                // Set character limit for outfit names
+                namingMenu.textBox.textLimit = 15;  // Max 15 characters for outfit names
                 namingMenu.textBox.limitWidth = false; // Prevent text truncation when set
                 namingMenu.textBox.Width = 384;     // Increase from 256 to 384 to fit more characters
                 // Re-set the text now that limitWidth is disabled (to avoid truncation from constructor)
-                namingMenu.textBox.Text = outfitSlotSelected.modelOutfit.Name ?? "";
+                namingMenu.textBox.Text = currentName;
 
                 // Center just the textbox (not the full assembly with buttons)
                 // The TextBox has a visual border that extends ~16px beyond its Width property
@@ -1170,8 +1207,8 @@ namespace StardewOutfitManager.Menus
                 upperRightCloseButton.bounds = new Rectangle(xPositionOnScreen + width - 36, yPositionOnScreen - 8, 48, 48);
             }
 
-            // Reposition portrait and farmer display
-            _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
+            // Reposition portrait and farmer display (shifted down 24px to make room for name label above)
+            _portraitBox = new Rectangle(xPositionOnScreen + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder, yPositionOnScreen + 88, 256, 384);
             leftRotationButton.bounds = new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60);
             rightRotationButton.bounds = new Rectangle(_portraitBox.X + 256 - 38, _portraitBox.Bottom - 24, 60, 60);
             renameButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y, 56, 56);
@@ -1367,8 +1404,8 @@ namespace StardewOutfitManager.Menus
             int gridSpacing = 0;
             int gridWidth = 3 * itemSize + 2 * gridSpacing;
 
-            // Measure the outfit name to determine if we need a wider box
-            string displayName = slot.outfitName;
+            // Measure the outfit name to determine if we need a wider box (add quotes around saved outfit names)
+            string displayName = $"\"{slot.outfitName}\"";
             Vector2 nameSize = Game1.smallFont.MeasureString(displayName);
             int minBoxWidthForGrid = gridWidth + padding * 2;
             int minBoxWidthForName = (int)nameSize.X + padding * 2;
@@ -1441,6 +1478,17 @@ namespace StardewOutfitManager.Menus
 
             // Outfit displays backdrop box
             drawTextureBox(b, Game1.menuTexture, new Rectangle(0, 320, 60, 60), outfitBox.X, outfitBox.Y, outfitBox.Width, outfitBox.Height, Color.White, 2f, false);
+
+            // Draw outfit name above portrait (show "Current Outfit" if no favorite is selected)
+            // Saved outfit names get quotes, "Current Outfit" does not
+            string outfitDisplayName = outfitSlotSelected != null ? $"\"{outfitSlotSelected.outfitName}\"" : "Current Outfit";
+            // The menu border texture is about 24px thick visually
+            int innerMenuTop = yPositionOnScreen + 24;
+            // Position text 62.5% down the gap (shifted 25% lower from center)
+            Vector2 nameSize = Game1.dialogueFont.MeasureString(outfitDisplayName);
+            float nameX = _portraitBox.Center.X - nameSize.X / 2;
+            float nameY = innerMenuTop + (_portraitBox.Y - innerMenuTop) * 0.625f - nameSize.Y / 2f;
+            Utility.drawTextWithShadow(b, outfitDisplayName, Game1.dialogueFont, new Vector2(nameX, nameY), Game1.textColor);
 
             // Farmer portrait
             b.Draw(StardewOutfitManager.assetManager.customSprites, _portraitBox, outFitDisplayBG, Color.White);

@@ -23,6 +23,9 @@ namespace StardewOutfitManager
         // Load Game Assets
         internal static AssetManager assetManager;
 
+        // Outfit name manager for random name suggestions
+        internal static OutfitNameManager outfitNameManager;
+
         // Set up managers for each local player (per-screen handles local co-op)
         internal static PlayerManager playerManager;
 
@@ -43,6 +46,7 @@ namespace StardewOutfitManager
 
             // Set up global manager functions
             assetManager = new AssetManager(helper);
+            outfitNameManager = new OutfitNameManager(helper);
             playerManager = new PlayerManager(helper);
 
             // Enable Harmony patches
