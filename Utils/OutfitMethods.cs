@@ -13,41 +13,56 @@ namespace StardewOutfitManager.Utils
         // Equips an item (or nothing) on the given farmer and puts whatever they were wearing, if anything, back into the given dresser furniture object
         public static void ItemExchange(this IClickableMenu m, StorageFurniture dresserObject, Farmer farmer, string category, Item itemToEquip, ClickableComponent itemLabel = null, bool playSound = true)
         {
-            // Remove the item being equipped from the dresser
-            if (itemToEquip != null) { dresserObject.heldItems.Remove(itemToEquip); }
+            // Get linked dressers from menu manager for proper item handling
+            var menuManager = StardewOutfitManager.playerManager.menuManager.Value;
+            var linkedDressers = menuManager?.linkedDressers;
+            var primaryDresser = menuManager?.primaryDresser ?? dresserObject;
 
-            // Put anything being worn in this slot back in the dresser and equip the new item
-            if (category == "Hat") 
+            // Remove the item being equipped from whichever linked dresser contains it
+            if (itemToEquip != null)
             {
-                // Put the current slot back in the dresser if it exists
-                if (farmer.hat.Value != null) { dresserObject.heldItems.Add(farmer.hat.Value); }
+                if (linkedDressers != null && linkedDressers.Count > 0)
+                {
+                    DresserLinkingMethods.RemoveItemFromLinkedDressers(linkedDressers, itemToEquip);
+                }
+                else
+                {
+                    dresserObject.heldItems.Remove(itemToEquip);
+                }
+            }
+
+            // Put anything being worn in this slot back in the primary dresser and equip the new item
+            if (category == "Hat")
+            {
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.hat.Value != null) { primaryDresser.heldItems.Add(farmer.hat.Value); }
                 // Equip the new item or unequip the current slot if there is no new hat item given
                 if (itemToEquip == null) { farmer.hat.Set(null); }
                 else { farmer.hat.Set(itemToEquip as Hat); }
                 if (itemLabel != null) itemLabel.name = (farmer.hat.Value != null) ? farmer.hat.Value.DisplayName : "None";
             }
-            else if (category == "Shirt") 
+            else if (category == "Shirt")
             {
-                // Put the current slot back in the dresser if it exists
-                if (farmer.shirtItem.Value != null) { dresserObject.heldItems.Add(farmer.shirtItem.Value); }
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.shirtItem.Value != null) { primaryDresser.heldItems.Add(farmer.shirtItem.Value); }
                 // Equip the new item or unequip the current slot if there is no new shirt item given
                 if (itemToEquip == null) { farmer.shirtItem.Set(null); }
                 else { farmer.shirtItem.Set(itemToEquip as Clothing); }
                 if (itemLabel != null) itemLabel.name = (farmer.shirtItem.Value != null) ? farmer.shirtItem.Value.DisplayName : "None";
             }
-            else if (category == "Pants") 
-            { 
-                // Put the current slot back in the dresser if it exists
-                if (farmer.pantsItem.Value != null) { dresserObject.heldItems.Add(farmer.pantsItem.Value);}
+            else if (category == "Pants")
+            {
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.pantsItem.Value != null) { primaryDresser.heldItems.Add(farmer.pantsItem.Value);}
                 // Equip the new item or unequip the current slot if there is no new pants item given
                 if (itemToEquip == null) { farmer.pantsItem.Set(null); }
                 else { farmer.pantsItem.Set(itemToEquip as Clothing); }
                 if (itemLabel != null) itemLabel.name = (farmer.pantsItem.Value != null) ? farmer.pantsItem.Value.DisplayName : "None";
             }
-            else if (category == "Shoes") 
-            { 
-                // Put the current slot back in the dresser if it exists
-                if (farmer.boots.Value != null) { dresserObject.heldItems.Add(farmer.boots.Value); }
+            else if (category == "Shoes")
+            {
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.boots.Value != null) { primaryDresser.heldItems.Add(farmer.boots.Value); }
                 // Equip the new item or unequip the current slot if there is no new boots item given (requires special color handling)
                 if (itemToEquip == null) {
                     farmer.boots.Set(null);
@@ -62,8 +77,8 @@ namespace StardewOutfitManager.Utils
             // Ring slots - only process if rings are included in outfits
             else if (StardewOutfitManager.Config.IncludeRingsInOutfits && category == "LeftRing")
             {
-                // Put the current slot back in the dresser if it exists
-                if (farmer.leftRing.Value != null) { dresserObject.heldItems.Add(farmer.leftRing.Value);}
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.leftRing.Value != null) { primaryDresser.heldItems.Add(farmer.leftRing.Value);}
                 // Equip the new item or unequip the current slot if there is no new ring item given
                 if (itemToEquip == null) { farmer.leftRing.Set(null); }
                 else { farmer.leftRing.Set(itemToEquip as Ring); }
@@ -71,8 +86,8 @@ namespace StardewOutfitManager.Utils
             }
             else if (StardewOutfitManager.Config.IncludeRingsInOutfits && category == "RightRing")
             {
-                // Put the current slot back in the dresser if it exists
-                if (farmer.rightRing.Value != null) { dresserObject.heldItems.Add(farmer.rightRing.Value);}
+                // Put the current slot back in the primary dresser if it exists
+                if (farmer.rightRing.Value != null) { primaryDresser.heldItems.Add(farmer.rightRing.Value);}
                 // Equip the new item or unequip the current slot if there is no new ring item given
                 if (itemToEquip == null) { farmer.rightRing.Set(null); }
                 else { farmer.rightRing.Set(itemToEquip as Ring); }

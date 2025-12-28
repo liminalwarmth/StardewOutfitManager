@@ -126,8 +126,8 @@ namespace StardewOutfitManager.Menus
                 shoesStock.Add(Game1.player.boots.Value);
                 shoesIndex = 0;
             }
-            // Generate inventory lists directly from the base game dresser object, if any, to wardrobe stock lists
-            List<Item> list = dresserObject.heldItems.ToList();
+            // Generate inventory lists from all linked dressers (combined inventory)
+            List<Item> list = menuManager.GetCombinedDresserItems();
             list.Sort(dresserObject.SortItems);
             foreach (Item item in list)
             {

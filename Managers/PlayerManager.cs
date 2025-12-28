@@ -8,7 +8,7 @@ using StardewOutfitManager.Data;
 using StardewModdingAPI.Utilities;
 using System.Threading;
 using StardewValley.Objects;
-using StardewValley.Monsters;
+using StardewOutfitManager.Utils;
 
 namespace StardewOutfitManager.Managers
 {
@@ -38,8 +38,8 @@ namespace StardewOutfitManager.Managers
             {
                 // Remember which tab was last used for next dresser open
                 lastUsedTab.Value = menuManager.Value.currentTab;
-                // Unlock the dresser for other players to use
-                menuManager.Value.dresserObject.mutex.ReleaseLock();
+                // Unlock all linked dressers for other players to use
+                DresserLinkingMethods.ReleaseAllDressers(menuManager.Value.linkedDressers);
                 // Exit the active menu
                 menuManager.Value.activeManagedMenu.exitThisMenu(playSound);
                 menuManager.Value = null;

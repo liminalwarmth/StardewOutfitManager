@@ -97,6 +97,22 @@ namespace StardewOutfitManager
                 tooltip: () => "When enabled, rings are saved and equipped as part of outfits. When disabled, rings are excluded from outfit management and ring slots are hidden from the UI."
             );
 
+            configMenu.AddTextOption(
+                mod: ModManifest,
+                getValue: () => Config.DresserInventorySharing.ToString(),
+                setValue: value => Config.DresserInventorySharing = Enum.Parse<DresserSharingMode>(value),
+                name: () => "Dresser Inventory Sharing",
+                tooltip: () => "Controls how dressers share their inventory. Individual: Each dresser is separate. Touching: Adjacent dressers share inventory. Same Building: All dressers in a house/cabin share inventory.",
+                allowedValues: new[] { "Individual", "Touching", "SameBuilding" },
+                formatAllowedValue: value => value switch
+                {
+                    "Individual" => "Individual (Separate)",
+                    "Touching" => "Touching (Adjacent)",
+                    "SameBuilding" => "Same Building (House/Cabin)",
+                    _ => value
+                }
+            );
+
             // New Dresser Types section
             configMenu.AddSectionTitle(
                 mod: ModManifest,
@@ -218,21 +234,29 @@ namespace StardewOutfitManager
                 StorageFurniture originalDresser = (StorageFurniture)originalMenu.source;
                 // Close the OG dresser menu before it opens
                 Game1.activeClickableMenu.exitThisMenuNoSound();
-                // Check if this particular dresser is locked for use by another player before opening the interaction menu
-                if (!originalDresser.mutex.IsLocked())
+
+                // Get all linked dressers based on config (individual, touching, or same building)
+                var linkedDressers = DresserLinkingMethods.GetLinkedDressers(originalDresser);
+
+                // Attempt to lock all linked dressers - fails if any is already locked
+                if (DresserLinkingMethods.TryLockAllDressers(linkedDressers))
                 {
-                    // Lock the dresser so other players can't use it
-                    originalDresser.mutex.RequestLock(delegate { });
                     // Load the favorites data (or create a new favorites data object if no file exists) if we haven't yet
                     if (playerManager.favoritesData.Value == null) { playerManager.loadFavoritesDataFromFile(); }
+
                     // Create a new menu manager instance for the active player
                     playerManager.menuManager.Value = new MenuManager();
-                    // Update the held original dresser reference to the source dresser object of the Dresser ShopMenu being closed
-                    playerManager.menuManager.Value.dresserObject = originalDresser;
+
+                    // Store both the primary dresser and all linked dressers
+                    playerManager.menuManager.Value.primaryDresser = originalDresser;
+                    playerManager.menuManager.Value.linkedDressers = linkedDressers;
+
                     // Store the dresser's display name for the tab hover text
                     playerManager.menuManager.Value.dresserDisplayName = originalDresser.DisplayName ?? "Dresser";
+
                     // Initialize category selection to current in-game season
                     playerManager.menuManager.Value.selectedCategory = MenuManager.GetCurrentSeasonCategory();
+
                     // Open to the last used tab (0 = Wardrobe, 1 = Favorites, 2 = Dresser)
                     int lastTab = playerManager.lastUsedTab.Value;
                     switch (lastTab)
@@ -241,7 +265,8 @@ namespace StardewOutfitManager
                             Game1.activeClickableMenu = new FavoritesMenu();
                             break;
                         case 2:
-                            List<Item> list = originalDresser.heldItems.ToList();
+                            // Get combined items from all linked dressers
+                            List<Item> list = playerManager.menuManager.Value.GetCombinedDresserItems();
                             list.Sort(originalDresser.SortItems);
                             Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
                             foreach (Item item in list)
@@ -254,10 +279,17 @@ namespace StardewOutfitManager
                             Game1.activeClickableMenu = new WardrobeMenu();
                             break;
                     }
+
                     // Start managing the menu we just opened
                     playerManager.menuManager.Value.activeManagedMenu = Game1.activeClickableMenu;
                     playerManager.menuManager.Value.positionActiveTab(lastTab);
                     Game1.playSound("bigSelect");
+                }
+                else
+                {
+                    // Failed to lock - another player is using a connected dresser
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage("Another player is using a connected dresser.", HUDMessage.error_type));
                 }
             }
         }

@@ -11,14 +11,21 @@ using Microsoft.Xna.Framework.Input;
 using StardewValley.BellsAndWhistles;
 using StardewModdingAPI;
 using StardewOutfitManager.Managers;
+using StardewOutfitManager.Utils;
 
 namespace StardewOutfitManager.Managers
 {
     // This class defines the top bar tabs which are inserted into all menus and the cross-menu equipping and list management functionality
     public class MenuManager
     {
-        // Holds dresser object for interaction with all menus
-        public StorageFurniture dresserObject;
+        // Primary dresser (the one the player clicked on)
+        public StorageFurniture primaryDresser;
+
+        // All linked dressers (includes primaryDresser) - for shared inventory modes
+        public List<StorageFurniture> linkedDressers = new();
+
+        // Legacy accessor for backward compatibility - returns primaryDresser
+        public StorageFurniture dresserObject => primaryDresser;
 
         // Tab buttons
         public ClickableTextureComponent wardrobeButton;
@@ -44,6 +51,14 @@ namespace StardewOutfitManager.Managers
         public static string GetCurrentSeasonCategory()
         {
             return Game1.IsSpring ? "Spring" : Game1.IsSummer ? "Summer" : Game1.IsFall ? "Fall" : Game1.IsWinter ? "Winter" : "Special";
+        }
+
+        /// <summary>
+        /// Get combined inventory from all linked dressers.
+        /// </summary>
+        public List<Item> GetCombinedDresserItems()
+        {
+            return DresserLinkingMethods.GetCombinedInventory(linkedDressers);
         }
 
         // Hang onto the menu we are currently working with until we perform a CleanExit
@@ -117,10 +132,10 @@ namespace StardewOutfitManager.Managers
                     {
                         if (menu.heldItem != null)
                         {
-                            // Dump the held object back into the dresser and play the deposit noise
+                            // Dump the held object back into the primary dresser and play the deposit noise
                             if (menu.heldItem is ISalable)
                             {
-                                dresserObject.AddItem(menu.heldItem as Item);
+                                primaryDresser.AddItem(menu.heldItem as Item);
                                 menu.heldItem = null;
                                 Game1.playSound("dwop");
                             }
@@ -151,9 +166,9 @@ namespace StardewOutfitManager.Managers
                         // Switch to New Dresser Menu
                         case 2:
                             {
-                                // Get the dresser items
-                                List<Item> list = dresserObject.heldItems.ToList();
-                                list.Sort(dresserObject.SortItems);
+                                // Get combined items from all linked dressers
+                                List<Item> list = GetCombinedDresserItems();
+                                list.Sort(primaryDresser.SortItems);
                                 Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
                                 foreach (Item item in list)
                                 {
@@ -162,7 +177,7 @@ namespace StardewOutfitManager.Managers
                                 // Open the shopMenu the same way the dresser does
                                 Game1.activeClickableMenu = new NewDresserMenu(contents)
                                 {
-                                    source = dresserObject
+                                    source = primaryDresser
                                 };
                                 break;
                             }

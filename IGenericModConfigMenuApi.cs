@@ -43,5 +43,18 @@ namespace StardewOutfitManager
         /// <param name="mod">The mod's manifest.</param>
         /// <param name="text">The paragraph text to display.</param>
         void AddParagraph(IManifest mod, Func<string> text);
+
+        /// <summary>
+        /// Add a text option with optional dropdown of allowed values.
+        /// </summary>
+        /// <param name="mod">The mod's manifest.</param>
+        /// <param name="getValue">Get the current value from the mod config.</param>
+        /// <param name="setValue">Set a new value in the mod config.</param>
+        /// <param name="name">The label text to show in the form.</param>
+        /// <param name="tooltip">The tooltip text shown when the cursor hovers on the field.</param>
+        /// <param name="allowedValues">The allowed values for the field, shown as a dropdown.</param>
+        /// <param name="formatAllowedValue">Format a value for display in the dropdown.</param>
+        /// <param name="fieldId">The unique field ID for use by other mods.</param>
+        void AddTextOption(IManifest mod, Func<string> getValue, Action<string> setValue, Func<string> name, Func<string> tooltip = null, string[] allowedValues = null, Func<string, string> formatAllowedValue = null, string fieldId = null);
     }
 }

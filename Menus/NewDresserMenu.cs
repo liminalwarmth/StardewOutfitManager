@@ -11,6 +11,7 @@ using StardewValley.Objects;
 using StardewValley;
 using StardewValley.Locations;
 using StardewOutfitManager.Managers;
+using StardewOutfitManager.Utils;
 using StardewModdingAPI;
 
 namespace StardewOutfitManager.Menus
@@ -102,12 +103,14 @@ namespace StardewOutfitManager.Menus
         {
             if (deposited_salable is Item)
             {
-                menuManager.dresserObject.heldItems.Add(deposited_salable as Item);
+                // Always deposit to primary dresser
+                menuManager.primaryDresser.heldItems.Add(deposited_salable as Item);
                 if (Game1.activeClickableMenu != null && Game1.activeClickableMenu is NewDresserMenu)
                 {
                     Dictionary<ISalable, int[]> contents = new Dictionary<ISalable, int[]>();
-                    List<Item> list = menuManager.dresserObject.heldItems.ToList();
-                    list.Sort(menuManager.dresserObject.SortItems);
+                    // Use combined inventory from all linked dressers
+                    List<Item> list = menuManager.GetCombinedDresserItems();
+                    list.Sort(menuManager.primaryDresser.SortItems);
                     foreach (Item item in list)
                     {
                         contents[item] = new int[2] { 0, 1 };
@@ -122,9 +125,10 @@ namespace StardewOutfitManager.Menus
 
         public virtual bool onDresserItemWithdrawn(ISalable salable, Farmer who, int amount)
         {
-            if (salable is Item)
+            if (salable is Item item)
             {
-                menuManager.dresserObject.heldItems.Remove(salable as Item);
+                // Find which dresser has the item and remove it from there
+                DresserLinkingMethods.RemoveItemFromLinkedDressers(menuManager.linkedDressers, item);
                 Game1.playSound("stoneStep");
             }
             return false;

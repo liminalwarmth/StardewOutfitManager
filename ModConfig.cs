@@ -1,6 +1,19 @@
 namespace StardewOutfitManager
 {
     /// <summary>
+    /// Controls how dresser inventories are shared between multiple dressers.
+    /// </summary>
+    public enum DresserSharingMode
+    {
+        /// <summary>Each dresser has its own separate inventory.</summary>
+        Individual,
+        /// <summary>Dressers that are touching (8-way adjacent) share the same inventory.</summary>
+        Touching,
+        /// <summary>All dressers within the same house or cabin share the same inventory.</summary>
+        SameBuilding
+    }
+
+    /// <summary>
     /// Configuration options for Stardew Outfit Manager.
     /// These can be edited via config.json or Generic Mod Config Menu.
     /// </summary>
@@ -45,5 +58,13 @@ namespace StardewOutfitManager
         /// When disabled, only vanilla accessories are available.
         /// </summary>
         public bool IncludeModdedAccessories { get; set; } = true;
+
+        /// <summary>
+        /// Controls how dresser inventories are shared.
+        /// Individual: Each dresser has its own inventory.
+        /// Touching: Adjacent dressers (8-way) share inventory.
+        /// SameBuilding: All dressers in a house/cabin share inventory.
+        /// </summary>
+        public DresserSharingMode DresserInventorySharing { get; set; } = DresserSharingMode.Touching;
     }
 }
