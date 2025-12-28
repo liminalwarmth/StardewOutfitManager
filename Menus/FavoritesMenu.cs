@@ -511,6 +511,7 @@ namespace StardewOutfitManager.Menus
         private Farmer _displayFarmer;
         private string hoverText = "";
         private Item hoveredItem = null;
+        private bool hoveredItemIsMissing = false;  // True when hoveredItem is a missing item (for "(Missing)" suffix)
         private Rectangle outFitDisplayBG = new Rectangle(0, 0, 128, 192);
 
         // Portrait Box Backgrounds
@@ -579,6 +580,14 @@ namespace StardewOutfitManager.Menus
             "Right Ring" => "RightRing",
             _ => null
         };
+
+        // Draw a cancel sign overlay centered on a slot (used for missing items)
+        private static void DrawCancelOverlay(SpriteBatch b, Rectangle bounds, int cancelSize = 56)
+        {
+            b.Draw(Game1.mouseCursors,
+                new Rectangle(bounds.X + (bounds.Width - cancelSize) / 2, bounds.Y + (bounds.Height - cancelSize) / 2, cancelSize, cancelSize),
+                new Rectangle(322, 498, 12, 12), Color.White);
+        }
 
         // Get empty slot icon for a given equipment component
         private static int GetEmptySlotIcon(string componentName) => componentName switch
@@ -1421,6 +1430,7 @@ namespace StardewOutfitManager.Menus
                 if (c.containsPoint(x, y))
                 {
                     hoveredItem = GetEquipmentSlotItem(c);
+                    hoveredItemIsMissing = false;
                     if (hoveredItem == null)
                     {
                         // Check if this is a missing item (has intended item but not available)
@@ -1431,8 +1441,7 @@ namespace StardewOutfitManager.Menus
                             if (outfitSlotSelected.outfitIntendedItems.TryGetValue(slotKey, out Item intendedItem) && intendedItem != null)
                             {
                                 hoveredItem = intendedItem;
-                                // Append "(Missing)" to indicate the item isn't available
-                                // Note: hoveredItem tooltip will be drawn with standard IClickableMenu.drawToolTip
+                                hoveredItemIsMissing = true;
                             }
                             else if (outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey))
                             {
@@ -1746,19 +1755,14 @@ namespace StardewOutfitManager.Menus
                     // Item is missing but we have a recreated version - draw it with cancel sign
                     b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, FILLED_SLOT_ICON), Color.White);
                     intendedItem.drawInMenu(b, new Vector2(itemX, itemY), 1f, 1f, 0.866f, StackDrawType.Hide);
-                    // Draw cancel sign overlay (nearly fills the slot to cross out the item)
-                    int cancelSize = 56;
-                    b.Draw(Game1.mouseCursors, new Rectangle(itemX + (itemSize - cancelSize) / 2, itemY + (itemSize - cancelSize) / 2, cancelSize, cancelSize),
-                        new Rectangle(322, 498, 12, 12), Color.White);
+                    DrawCancelOverlay(b, itemBounds);
                 }
                 else if (slot.outfitAvailabileItems.ContainsKey(slotKeys[i]))
                 {
                     // Slot was part of outfit but item is missing and we can't recreate (legacy data)
                     // Show empty icon with cancel sign
                     b.Draw(Game1.menuTexture, itemBounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptyIcons[i]), Color.White * 0.5f);
-                    int cancelSize = 56;
-                    b.Draw(Game1.mouseCursors, new Rectangle(itemX + (itemSize - cancelSize) / 2, itemY + (itemSize - cancelSize) / 2, cancelSize, cancelSize),
-                        new Rectangle(322, 498, 12, 12), Color.White);
+                    DrawCancelOverlay(b, itemBounds);
                 }
                 else
                 {
@@ -1862,9 +1866,7 @@ namespace StardewOutfitManager.Menus
                 {
                     outfitSlotSelected.outfitIntendedItems.TryGetValue(slotKey, out intendedItem);
                     // Missing if: slot is in available items (was supposed to have something) but the item is null
-                    isMissingItem = outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey) &&
-                                   !outfitSlotSelected.outfitAvailabileItems.TryGetValue(slotKey, out Item available) ||
-                                   (outfitSlotSelected.outfitAvailabileItems.TryGetValue(slotKey, out available) && available == null);
+                    isMissingItem = outfitSlotSelected.outfitAvailabileItems.TryGetValue(slotKey, out Item available) && available == null;
                 }
 
                 if (slotItem != null)
@@ -1878,18 +1880,13 @@ namespace StardewOutfitManager.Menus
                     // Item is missing but we have a recreated version - draw it with cancel sign
                     b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, FILLED_SLOT_ICON), Color.White);
                     intendedItem.drawInMenu(b, new Vector2(c.bounds.X, c.bounds.Y), c.scale, 1f, 0.866f, StackDrawType.Hide);
-                    // Draw cancel sign overlay (nearly fills the slot to cross out the item)
-                    int cancelSize = 56;
-                    b.Draw(Game1.mouseCursors, new Rectangle(c.bounds.X + (c.bounds.Width - cancelSize) / 2, c.bounds.Y + (c.bounds.Height - cancelSize) / 2, cancelSize, cancelSize),
-                        new Rectangle(322, 498, 12, 12), Color.White);
+                    DrawCancelOverlay(b, c.bounds);
                 }
                 else if (isMissingItem)
                 {
                     // Item is missing and we can't recreate (legacy data) - show empty with cancel sign
                     b.Draw(Game1.menuTexture, c.bounds, Game1.getSourceRectForStandardTileSheet(Game1.menuTexture, emptySlotIcon), Color.White * 0.5f);
-                    int cancelSize = 56;
-                    b.Draw(Game1.mouseCursors, new Rectangle(c.bounds.X + (c.bounds.Width - cancelSize) / 2, c.bounds.Y + (c.bounds.Height - cancelSize) / 2, cancelSize, cancelSize),
-                        new Rectangle(322, 498, 12, 12), Color.White);
+                    DrawCancelOverlay(b, c.bounds);
                 }
                 else
                 {
@@ -1977,6 +1974,7 @@ namespace StardewOutfitManager.Menus
                 if (snapped?.region == EQUIPMENT)
                 {
                     hoveredItem = GetEquipmentSlotItem(snapped);
+                    hoveredItemIsMissing = false;
                     if (hoveredItem == null)
                     {
                         // Check if this is a missing item (has intended item but not available)
@@ -1987,6 +1985,7 @@ namespace StardewOutfitManager.Menus
                             if (outfitSlotSelected.outfitIntendedItems.TryGetValue(slotKey, out Item intendedItem) && intendedItem != null)
                             {
                                 hoveredItem = intendedItem;
+                                hoveredItemIsMissing = true;
                             }
                             else if (outfitSlotSelected.outfitAvailabileItems.ContainsKey(slotKey))
                             {
@@ -2008,7 +2007,8 @@ namespace StardewOutfitManager.Menus
             // Draw hover text or item tooltip
             if (hoveredItem != null)
             {
-                IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), hoveredItem.DisplayName, hoveredItem);
+                string displayName = hoveredItemIsMissing ? $"{hoveredItem.DisplayName} (Missing)" : hoveredItem.DisplayName;
+                IClickableMenu.drawToolTip(b, hoveredItem.getDescription(), displayName, hoveredItem);
             }
             else if (!hoverText.Equals(""))
             {

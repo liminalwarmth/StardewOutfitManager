@@ -45,9 +45,14 @@ Enhanced the display of unavailable outfits to show which specific items are mis
 - Cancel signs appear on slots with missing items when an outfit is selected
 
 ### Tooltip Updates
-- Hovering over missing item slots shows the item tooltip (using recreated item)
+- Hovering over missing item slots shows the item tooltip with "(Missing)" suffix appended to the display name
 - Legacy outfits without ItemIds show "Missing {slot}" text
 - Gamepad navigation also updated with same behavior
+
+### Code Quality Fixes (Code Review Follow-up)
+- Fixed logic bug in `isMissingItem` calculation (operator precedence issue)
+- Added `hoveredItemIsMissing` field to track when tooltip should show "(Missing)" suffix
+- Extracted cancel overlay drawing to `DrawCancelOverlay()` helper method to reduce duplication
 
 ## Visual Behavior Summary
 
