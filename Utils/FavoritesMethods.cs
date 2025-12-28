@@ -33,8 +33,11 @@ namespace StardewOutfitManager.Utils
             outfit.Items.Add("Shirt", outfit.tagItemAsFavorite(player.shirtItem.Value));
             outfit.Items.Add("Pants", outfit.tagItemAsFavorite(player.pantsItem.Value));
             outfit.Items.Add("Shoes", outfit.tagItemAsFavorite(player.boots.Value));
-            outfit.Items.Add("LeftRing", outfit.tagItemAsFavorite(player.leftRing.Value));
-            outfit.Items.Add("RightRing", outfit.tagItemAsFavorite(player.rightRing.Value));
+            if (StardewOutfitManager.Config.IncludeRingsInOutfits)
+            {
+                outfit.Items.Add("LeftRing", outfit.tagItemAsFavorite(player.leftRing.Value));
+                outfit.Items.Add("RightRing", outfit.tagItemAsFavorite(player.rightRing.Value));
+            }
 
             // Store clothing dye colors for dyeable items (allows same item with different dyes to be saved separately)
             outfit.ItemColors.Add("Shirt", getClothingColorString(player.shirtItem.Value));
@@ -69,12 +72,16 @@ namespace StardewOutfitManager.Utils
         {
             foreach (FavoriteOutfit favorite in f.Favorites)
             {
-                if (outfit.Items["Hat"] == favorite.Items["Hat"] &&
-                    outfit.Items["Shirt"] == favorite.Items["Shirt"] &&
-                    outfit.Items["Pants"] == favorite.Items["Pants"] &&
-                    outfit.Items["Shoes"] == favorite.Items["Shoes"] &&
-                    outfit.Items["LeftRing"] == favorite.Items["LeftRing"] &&
-                    outfit.Items["RightRing"] == favorite.Items["RightRing"] &&
+                // Check rings only if config option is enabled (use GetValueOrDefault for null-safe access)
+                bool ringsMatch = !StardewOutfitManager.Config.IncludeRingsInOutfits ||
+                    (outfit.Items.GetValueOrDefault("LeftRing") == favorite.Items.GetValueOrDefault("LeftRing") &&
+                     outfit.Items.GetValueOrDefault("RightRing") == favorite.Items.GetValueOrDefault("RightRing"));
+
+                if (outfit.Items.GetValueOrDefault("Hat") == favorite.Items.GetValueOrDefault("Hat") &&
+                    outfit.Items.GetValueOrDefault("Shirt") == favorite.Items.GetValueOrDefault("Shirt") &&
+                    outfit.Items.GetValueOrDefault("Pants") == favorite.Items.GetValueOrDefault("Pants") &&
+                    outfit.Items.GetValueOrDefault("Shoes") == favorite.Items.GetValueOrDefault("Shoes") &&
+                    ringsMatch &&
                     outfit.Hair == favorite.Hair &&
                     outfit.Accessory == favorite.Accessory &&
                     outfit.Category == favorite.Category &&
@@ -140,13 +147,18 @@ namespace StardewOutfitManager.Utils
         public static bool isAvailable(this FavoriteOutfit f, Dictionary<string, Item> itemTagLookup)
         {
             // Check all items on the needed item list against the lookup dictionary
-            foreach (string itemID in f.Items.Values)
+            foreach (var kvp in f.Items)
             {
+                // Skip ring slots if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits &&
+                    (kvp.Key == "LeftRing" || kvp.Key == "RightRing"))
+                    continue;
+
                 // Only check for slots that have an item reference stored in that slot
-                if (itemID != null)
+                if (kvp.Value != null)
                 {
                     // If they're missing an item from this outfit, the ensemble is unavailable
-                    if (!itemTagLookup.ContainsKey(itemID)) { return false; }
+                    if (!itemTagLookup.ContainsKey(kvp.Value)) { return false; }
                 }
             }
 
@@ -161,6 +173,11 @@ namespace StardewOutfitManager.Utils
             // Check all items on the needed item list against the lookup dictionary
             foreach (string itemKey in f.Items.Keys)
             {
+                // Skip ring slots if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits &&
+                    (itemKey == "LeftRing" || itemKey == "RightRing"))
+                    continue;
+
                 // Only check for slots that have an item reference stored in that slot
                 if (f.Items[itemKey] != null)
                 {
@@ -222,10 +239,14 @@ namespace StardewOutfitManager.Utils
             }
             else if (category == "LeftRing")
             {
+                // Skip ring check if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits) { return false; }
                 if (favoriteItemTagMatches(f, farmer.leftRing.Value, itemTag)) { return true; }
             }
             else if (category == "RightRing")
             {
+                // Skip ring check if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits) { return false; }
                 if (favoriteItemTagMatches(f, farmer.rightRing.Value, itemTag)) { return true; }
             }
             return false;
@@ -281,18 +302,24 @@ namespace StardewOutfitManager.Utils
                     displayFarmer.changeShoeColor(displayFarmer.boots.Value.indexInColorSheet.Value.ToString());
                 }
             }
-            // LeftRing
-            displayFarmer.leftRing.Set(null);
-            if (availability.ContainsKey("LeftRing"))
+            // Rings - only modify if rings are included in outfits
+            if (StardewOutfitManager.Config.IncludeRingsInOutfits)
             {
-                if (availability["LeftRing"] != null) { displayFarmer.leftRing.Set(availability["LeftRing"] as Ring); }
+                // LeftRing
+                displayFarmer.leftRing.Set(null);
+                if (availability.ContainsKey("LeftRing") && availability["LeftRing"] != null)
+                {
+                    displayFarmer.leftRing.Set(availability["LeftRing"] as Ring);
+                }
+                // RightRing
+                displayFarmer.rightRing.Set(null);
+                if (availability.ContainsKey("RightRing") && availability["RightRing"] != null)
+                {
+                    displayFarmer.rightRing.Set(availability["RightRing"] as Ring);
+                }
             }
-            // RightRing
-            displayFarmer.rightRing.Set(null);
-            if (availability.ContainsKey("RightRing"))
-            {
-                if (availability["RightRing"] != null) { displayFarmer.rightRing.Set(availability["RightRing"] as Ring); }
-            }
+            // When rings disabled: leave rings unchanged on display farmer
+
             // Hair & Accessory
             displayFarmer.changeHairStyle(f.Hair);
             displayFarmer.accessory.Set(f.Accessory);
@@ -308,11 +335,21 @@ namespace StardewOutfitManager.Utils
             // First unequip all player slots and put whatever is in them back in the dresser
             foreach (string itemSlot in f.Items.Keys)
             {
+                // Skip ring slots if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits &&
+                    (itemSlot == "LeftRing" || itemSlot == "RightRing"))
+                    continue;
+
                 menu.ItemExchange(dresserObject, farmer, itemSlot, null, null, false);
             }
             // Then equip the available pieces of this outfit, removing them from the dresser
             foreach (string itemSlot in availability.Keys)
             {
+                // Skip ring slots if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits &&
+                    (itemSlot == "LeftRing" || itemSlot == "RightRing"))
+                    continue;
+
                 if (availability[itemSlot] != null)
                 {
                     menu.ItemExchange(dresserObject, farmer, itemSlot, availability[itemSlot], null, false);
