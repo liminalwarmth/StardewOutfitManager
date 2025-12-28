@@ -142,8 +142,8 @@ namespace StardewOutfitManager.Utils
             return lookup;
         }
 
-        // TODO: Need to add checks for hair and Accessory validity when/if we're using custom hair and accessory indexes
         // Given a pre-built lookup dictionary, returns true if all pieces of this outfit are present
+        // Includes validation for hair and accessory indices
         public static bool isAvailable(this FavoriteOutfit f, Dictionary<string, Item> itemTagLookup)
         {
             // Check all items on the needed item list against the lookup dictionary
@@ -162,8 +162,41 @@ namespace StardewOutfitManager.Utils
                 }
             }
 
-            // If all items in the outfit were found, return true
+            // Check hair availability (index must exist in current hairstyle list)
+            if (!IsHairIndexValid(f.Hair))
+            {
+                return false;
+            }
+
+            // Check accessory availability (index must exist in current accessory range)
+            if (!IsAccessoryIndexValid(f.Accessory))
+            {
+                return false;
+            }
+
+            // If all items, hair, and accessory were valid, return true
             return true;
+        }
+
+        /// <summary>
+        /// Check if a hair index is valid (exists in current hairstyle list).
+        /// </summary>
+        /// <param name="hairIndex">The hair index to validate</param>
+        /// <returns>True if the index is valid</returns>
+        public static bool IsHairIndexValid(int hairIndex)
+        {
+            List<int> validHairs = Farmer.GetAllHairstyleIndices();
+            return validHairs.Contains(hairIndex);
+        }
+
+        /// <summary>
+        /// Check if an accessory index is valid (exists in current accessory range).
+        /// </summary>
+        /// <param name="accessoryIndex">The accessory index to validate</param>
+        /// <returns>True if the index is valid</returns>
+        public static bool IsAccessoryIndexValid(int accessoryIndex)
+        {
+            return AccessoryMethods.IsValidAccessoryIndex(accessoryIndex);
         }
 
         // Given a pre-built lookup dictionary, returns the items for any non-null slots that are available and null for any that are not
@@ -320,9 +353,19 @@ namespace StardewOutfitManager.Utils
             }
             // When rings disabled: leave rings unchanged on display farmer
 
-            // Hair & Accessory
-            displayFarmer.changeHairStyle(f.Hair);
-            displayFarmer.accessory.Set(f.Accessory);
+            // Hair & Accessory - only apply if valid
+            if (IsHairIndexValid(f.Hair))
+            {
+                displayFarmer.changeHairStyle(f.Hair);
+            }
+            // else: leave display farmer with current/default hair
+
+            if (IsAccessoryIndexValid(f.Accessory))
+            {
+                displayFarmer.accessory.Set(f.Accessory);
+            }
+            // else: leave display farmer with current/default accessory
+
             // Finalize display settings
             displayFarmer.UpdateClothing();
             // Note: Facing direction is managed by the calling menu, not here
@@ -355,9 +398,18 @@ namespace StardewOutfitManager.Utils
                     menu.ItemExchange(dresserObject, farmer, itemSlot, availability[itemSlot], null, false);
                 }
             }
-            // Change hair and accessory to match outfit settings
-            farmer.changeHairStyle(f.Hair);
-            farmer.accessory.Set(f.Accessory);
+            // Change hair and accessory to match outfit settings (only if valid)
+            if (IsHairIndexValid(f.Hair))
+            {
+                farmer.changeHairStyle(f.Hair);
+            }
+            // else: keep current hair
+
+            if (IsAccessoryIndexValid(f.Accessory))
+            {
+                farmer.accessory.Set(f.Accessory);
+            }
+            // else: keep current accessory
         }
     }
 }
