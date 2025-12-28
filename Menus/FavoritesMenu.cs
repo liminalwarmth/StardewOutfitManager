@@ -775,8 +775,8 @@ namespace StardewOutfitManager.Menus
                 playerOwnedItems.Add(Game1.player.rightRing.Value);
             }
 
-            // Generate remaining inventory lists directly from the base game dresser object
-            List<Item> list = dresserObject.heldItems.ToList();
+            // Generate remaining inventory lists from all linked dressers (combined inventory)
+            List<Item> list = menuManager.GetCombinedDresserItems();
             list.Sort(dresserObject.SortItems);
             foreach (Item item in list)
             {
