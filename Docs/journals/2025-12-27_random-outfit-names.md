@@ -277,3 +277,305 @@ When adding new initialization code to a constructor, verify that all dependenci
 
 ### Build Status
 - **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - UI Polish: Button Positioning and Naming Preview
+
+**Tasks:**
+1. Move rename/delete buttons in WardrobeMenu to right side of portrait (matching FavoritesMenu)
+2. Add outfit preview with seasonal background to NamingMenu
+
+### Changes Made
+
+**1. Fixed Button Positioning (WardrobeMenu.cs)**
+- Changed renameButton position from `_portraitBox.X - 64` (left side) to `_portraitBox.Right + 8` (right side)
+- Changed deleteButton position from `_portraitBox.X - 64` to `_portraitBox.Right + 8`
+- Updated both constructor initialization and `gameWindowSizeChanged()` repositioning
+- Now matches FavoritesMenu button positions for visual consistency
+
+**2. Enhanced OutfitNamingMenu with Preview (FavoritesMenu.cs - OutfitNamingMenu class)**
+- Added `_previewFarmer`, `_previewBackground`, and `_previewBox` fields for outfit preview display
+- Added static background rectangle constants matching WardrobeMenu (bgDefault, bgSpring, etc.)
+- Added `previewFarmer` parameter to constructor (optional, backwards compatible)
+- Added `CreatePreviewFarmer()` helper to clone the source farmer for preview
+- Added `GetBackgroundForCategory()` helper to select seasonal background
+- Added `UpdatePreviewPosition()` to position preview left of textbox
+- Override `draw()` to render outfit preview with seasonal background
+
+**3. Updated Calling Code (WardrobeMenu.cs, FavoritesMenu.cs)**
+- WardrobeMenu save dialog: Pass `_displayFarmer` to show current outfit preview
+- WardrobeMenu rename dialog: Pass `_displayFarmer` to show current outfit preview
+- FavoritesMenu rename dialog: Pass `outfitSlotSelected.modelFarmer` to show outfit preview
+
+### Files Modified
+- `Menus/WardrobeMenu.cs` - Button repositioning (2 places), pass farmer to naming menu (2 places)
+- `Menus/FavoritesMenu.cs` - Enhanced OutfitNamingMenu class with preview, pass farmer in rename call
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+### Behavior Changes
+- Rename/delete buttons now appear on the RIGHT side of the portrait in WardrobeMenu (matching FavoritesMenu)
+- When naming or renaming an outfit, a small preview with seasonal background appears to the LEFT of the text box
+- Preview shows the farmer wearing the outfit being named, giving visual context during naming
+
+### Note on Gamepad Mode
+The outfit preview is rendered in keyboard mode (NamingMenu overlay). Gamepad mode uses the separate TextEntryMenu which handles its own display independently. Adding preview to gamepad mode would require a custom TextEntryMenu implementation (see `Docs/feature_specs/Enhancement_Custom_Gamepad_Keyboard.md` for details).
+
+---
+
+## 2025-12-27 - Preview Positioning Refinement
+
+**Task:** Adjust outfit preview positioning in NamingMenu for better visual alignment
+
+### Changes Made
+
+**1. Updated Preview Positioning (FavoritesMenu.cs - OutfitNamingMenu class)**
+- Changed vertical alignment from center-aligned to top-aligned with textbox
+- Preview top is now flush with textbox top (`textBox.Y` instead of `textBox.Y + textBox.Height / 2 - previewHeight / 2`)
+- Gap between preview and textbox matches the gap between textbox and OK button (16px)
+- Added documentation comment explaining the symmetry
+
+**2. Updated Gamepad Keyboard Spec (Enhancement_Custom_Gamepad_Keyboard.md)**
+- Added "Layout Requirements (Match Keyboard Mode)" section
+- Documented exact preview positioning: 128x192 size, 16px gap, top-aligned
+- Added reference to `OutfitNamingMenu.UpdatePreviewPosition()` code
+- Documented farmer rendering parameters (position, scale, direction)
+- Ensures future gamepad implementation will match keyboard mode layout
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - Updated `UpdatePreviewPosition()` method
+- `Docs/feature_specs/Enhancement_Custom_Gamepad_Keyboard.md` - Added layout requirements section
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - Preview Positioning Fix (Visual Alignment)
+
+**Task:** Fix outfit preview alignment based on in-game screenshot feedback
+
+### Problem
+Screenshot showed:
+1. Preview top was NOT aligned with textbox visual top (was lower)
+2. Horizontal gap between preview and textbox was too narrow
+
+Root cause: TextBox draws its border above its Y coordinate, so `textBox.Y` is not the visual top.
+
+### Changes Made
+
+**1. Fixed Vertical Alignment (FavoritesMenu.cs - OutfitNamingMenu)**
+- Added `textBoxBorderOffset = 12` to account for border drawing above Y
+- Changed from `textBox.Y` to `textBox.Y - textBoxBorderOffset`
+
+**2. Increased Horizontal Gap**
+- Changed gap from 16px to 26px for proper visual spacing
+
+**3. Updated Gamepad Keyboard Spec**
+- Updated positioning values to match corrected implementation
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - Fixed `UpdatePreviewPosition()` with border offset
+- `Docs/feature_specs/Enhancement_Custom_Gamepad_Keyboard.md` - Updated positioning values
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - Preview Positioning Fine-Tune and Window Resize Support
+
+**Task:** Final preview alignment adjustment and add window resize handling to naming menu
+
+### Problem
+1. Preview still slightly below textbox top - needed more vertical offset
+2. NamingMenu didn't reposition elements when window resized (unlike other menus)
+
+### Changes Made
+
+**1. Increased Vertical Offset (FavoritesMenu.cs - OutfitNamingMenu)**
+- Changed `textBoxBorderOffset` from 12 to 16 pixels
+
+**2. Added Window Resize Handling (FavoritesMenu.cs - OutfitNamingMenu)**
+- Added `ApplyCustomLayout()` method that handles all textbox/button positioning
+- Moved positioning logic from calling code (WardrobeMenu, FavoritesMenu) into OutfitNamingMenu constructor
+- Added `gameWindowSizeChanged()` override that calls `ApplyCustomLayout()` after base resize
+- Preview position now updates on resize via `UpdatePreviewPosition()`
+
+**3. Simplified Calling Code (WardrobeMenu.cs, FavoritesMenu.cs)**
+- Removed duplicate positioning code from 3 locations
+- OutfitNamingMenu now handles all layout internally
+
+**4. Updated Gamepad Keyboard Spec**
+- Updated textBoxBorderOffset from 12 to 16
+- Added "Window Resize Handling" section documenting the requirement
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - OutfitNamingMenu: added ApplyCustomLayout(), gameWindowSizeChanged(), updated offset to 16; removed duplicate positioning from rename call
+- `Menus/WardrobeMenu.cs` - Removed duplicate positioning from save/rename calls
+- `Docs/feature_specs/Enhancement_Custom_Gamepad_Keyboard.md` - Updated offset, added resize section
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+### Behavior Changes
+- Preview now properly aligned with textbox top border
+- When window is resized while naming menu is open, all elements reposition correctly
+- Code is cleaner with positioning centralized in OutfitNamingMenu
+
+---
+
+## 2025-12-27 - Fix Window Resize Layout Bug
+
+**Task:** Fix naming menu elements rearranging incorrectly on window resize
+
+### Problem
+When resizing the game window while the naming menu was open, the textbox and buttons would get repositioned incorrectly. The issue was that `ApplyCustomLayout()` was using relative positioning (subtracting from current values) which caused cumulative drift when called after `base.gameWindowSizeChanged()` reset the positions.
+
+### Changes Made
+
+**Fixed ApplyCustomLayout() to Use Absolute Positioning (FavoritesMenu.cs)**
+- Changed from relative positioning (`textBox.Y -= shift`) to absolute positioning
+- Now calculates all positions from scratch based on `Game1.uiViewport` dimensions
+- TextBox Y: `viewport.Height / 2 - verticalShift`
+- Button Y: `viewport.Height / 2 - 8 - verticalShift` (buttons sit 8px above textbox baseline)
+- This ensures consistent layout regardless of previous state
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - Fixed `ApplyCustomLayout()` to use absolute positioning
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - Fix Window Resize (Second Attempt)
+
+**Task:** Window resize still not working - elements getting repositioned incorrectly
+
+### Problem
+Even with absolute positioning in `ApplyCustomLayout()`, elements were still getting messed up on resize. The issue was that `base.gameWindowSizeChanged()` (NamingMenu's version) was also repositioning elements, and its positioning conflicted with our custom layout.
+
+### Root Cause
+When resize happens:
+1. Parent (WardrobeMenu) calls `base.gameWindowSizeChanged()` which propagates to child menus
+2. Our `OutfitNamingMenu.gameWindowSizeChanged()` was called
+3. We called `base.gameWindowSizeChanged()` (NamingMenu) which repositioned elements to its defaults
+4. Then we called `ApplyCustomLayout()` - but the base had already messed up positions
+
+### Solution
+Don't call `base.gameWindowSizeChanged()` at all since we handle all positioning ourselves. The base NamingMenu's resize logic conflicts with our custom centered layout.
+
+### Changes Made
+- Removed `base.gameWindowSizeChanged(oldBounds, newBounds)` call from `OutfitNamingMenu.gameWindowSizeChanged()`
+- Added comment explaining why we don't call base
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - Removed base.gameWindowSizeChanged() call
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - Fix Window Resize (Final Fix)
+
+**Task:** Window resize STILL not working - title banner ending up below textbox after resize
+
+### Problem
+After removing `base.gameWindowSizeChanged()`, the textbox and buttons were positioning correctly, but the **title banner** ("Name This Outfit") was ending up in the wrong position - rendered BELOW the textbox after resize.
+
+### Root Cause Analysis
+Looking at how WardrobeMenu handles resize:
+1. It calls `base.gameWindowSizeChanged()` **first** to handle standard repositioning
+2. Then it recalculates all its custom positions
+
+The NamingMenu base class draws its title banner using `yPositionOnScreen`, which only gets updated when `base.gameWindowSizeChanged()` is called. By NOT calling base, the title's position value was never updated for the new viewport size.
+
+### Solution
+Call `base.gameWindowSizeChanged()` **first** to let NamingMenu update its internal position values (including `yPositionOnScreen` for the title), **then** apply our custom layout to override just the textbox and button positions.
+
+```csharp
+public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+{
+    // Call base first to let NamingMenu update its internal positions
+    // This is critical - NamingMenu uses yPositionOnScreen to draw the title banner
+    base.gameWindowSizeChanged(oldBounds, newBounds);
+
+    // Now override with our custom layout for textbox and buttons
+    ApplyCustomLayout();
+
+    // Update preview position if we have one
+    if (_previewFarmer != null)
+    {
+        UpdatePreviewPosition();
+    }
+}
+```
+
+### Key Insight
+When subclassing SDV menus:
+- **Call base.gameWindowSizeChanged()** to let the parent class update its internal positioning values
+- **Then override** only the specific elements you want to customize
+- Don't skip the base call unless you're handling ALL positioning including things the base class draws
+
+### Files Modified
+- `Menus/FavoritesMenu.cs` - Added base.gameWindowSizeChanged() call back, kept ApplyCustomLayout() for textbox/buttons
+
+### Build Status
+- **Build succeeded with 0 warnings**
+
+---
+
+## 2025-12-27 - Fix Window Resize (ACTUAL Fix - Child Menu Propagation)
+
+**Task:** Window resize STILL broken after all previous attempts
+
+### Root Cause Discovery
+After extensive investigation, discovered the **actual** root cause: **parent menus don't propagate resize events to child menus**.
+
+When the window resizes:
+1. `Game1` calls `activeClickableMenu.gameWindowSizeChanged()`
+2. `WardrobeMenu.gameWindowSizeChanged()` runs, repositions its own elements
+3. **OutfitNamingMenu.gameWindowSizeChanged() is NEVER called**
+4. The child menu's elements stay at their old positions
+
+The SDV framework does NOT automatically propagate resize events to child menus set via `SetChildMenu()`. The parent is responsible for explicitly calling `GetChildMenu()?.gameWindowSizeChanged()`.
+
+### Why Previous Fixes Failed
+All previous attempts modified `OutfitNamingMenu.gameWindowSizeChanged()`:
+- Calling/not calling base
+- Relative vs absolute positioning
+- Various layout adjustments
+
+None of these mattered because **the method was never being invoked** - the parent wasn't propagating the resize call.
+
+### The Fix
+Add child menu resize propagation to both parent menus:
+
+**WardrobeMenu.gameWindowSizeChanged()** (line 985-986):
+```csharp
+// Propagate resize to child menu (e.g., OutfitNamingMenu) if one is open
+GetChildMenu()?.gameWindowSizeChanged(oldBounds, newBounds);
+```
+
+**FavoritesMenu.gameWindowSizeChanged()** (line 1433-1434):
+```csharp
+// Propagate resize to child menu (e.g., OutfitNamingMenu) if one is open
+GetChildMenu()?.gameWindowSizeChanged(oldBounds, newBounds);
+```
+
+### Key Insight
+When using child menus in SDV:
+- Parent menus are responsible for propagating `gameWindowSizeChanged()` to children
+- The framework does NOT do this automatically
+- Check `GetChildMenu()` in resize handlers, not just input handlers
+
+### Files Modified
+- `Menus/WardrobeMenu.cs` - Added child menu resize propagation in gameWindowSizeChanged()
+- `Menus/FavoritesMenu.cs` - Added child menu resize propagation in gameWindowSizeChanged()
+
+### Build Status
+- **Build succeeded with 0 warnings**

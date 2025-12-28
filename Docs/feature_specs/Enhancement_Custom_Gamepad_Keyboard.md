@@ -189,6 +189,59 @@ If the full custom keyboard is too complex, a simpler alternative:
 
 This would be faster to implement but less clean architecturally.
 
+## Layout Requirements (Match Keyboard Mode)
+
+When implementing the gamepad keyboard, the layout must match the keyboard-mode `OutfitNamingMenu` for visual consistency:
+
+### Outfit Preview Positioning
+- **Size**: 128x192 pixels (same as outfit slot previews in FavoritesMenu)
+- **Horizontal**: Left of the textbox, with 26px gap between preview right edge and textbox left border
+- **Vertical**: Top of preview aligned flush with textbox visual top (border draws 16px above textBox.Y)
+- **Content**: Farmer preview with seasonal background sprite based on outfit category
+
+### Gap and Alignment Notes
+- The 26px horizontal gap provides visual balance with the textbox border thickness
+- The textbox draws its border above its Y position, so subtract 16px to align with visual top
+
+### Reference Implementation
+See `OutfitNamingMenu.UpdatePreviewPosition()` in `Menus/FavoritesMenu.cs` for the exact positioning logic:
+```csharp
+int previewWidth = 128;
+int previewHeight = 192;
+int gap = 26;  // Horizontal gap for visual balance
+int textBoxBorderOffset = 16;  // TextBox border draws above its Y position
+
+_previewBox = new Rectangle(
+    textBox.X - gap - previewWidth,
+    textBox.Y - textBoxBorderOffset,  // Align with textbox visual top
+    previewWidth,
+    previewHeight
+);
+```
+
+### Farmer Rendering
+Use `FarmerRenderer.draw()` with these parameters:
+- Position: `new Vector2(_previewBox.Center.X - 32, _previewBox.Bottom - 160)`
+- Scale: `0.8f`
+- Always face forward: `farmer.faceDirection(2)`
+
+### Window Resize Handling
+The custom gamepad keyboard must handle window resize events to maintain proper positioning:
+- Override `gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)`
+- **IMPORTANT**: Call `base.gameWindowSizeChanged()` FIRST - this updates parent class position values like `yPositionOnScreen` which are used to draw elements like the title banner
+- THEN recalculate and reapply custom positioning for elements you want to override
+- See `OutfitNamingMenu.gameWindowSizeChanged()` and `ApplyCustomLayout()` for the keyboard-mode implementation
+
+**Key insight from keyboard-mode implementation:**
+When subclassing SDV menus, the parent class draws some elements using stored position values (e.g., NamingMenu draws its title banner at `yPositionOnScreen`). If you skip `base.gameWindowSizeChanged()`, those values never update and the elements render in the wrong position. The pattern is: let base update its positions, then override just the specific elements you want to customize.
+
+**CRITICAL: Child menu resize propagation:**
+The SDV framework does NOT automatically propagate `gameWindowSizeChanged()` to child menus set via `SetChildMenu()`. The parent menu must explicitly call:
+```csharp
+GetChildMenu()?.gameWindowSizeChanged(oldBounds, newBounds);
+```
+Without this, the child menu's resize handler never runs and elements stay at old positions.
+
 ## Status
 
 **Priority**: Low (gamepad users can still rename outfits, just without visual context)

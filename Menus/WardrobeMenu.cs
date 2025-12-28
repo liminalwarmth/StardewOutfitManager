@@ -344,9 +344,9 @@ namespace StardewOutfitManager.Menus
             };
 
             // Rename and Delete buttons (shown when displaying a saved outfit)
-            // Position to the left of the portrait box
+            // Position to the right of the portrait box (matching FavoritesMenu)
             weaponsTexture = Game1.content.Load<Texture2D>("TileSheets/weapons");
-            renameButton = new ClickableTextureComponent("Rename", new Rectangle(_portraitBox.X - 64, _portraitBox.Y, 56, 56), null, "Rename Outfit", weaponsTexture, new Rectangle(64, 64, 16, 16), 1f)
+            renameButton = new ClickableTextureComponent("Rename", new Rectangle(_portraitBox.Right + 8, _portraitBox.Y, 56, 56), null, "Rename Outfit", weaponsTexture, new Rectangle(64, 64, 16, 16), 1f)
             {
                 myID = 9996,
                 upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
@@ -354,7 +354,7 @@ namespace StardewOutfitManager.Menus
                 leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
                 rightNeighborID = ClickableComponent.SNAP_AUTOMATIC
             };
-            deleteButton = new ClickableTextureComponent("Delete", new Rectangle(_portraitBox.X - 64, _portraitBox.Y + 56 + 8, 56, 56), null, "Delete Outfit", Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 1f)
+            deleteButton = new ClickableTextureComponent("Delete", new Rectangle(_portraitBox.Right + 8, _portraitBox.Y + 56 + 8, 56, 56), null, "Delete Outfit", Game1.mouseCursors, new Rectangle(322, 498, 12, 12), 1f)
             {
                 myID = 9995,
                 upNeighborID = 9996,
@@ -648,37 +648,15 @@ namespace StardewOutfitManager.Menus
                 Game1.playSound("smallSelect");
                 hoverText = "";  // Clear hover text
 
+                // OutfitNamingMenu handles all positioning internally (textbox centering, layout, resize)
                 OutfitNamingMenu namingMenu = new OutfitNamingMenu(
                     OnNewOutfitNamed,
                     "Name This Outfit",
                     defaultName,
                     _pendingOutfitCategory,
-                    OnNewOutfitCancelled
+                    OnNewOutfitCancelled,
+                    _displayFarmer  // Show outfit preview with seasonal background
                 );
-
-                // Configure textbox (same as FavoritesMenu)
-                namingMenu.textBox.textLimit = 15;  // Max 15 characters for outfit names
-                namingMenu.textBox.limitWidth = false;
-                namingMenu.textBox.Width = 384;
-                namingMenu.textBox.Text = defaultName;
-
-                // Center just the textbox (not the full assembly with buttons)
-                int textBoxVisualWidth = namingMenu.textBox.Width + 16;
-                int gapAfterTextBox = 16;
-                int doneButtonWidth = namingMenu.doneNamingButton.bounds.Width;
-                int gapAfterDone = 8;
-
-                int textBoxCenterX = Game1.uiViewport.Width / 2 - textBoxVisualWidth / 2;
-                namingMenu.textBox.X = textBoxCenterX;
-                namingMenu.doneNamingButton.bounds.X = textBoxCenterX + textBoxVisualWidth + gapAfterTextBox;
-                namingMenu.randomButton.bounds.X = namingMenu.doneNamingButton.bounds.X + doneButtonWidth + gapAfterDone;
-
-                // Move textbox and buttons up to reduce gap with title banner
-                int verticalShift = 40;
-                namingMenu.textBox.Y -= verticalShift;
-                namingMenu.doneNamingButton.bounds.Y -= verticalShift;
-                namingMenu.randomButton.bounds.Y -= verticalShift;
-
                 SetChildMenu(namingMenu);
             }
 
@@ -690,36 +668,15 @@ namespace StardewOutfitManager.Menus
                 Game1.playSound("smallSelect");
                 hoverText = "";
 
-                // Open naming menu with current outfit name
+                // OutfitNamingMenu handles all positioning internally (textbox centering, layout, resize)
                 OutfitNamingMenu namingMenu = new OutfitNamingMenu(
                     OnOutfitRenamed,
                     "Rename Outfit",
                     _matchedOutfitName,
                     categorySelected.name,
-                    OnRenameCancelled
+                    OnRenameCancelled,
+                    _displayFarmer  // Show outfit preview with seasonal background
                 );
-                // Configure textbox
-                namingMenu.textBox.textLimit = 15;
-                namingMenu.textBox.limitWidth = false;
-                namingMenu.textBox.Width = 384;
-                namingMenu.textBox.Text = _matchedOutfitName;
-
-                // Center the textbox
-                int textBoxVisualWidth = namingMenu.textBox.Width + 16;
-                int gapAfterTextBox = 16;
-                int doneButtonWidth = namingMenu.doneNamingButton.bounds.Width;
-                int gapAfterDone = 8;
-                int textBoxCenterX = Game1.uiViewport.Width / 2 - textBoxVisualWidth / 2;
-                namingMenu.textBox.X = textBoxCenterX;
-                namingMenu.doneNamingButton.bounds.X = textBoxCenterX + textBoxVisualWidth + gapAfterTextBox;
-                namingMenu.randomButton.bounds.X = namingMenu.doneNamingButton.bounds.X + doneButtonWidth + gapAfterDone;
-
-                // Move up to reduce gap with title banner
-                int verticalShift = 40;
-                namingMenu.textBox.Y -= verticalShift;
-                namingMenu.doneNamingButton.bounds.Y -= verticalShift;
-                namingMenu.randomButton.bounds.Y -= verticalShift;
-
                 SetChildMenu(namingMenu);
             }
             else
@@ -1018,12 +975,15 @@ namespace StardewOutfitManager.Menus
             saveFavoriteBox = new Rectangle(catXpos + 45, catYpos + 160, 178, 72);
             saveFavoriteButton.bounds = saveFavoriteBox;
 
-            // Reposition rename and delete buttons
-            renameButton.bounds = new Rectangle(_portraitBox.X - 64, _portraitBox.Y, 56, 56);
-            deleteButton.bounds = new Rectangle(_portraitBox.X - 64, _portraitBox.Y + 56 + 8, 56, 56);
+            // Reposition rename and delete buttons (right of portrait, matching FavoritesMenu)
+            renameButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y, 56, 56);
+            deleteButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y + 56 + 8, 56, 56);
 
             // Reposition top tabs
             menuManager.repositionTopTabButtons(this);
+
+            // Propagate resize to child menu (e.g., OutfitNamingMenu) if one is open
+            GetChildMenu()?.gameWindowSizeChanged(oldBounds, newBounds);
         }
 
         // ** DRAW **

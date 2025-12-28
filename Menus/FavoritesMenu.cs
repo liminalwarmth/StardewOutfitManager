@@ -19,26 +19,163 @@ namespace StardewOutfitManager.Menus
     /// <summary>
     /// Custom NamingMenu for outfit naming with season-specific random name suggestions.
     /// Overrides the dice button to use outfit names instead of pet names.
+    /// Displays the outfit preview with seasonal background to the left of the text box.
     /// </summary>
     internal class OutfitNamingMenu : NamingMenu
     {
         private readonly string _outfitCategory;
         private readonly Action _onCancelCallback;
 
+        // Outfit preview display
+        private Farmer _previewFarmer;
+        private Rectangle _previewBackground;
+        private Rectangle _previewBox;
+
+        // Background sprite rectangles (128x192 source size)
+        private static readonly Rectangle bgDefault = new Rectangle(0, 0, 128, 192);
+        private static readonly Rectangle bgSpring = new Rectangle(128, 0, 128, 192);
+        private static readonly Rectangle bgSummer = new Rectangle(256, 0, 128, 192);
+        private static readonly Rectangle bgFall = new Rectangle(384, 0, 128, 192);
+        private static readonly Rectangle bgWinter = new Rectangle(512, 0, 128, 192);
+        private static readonly Rectangle bgSpecial = new Rectangle(512, 192, 128, 192);
+
+        // Stored positioning parameters for resize handling
+        private readonly int _textBoxWidth = 384;
+        private readonly int _verticalShift = 40;
+
         /// <summary>
-        /// Creates a new outfit naming menu.
+        /// Creates a new outfit naming menu with optional farmer preview.
         /// </summary>
         /// <param name="onDone">Callback when naming is complete</param>
         /// <param name="title">Title displayed above the text box</param>
         /// <param name="defaultName">Initial name in the text box</param>
         /// <param name="category">Season category for random name suggestions (Spring, Summer, Fall, Winter, Special)</param>
         /// <param name="onCancel">Optional callback when the user cancels (Escape key)</param>
-        public OutfitNamingMenu(doneNamingBehavior onDone, string title, string defaultName, string category, Action onCancel = null)
+        /// <param name="previewFarmer">Optional farmer to display as outfit preview (wearing the outfit)</param>
+        public OutfitNamingMenu(doneNamingBehavior onDone, string title, string defaultName, string category, Action onCancel = null, Farmer previewFarmer = null)
             : base(onDone, title, defaultName)
         {
             _outfitCategory = category;
             _onCancelCallback = onCancel;
             minLength = 1;  // Require non-empty names
+
+            // Configure textbox
+            textBox.textLimit = 15;  // Max 15 characters for outfit names
+            textBox.limitWidth = false;
+            textBox.Width = _textBoxWidth;
+
+            // Apply custom layout (centers textbox and shifts up)
+            ApplyCustomLayout();
+
+            // Set up outfit preview if farmer provided
+            if (previewFarmer != null)
+            {
+                _previewFarmer = CreatePreviewFarmer(previewFarmer);
+                _previewFarmer.faceDirection(2);  // Face forward
+                _previewBackground = GetBackgroundForCategory(category);
+                UpdatePreviewPosition();
+            }
+        }
+
+        /// <summary>
+        /// Applies custom layout: centers textbox horizontally and shifts elements up.
+        /// Called from constructor and gameWindowSizeChanged.
+        /// </summary>
+        private void ApplyCustomLayout()
+        {
+            // Center just the textbox (not the full assembly with buttons)
+            int textBoxVisualWidth = textBox.Width + 16;
+            int gapAfterTextBox = 16;
+            int doneButtonWidth = doneNamingButton.bounds.Width;
+            int gapAfterDone = 8;
+
+            // Calculate absolute positions based on viewport
+            int textBoxCenterX = Game1.uiViewport.Width / 2 - textBoxVisualWidth / 2;
+            int baseTextBoxY = Game1.uiViewport.Height / 2;  // NamingMenu default vertical center
+
+            // Set horizontal positions
+            textBox.X = textBoxCenterX;
+            doneNamingButton.bounds.X = textBoxCenterX + textBoxVisualWidth + gapAfterTextBox;
+            randomButton.bounds.X = doneNamingButton.bounds.X + doneButtonWidth + gapAfterDone;
+
+            // Set vertical positions (shifted up from center)
+            // Buttons are positioned 8 pixels above the textbox baseline in NamingMenu
+            textBox.Y = baseTextBoxY - _verticalShift;
+            doneNamingButton.bounds.Y = baseTextBoxY - 8 - _verticalShift;
+            randomButton.bounds.Y = baseTextBoxY - 8 - _verticalShift;
+        }
+
+        /// <summary>
+        /// Creates a copy of the farmer for preview display.
+        /// </summary>
+        private Farmer CreatePreviewFarmer(Farmer source)
+        {
+            Farmer farmer = new Farmer(new FarmerSprite(source.FarmerSprite.textureName.Value), new Vector2(192f, 192f), 1, "", new List<Item>(), source.IsMale);
+            farmer.Name = source.Name;
+            farmer.displayName = source.displayName;
+            farmer.isFakeEventActor = true;
+            farmer.changeGender(source.IsMale);
+            farmer.changeHairStyle(source.hair.Value);
+            farmer.UniqueMultiplayerID = source.UniqueMultiplayerID;
+            farmer.shirtItem.Set(source.shirtItem.Value);
+            farmer.pantsItem.Set(source.pantsItem.Value);
+            farmer.shirt.Set(source.shirt.Value);
+            farmer.pants.Set(source.pants.Value);
+            farmer.changeShoeColor(source.shoes.Value);
+            farmer.boots.Set(source.boots.Value);
+            farmer.leftRing.Set(source.leftRing.Value);
+            farmer.rightRing.Set(source.rightRing.Value);
+            farmer.hat.Set(source.hat.Value);
+            farmer.pantsColor.Set(source.pantsColor.Value);
+            farmer.changeHairColor(source.hairstyleColor.Value);
+            farmer.changeSkinColor(source.skin.Value);
+            farmer.accessory.Set(source.accessory.Value);
+            farmer.changeEyeColor(source.newEyeColor.Value);
+            farmer.FarmerSprite.StopAnimation();
+            return farmer;
+        }
+
+        /// <summary>
+        /// Gets the seasonal background rectangle for a category.
+        /// </summary>
+        private static Rectangle GetBackgroundForCategory(string category)
+        {
+            return category switch
+            {
+                "Spring" => bgSpring,
+                "Summer" => bgSummer,
+                "Fall" => bgFall,
+                "Winter" => bgWinter,
+                "Special" => bgSpecial,
+                _ => bgDefault
+            };
+        }
+
+        /// <summary>
+        /// Updates the preview box position based on current textbox position.
+        /// Horizontal: Gap between preview right edge and textbox border (26px for visual balance).
+        /// Vertical: Preview top aligned with textbox visual top (border draws above textBox.Y).
+        /// </summary>
+        private void UpdatePreviewPosition()
+        {
+            if (_previewFarmer == null) return;
+
+            // Preview is 128x192 pixels (same as outfit slot previews)
+            int previewWidth = 128;
+            int previewHeight = 192;
+
+            // Horizontal gap for visual balance (textbox border adds visual width)
+            int gap = 26;
+
+            // TextBox draws its border above its Y position, so subtract to align with visual top
+            int textBoxBorderOffset = 16;
+
+            _previewBox = new Rectangle(
+                textBox.X - gap - previewWidth,
+                textBox.Y - textBoxBorderOffset,  // Align with textbox visual top (border)
+                previewWidth,
+                previewHeight
+            );
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -66,6 +203,51 @@ namespace StardewOutfitManager.Menus
             }
 
             base.receiveKeyPress(key);
+        }
+
+        public override void draw(SpriteBatch b)
+        {
+            // Let base NamingMenu draw everything first
+            base.draw(b);
+
+            // Draw outfit preview on top if we have a farmer
+            if (_previewFarmer != null)
+            {
+                // Recalculate position in case textbox was moved
+                UpdatePreviewPosition();
+
+                // Draw seasonal background
+                b.Draw(StardewOutfitManager.assetManager.customSprites, _previewBox, _previewBackground, Color.White);
+
+                // Draw farmer within background box bounds
+                FarmerRenderer.isDrawingForUI = true;
+                _previewFarmer.FarmerRenderer.draw(b,
+                    _previewFarmer.FarmerSprite.CurrentAnimationFrame,
+                    _previewFarmer.FarmerSprite.CurrentFrame,
+                    _previewFarmer.FarmerSprite.SourceRect,
+                    new Vector2(_previewBox.Center.X - 32, _previewBox.Bottom - 160),
+                    Vector2.Zero, 0.8f, Color.White, 0f, 1f, _previewFarmer);
+                FarmerRenderer.isDrawingForUI = false;
+            }
+
+            // Redraw mouse cursor on top
+            drawMouse(b);
+        }
+
+        public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+        {
+            // Call base first to let NamingMenu update its internal positions
+            // This is critical - NamingMenu uses yPositionOnScreen to draw the title banner
+            base.gameWindowSizeChanged(oldBounds, newBounds);
+
+            // Now override with our custom layout for textbox and buttons
+            ApplyCustomLayout();
+
+            // Update preview position if we have one
+            if (_previewFarmer != null)
+            {
+                UpdatePreviewPosition();
+            }
         }
     }
 
@@ -1026,42 +1208,15 @@ namespace StardewOutfitManager.Menus
                 {
                     currentName = StardewOutfitManager.outfitNameManager.GetRandomName(outfitSlotSelected.modelOutfit.Category);
                 }
+                // OutfitNamingMenu handles all positioning internally (textbox centering, layout, resize)
                 OutfitNamingMenu namingMenu = new OutfitNamingMenu(
                     OnOutfitRenamed,
                     "Name This Outfit",
                     currentName,
                     outfitSlotSelected.modelOutfit.Category,
-                    OnRenameCancelled
+                    OnRenameCancelled,
+                    outfitSlotSelected.modelFarmer  // Show outfit preview with seasonal background
                 );
-                // Set character limit for outfit names
-                namingMenu.textBox.textLimit = 15;  // Max 15 characters for outfit names
-                namingMenu.textBox.limitWidth = false; // Prevent text truncation when set
-                namingMenu.textBox.Width = 384;     // Increase from 256 to 384 to fit more characters
-                // Re-set the text now that limitWidth is disabled (to avoid truncation from constructor)
-                namingMenu.textBox.Text = currentName;
-
-                // Center just the textbox (not the full assembly with buttons)
-                // The TextBox has a visual border that extends ~16px beyond its Width property
-                int textBoxVisualWidth = namingMenu.textBox.Width + 16;  // Account for right border decoration
-                int gapAfterTextBox = 16;  // Gap between textbox visual edge and OK button
-                int doneButtonWidth = namingMenu.doneNamingButton.bounds.Width;
-                int gapAfterDone = 8;
-
-                // Center just the textbox relative to screen (buttons go to the right)
-                int textBoxCenterX = Game1.uiViewport.Width / 2 - textBoxVisualWidth / 2;
-                namingMenu.textBox.X = textBoxCenterX;
-                namingMenu.doneNamingButton.bounds.X = textBoxCenterX + textBoxVisualWidth + gapAfterTextBox;
-                namingMenu.randomButton.bounds.X = namingMenu.doneNamingButton.bounds.X + doneButtonWidth + gapAfterDone;
-
-                // Move textbox and buttons up to reduce gap with title banner
-                // Banner is drawn at height/2 - 128, is 72px tall, so bottom is at height/2 - 56
-                // TextBox default is at height/2, so we shift up by 40px to create 16px gap
-                // Note: Gamepad virtual keyboard (TextEntryMenu) handles its own positioning independently
-                int verticalShift = 40;
-                namingMenu.textBox.Y -= verticalShift;
-                namingMenu.doneNamingButton.bounds.Y -= verticalShift;
-                namingMenu.randomButton.bounds.Y -= verticalShift;
-
                 SetChildMenu(namingMenu);
             }
 
@@ -1274,6 +1429,9 @@ namespace StardewOutfitManager.Menus
 
             // Reposition top tabs
             menuManager.repositionTopTabButtons(this);
+
+            // Propagate resize to child menu (e.g., OutfitNamingMenu) if one is open
+            GetChildMenu()?.gameWindowSizeChanged(oldBounds, newBounds);
         }
 
         // Handle rotation actions
