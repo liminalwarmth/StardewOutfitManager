@@ -8,7 +8,6 @@ using StardewOutfitManager.Data;
 using StardewModdingAPI.Utilities;
 using System.Threading;
 using StardewValley.Objects;
-using StardewValley.Monsters;
 using StardewOutfitManager.Utils;
 
 namespace StardewOutfitManager.Managers

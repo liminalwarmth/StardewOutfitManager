@@ -238,12 +238,9 @@ namespace StardewOutfitManager
                 // Get all linked dressers based on config (individual, touching, or same building)
                 var linkedDressers = DresserLinkingMethods.GetLinkedDressers(originalDresser);
 
-                // Check if any linked dresser is locked for use by another player
-                if (!DresserLinkingMethods.AnyDresserLocked(linkedDressers))
+                // Attempt to lock all linked dressers - fails if any is already locked
+                if (DresserLinkingMethods.TryLockAllDressers(linkedDressers))
                 {
-                    // Lock all linked dressers so other players can't use any of them
-                    DresserLinkingMethods.TryLockAllDressers(linkedDressers, delegate { });
-
                     // Load the favorites data (or create a new favorites data object if no file exists) if we haven't yet
                     if (playerManager.favoritesData.Value == null) { playerManager.loadFavoritesDataFromFile(); }
 
@@ -287,6 +284,12 @@ namespace StardewOutfitManager
                     playerManager.menuManager.Value.activeManagedMenu = Game1.activeClickableMenu;
                     playerManager.menuManager.Value.positionActiveTab(lastTab);
                     Game1.playSound("bigSelect");
+                }
+                else
+                {
+                    // Failed to lock - another player is using a connected dresser
+                    Game1.playSound("cancel");
+                    Game1.addHUDMessage(new HUDMessage("Another player is using a connected dresser.", HUDMessage.error_type));
                 }
             }
         }

@@ -206,33 +206,55 @@ namespace StardewOutfitManager.Utils
         }
 
         /// <summary>
-        /// Lock all dressers in the list. Fails if any is already locked.
+        /// Attempt to lock all dressers in the list synchronously.
+        /// Uses a sequential locking strategy with rollback on failure.
         /// </summary>
         /// <param name="dressers">List of dressers to lock.</param>
-        /// <param name="onSuccess">Callback when all dressers are locked.</param>
-        /// <returns>True if locking was initiated, false if any dresser was already locked.</returns>
-        public static bool TryLockAllDressers(List<StorageFurniture> dressers, Action onSuccess)
+        /// <returns>True if all dressers were successfully locked, false otherwise.</returns>
+        public static bool TryLockAllDressers(List<StorageFurniture> dressers)
         {
-            // Check if any dresser is already locked
-            if (AnyDresserLocked(dressers))
-            {
+            if (dressers == null || dressers.Count == 0)
                 return false;
-            }
 
-            // For single dresser, use simple lock
-            if (dressers.Count == 1)
-            {
-                dressers[0].mutex.RequestLock(onSuccess);
-                return true;
-            }
+            var lockedDressers = new List<StorageFurniture>();
 
-            // For multiple dressers, lock them all
-            // We lock synchronously since we already checked none are locked
             foreach (var dresser in dressers)
             {
+                // Check if already locked by someone else
+                if (dresser.mutex.IsLocked())
+                {
+                    // Rollback: release any locks we acquired
+                    foreach (var locked in lockedDressers)
+                    {
+                        try { locked.mutex.ReleaseLock(); }
+                        catch { /* ignore release errors during rollback */ }
+                    }
+                    return false;
+                }
+
+                // Request the lock - this is synchronous in local context
+                // The lock is acquired immediately for the local player
                 dresser.mutex.RequestLock(delegate { });
+
+                // In multiplayer, RequestLock may not immediately succeed
+                // Check if we actually hold the lock now
+                if (dresser.mutex.IsLockHeld())
+                {
+                    lockedDressers.Add(dresser);
+                }
+                else
+                {
+                    // Lock wasn't acquired (likely held by remote player)
+                    // Rollback all previously acquired locks
+                    foreach (var locked in lockedDressers)
+                    {
+                        try { locked.mutex.ReleaseLock(); }
+                        catch { /* ignore release errors during rollback */ }
+                    }
+                    return false;
+                }
             }
-            onSuccess?.Invoke();
+
             return true;
         }
 
