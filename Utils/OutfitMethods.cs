@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using StardewValley.BellsAndWhistles;
 using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley;
 using StardewOutfitManager.Utils;
-using StardewOutfitManager.Managers;
-using StardewOutfitManager.Data;
-using System.Xml.Linq;
-using StardewOutfitManager.Menus;
-using StardewModdingAPI;
 
 namespace StardewOutfitManager.Utils
 {
@@ -104,27 +94,47 @@ namespace StardewOutfitManager.Utils
     // Extension methods to IClickableMenu for farmer hair and accessory management
     public static class HairAndAccessoryMethods
     {
+        // Vanilla hair range (indices 0-73 based on HairNames.json)
+        public const int VANILLA_HAIR_MAX = 73;
+
         // Change to next or prior hair in the hairstyle indices
         public static void HairSwap(this IClickableMenu menu, string name, int change, Farmer farmer, ClickableComponent label = null)
         {
-            // Shuffle to prior or next hair in the hair index
+            // Get all valid hair indices
             List<int> all_hairs = Farmer.GetAllHairstyleIndices();
+
+            // Filter to vanilla-only if modded hair is disabled in config
+            if (!StardewOutfitManager.Config.IncludeModdedHairstyles)
+            {
+                all_hairs = all_hairs.Where(i => i <= VANILLA_HAIR_MAX).ToList();
+            }
+
             int current_index = all_hairs.IndexOf(farmer.hair.Value);
+
+            // If current hair not in filtered list, reset to first valid
+            if (current_index < 0)
+            {
+                current_index = 0;
+            }
+
             current_index += change;
+
             if (current_index >= all_hairs.Count)
             {
                 current_index = 0;
             }
             else if (current_index < 0)
             {
-                current_index = all_hairs.Count() - 1;
+                current_index = all_hairs.Count - 1;
             }
+
             // Update farmer hairstyle
             farmer.changeHairStyle(all_hairs[current_index]);
+
             // If a label was given, update the label with the correct hairstyle name
             if (label != null)
             {
-                label.name = GetHairOrAccessoryName(menu, name, current_index);
+                label.name = GetHairOrAccessoryName(menu, name, all_hairs[current_index]);
             }
             Game1.playSound("grassyStep");
         }
@@ -132,34 +142,45 @@ namespace StardewOutfitManager.Utils
         // Change to next or prior accessory in the accessory indices
         public static void AccessorySwap(this IClickableMenu menu, string name, int change, Farmer farmer, ClickableComponent label = null)
         {
-            int newAccValue = (int)farmer.accessory.Value + change;
-            // Taken from the game hardcoding -- these should be made dynamic if I want to add more or exclude beards
-            // Taking out beards (0-6) and the duckbill (18) for now
-            if (newAccValue < 6)
+            // Get all valid accessory indices based on config
+            List<int> validAccessories = AccessoryMethods.GetAllAccessoryIndices(
+                StardewOutfitManager.Config.IncludeFacialHair,
+                StardewOutfitManager.Config.IncludeModdedAccessories
+            );
+
+            int currentValue = farmer.accessory.Value;
+            int currentIndex = validAccessories.IndexOf(currentValue);
+
+            // If current accessory not in valid list, reset to first (none/-1)
+            if (currentIndex < 0)
             {
-                if (change == -1) { newAccValue = newAccValue < -1 ? 17 : -1; } // Hop down to 0 from 6 and then loop around if we're going left
-                else { newAccValue = 6; } // Else hop up to 6 if right
+                currentIndex = 0;
             }
-            if (newAccValue >= -1)
-            {
-                if (newAccValue >= 18)
-                {
-                    newAccValue = -1;
-                }
-                farmer.accessory.Set(newAccValue);
-            }
-            // If a label was given, update the label with the correct accesory name
+
+            // Move to next/previous
+            currentIndex += change;
+
+            // Wrap around
+            if (currentIndex >= validAccessories.Count)
+                currentIndex = 0;
+            else if (currentIndex < 0)
+                currentIndex = validAccessories.Count - 1;
+
+            int newValue = validAccessories[currentIndex];
+            farmer.accessory.Set(newValue);
+
+            // If a label was given, update the label with the correct accessory name
             if (label != null)
             {
-                label.name = GetHairOrAccessoryName(menu, name, newAccValue);
+                label.name = GetHairOrAccessoryName(menu, name, newValue);
             }
             Game1.playSound("purchase");
         }
 
         // Get hair or accessory name given a type and index # value
+        // JSON keys match the actual index values (e.g., key "-1" for None, key "0" for first accessory)
         public static string GetHairOrAccessoryName(this IClickableMenu menu, string stringType, int value)
         {
-            value++;
             string valueString = value.ToString();
             IDictionary<string, string> dictToCheck = (stringType == "Hair") ? StardewOutfitManager.assetManager.hairJSON : StardewOutfitManager.assetManager.accessoryJSON;
             if (dictToCheck.ContainsKey(valueString))
@@ -168,8 +189,9 @@ namespace StardewOutfitManager.Utils
             }
             else
             {
+                // Fallback for unknown indices - use 1-based display for user-friendliness
                 string prefix = (stringType == "Hair") ? "Hair " : "Accessory ";
-                return prefix + valueString;
+                return prefix + (value + 1).ToString();
             }
         }
     }

@@ -58,6 +58,7 @@ namespace StardewOutfitManager
             helper.Events.Input.ButtonsChanged += OnButtonsChanged;
             helper.Events.GameLoop.DayEnding += OnDayEnding;
             helper.Events.Content.AssetRequested += OnAssetRequested;
+            helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         }
@@ -126,10 +127,40 @@ namespace StardewOutfitManager
                 tooltip: () => "When enabled, Mirror Dressers can randomly appear in the Traveling Merchant's inventory on Fridays and Sundays. The cart picks one random furniture item per visit, so dressers won't appear every time. Prices range from 250g to 2500g regardless of base value."
             );
 
-            // Clothes Options section (placeholder for future options)
+            // Hair & Accessory Options section
             configMenu.AddSectionTitle(
                 mod: ModManifest,
-                text: () => "Clothes Options"
+                text: () => "Hair & Accessory Options"
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.IncludeFacialHair,
+                setValue: value => {
+                    Config.IncludeFacialHair = value;
+                    Utils.AccessoryMethods.InvalidateCache();
+                },
+                name: () => "Include Facial Hair",
+                tooltip: () => "When enabled, facial hair (beards, mustaches, etc.) appear in the accessory picker. When disabled, only non-facial-hair accessories like glasses and earrings are available."
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.IncludeModdedHairstyles,
+                setValue: value => Config.IncludeModdedHairstyles = value,
+                name: () => "Include Modded Hairstyles",
+                tooltip: () => "When enabled, custom hairstyles from mods appear in the hair picker. When disabled, only vanilla hairstyles (0-73) are available."
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.IncludeModdedAccessories,
+                setValue: value => {
+                    Config.IncludeModdedAccessories = value;
+                    Utils.AccessoryMethods.InvalidateCache();
+                },
+                name: () => "Include Modded Accessories",
+                tooltip: () => "When enabled, custom accessories from mods appear in the accessory picker. When disabled, only vanilla 1.6 accessories are available."
             );
         }
 
@@ -163,6 +194,18 @@ namespace StardewOutfitManager
         private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
         {
             assetManager.HandleAssetRequested(e);
+        }
+
+        // Invalidate caches when relevant assets are reloaded (e.g., when mods add/remove accessories)
+        private void OnAssetsInvalidated(object sender, AssetsInvalidatedEventArgs e)
+        {
+            foreach (var name in e.NamesWithoutLocale)
+            {
+                if (name.IsEquivalentTo("Characters/Farmer/accessories"))
+                {
+                    AccessoryMethods.InvalidateCache();
+                }
+            }
         }
 
         // Look for the dresser display menu when a menu changes and insert the new Wardrobe menu instead
