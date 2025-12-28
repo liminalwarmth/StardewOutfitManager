@@ -147,14 +147,22 @@ namespace StardewOutfitManager.Menus
             _displayFarmer.FarmerSprite.StopAnimation();
 
             // Equipment slot displays
-            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            // Layout WITH rings: [Hat][Shirt][Left Ring] / [Boots][Pants][Right Ring] (3 columns)
+            // Layout WITHOUT rings: [Hat][Shirt] / [Boots][Pants] (2 columns, centered)
+            bool includeRings = StardewOutfitManager.Config.IncludeRingsInOutfits;
+            int numCols = includeRings ? 3 : 2;
+            int gridWidth = numCols * 64;
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - gridWidth / 2;
             int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat"));
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64), "Shirt"));
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64), "Pants"));
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64), "Boots"));
-            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
-            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
+            if (includeRings)
+            {
+                equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring"));
+                equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring"));
+            }
 
             // Player display window movement buttons
             leftSelectionButtons.Add(new ClickableTextureComponent("Direction", new Rectangle(_portraitBox.X - 42, _portraitBox.Bottom - 24, 60, 60), null, "", Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 44), 1.25f));
@@ -669,14 +677,20 @@ namespace StardewOutfitManager.Menus
             _portraitBox = new Rectangle(xPositionOnScreen + borderWidth + spaceToClearSideBorder, yPositionOnScreen + 64, 256, 384);
 
             // Reposition equipment icons
-            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            bool includeRings = StardewOutfitManager.Config.IncludeRingsInOutfits;
+            int numCols = includeRings ? 3 : 2;
+            int gridWidth = numCols * 64;
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - gridWidth / 2;
             int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
             equipmentIcons[0].bounds = new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64);           // Hat
             equipmentIcons[1].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64);      // Shirt
             equipmentIcons[2].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64); // Pants
             equipmentIcons[3].bounds = new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64);      // Boots
-            equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
-            equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
+            if (includeRings && equipmentIcons.Count > 4)
+            {
+                equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
+                equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
+            }
 
             // Reposition selection buttons
             int selectorBtnsX = xPositionOnScreen + width / 2 + IClickableMenu.borderWidth + IClickableMenu.spaceToClearSideBorder - 120;
