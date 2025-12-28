@@ -51,6 +51,17 @@ namespace StardewOutfitManager.Utils
                 outfit.Items.Add("RightRing", outfit.tagItemAsFavorite(player.rightRing.Value));
             }
 
+            // Store QualifiedItemIds for recreating items when missing from dresser
+            outfit.ItemIds.Add("Hat", player.hat.Value?.QualifiedItemId);
+            outfit.ItemIds.Add("Shirt", player.shirtItem.Value?.QualifiedItemId);
+            outfit.ItemIds.Add("Pants", player.pantsItem.Value?.QualifiedItemId);
+            outfit.ItemIds.Add("Shoes", player.boots.Value?.QualifiedItemId);
+            if (StardewOutfitManager.Config.IncludeRingsInOutfits)
+            {
+                outfit.ItemIds.Add("LeftRing", player.leftRing.Value?.QualifiedItemId);
+                outfit.ItemIds.Add("RightRing", player.rightRing.Value?.QualifiedItemId);
+            }
+
             // Store clothing dye colors for dyeable items (allows same item with different dyes to be saved separately)
             outfit.ItemColors.Add("Shirt", getClothingColorString(player.shirtItem.Value));
             outfit.ItemColors.Add("Pants", getClothingColorString(player.pantsItem.Value));
@@ -313,6 +324,54 @@ namespace StardewOutfitManager.Utils
             }
             // Return the available items
             return itemAvailability;
+        }
+
+        // Creates temporary items from stored QualifiedItemIds for display purposes (e.g., showing intended outfit on farmer preview)
+        // Returns dictionary mapping slot name -> Item (null if no ItemId stored or creation fails)
+        public static Dictionary<string, Item> GetOutfitIntendedItems(this FavoriteOutfit f)
+        {
+            Dictionary<string, Item> intendedItems = new();
+
+            // Process each slot that has a stored QualifiedItemId
+            foreach (string slotKey in new[] { "Hat", "Shirt", "Pants", "Shoes", "LeftRing", "RightRing" })
+            {
+                // Skip ring slots if rings are disabled in config
+                if (!StardewOutfitManager.Config.IncludeRingsInOutfits &&
+                    (slotKey == "LeftRing" || slotKey == "RightRing"))
+                    continue;
+
+                // Check if we have a QualifiedItemId for this slot
+                if (f.ItemIds != null && f.ItemIds.TryGetValue(slotKey, out string qualifiedId) && !string.IsNullOrEmpty(qualifiedId))
+                {
+                    // Create the item using ItemRegistry (returns null if invalid)
+                    Item item = ItemRegistry.Create(qualifiedId, allowNull: true);
+
+                    // Apply stored dye color for clothing items
+                    if (item is Clothing clothing && clothing.dyeable.Value &&
+                        f.ItemColors != null && f.ItemColors.TryGetValue(slotKey, out string colorStr) && !string.IsNullOrEmpty(colorStr))
+                    {
+                        string[] parts = colorStr.Split(',');
+                        if (parts.Length == 4 &&
+                            byte.TryParse(parts[0], out byte r) &&
+                            byte.TryParse(parts[1], out byte g) &&
+                            byte.TryParse(parts[2], out byte b) &&
+                            byte.TryParse(parts[3], out byte a))
+                        {
+                            clothing.clothesColor.Value = new Color(r, g, b, a);
+                        }
+                    }
+
+                    intendedItems[slotKey] = item;
+                }
+                // If no ItemId but we have an Item tag, the slot was used but we can't recreate (legacy data)
+                else if (f.Items != null && f.Items.TryGetValue(slotKey, out string tag) && !string.IsNullOrEmpty(tag))
+                {
+                    // Mark as intended but not recreatable (null value means slot should exist but item unavailable)
+                    intendedItems[slotKey] = null;
+                }
+            }
+
+            return intendedItems;
         }
 
         // Looks up the actual item in a pre-built lookup dictionary by tag reference ID (or null if not found)
