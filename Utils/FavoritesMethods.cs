@@ -11,7 +11,6 @@ using StardewValley;
 using StardewOutfitManager.Utils;
 using StardewOutfitManager.Managers;
 using StardewOutfitManager.Data;
-using System.Xml.Linq;
 
 namespace StardewOutfitManager.Utils
 {

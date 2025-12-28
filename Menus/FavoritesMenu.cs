@@ -1211,7 +1211,7 @@ namespace StardewOutfitManager.Menus
                 // OutfitNamingMenu handles all positioning internally (textbox centering, layout, resize)
                 OutfitNamingMenu namingMenu = new OutfitNamingMenu(
                     OnOutfitRenamed,
-                    "Name This Outfit",
+                    "Rename Outfit",
                     currentName,
                     outfitSlotSelected.modelOutfit.Category,
                     OnRenameCancelled,
