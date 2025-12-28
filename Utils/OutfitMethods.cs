@@ -69,8 +69,9 @@ namespace StardewOutfitManager.Utils
                 }
                 if (itemLabel != null) itemLabel.name = (farmer.boots.Value != null) ? farmer.boots.Value.DisplayName : "None";
             }
-            else if (category == "LeftRing") 
-            { 
+            // Ring slots - only process if rings are included in outfits
+            else if (StardewOutfitManager.Config.IncludeRingsInOutfits && category == "LeftRing")
+            {
                 // Put the current slot back in the dresser if it exists
                 if (farmer.leftRing.Value != null) { dresserObject.heldItems.Add(farmer.leftRing.Value);}
                 // Equip the new item or unequip the current slot if there is no new ring item given
@@ -78,7 +79,7 @@ namespace StardewOutfitManager.Utils
                 else { farmer.leftRing.Set(itemToEquip as Ring); }
                 if (itemLabel != null) itemLabel.name = (farmer.leftRing.Value != null) ? farmer.leftRing.Value.DisplayName : "None";
             }
-            else if (category == "RightRing")
+            else if (StardewOutfitManager.Config.IncludeRingsInOutfits && category == "RightRing")
             {
                 // Put the current slot back in the dresser if it exists
                 if (farmer.rightRing.Value != null) { dresserObject.heldItems.Add(farmer.rightRing.Value);}

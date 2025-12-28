@@ -82,10 +82,18 @@ namespace StardewOutfitManager
                 }
             );
 
-            // Wardrobe Options section (placeholder for future options)
+            // Wardrobe Options section
             configMenu.AddSectionTitle(
                 mod: ModManifest,
                 text: () => "Wardrobe Options"
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.IncludeRingsInOutfits,
+                setValue: value => Config.IncludeRingsInOutfits = value,
+                name: () => "Include Rings in Outfits",
+                tooltip: () => "When enabled, rings are saved and equipped as part of outfits. When disabled, rings are excluded from outfit management and ring slots are hidden from the UI."
             );
 
             // New Dresser Types section

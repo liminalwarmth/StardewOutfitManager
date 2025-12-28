@@ -20,5 +20,11 @@ namespace StardewOutfitManager
         /// If enabled, Mirror Dressers can appear in the Traveling Merchant's random furniture selection.
         /// </summary>
         public bool TravelingMerchantSellsDressers { get; set; } = true;
+
+        /// <summary>
+        /// If enabled, rings are included when saving and equipping outfits.
+        /// When disabled, rings are excluded and ring slots are hidden from the UI.
+        /// </summary>
+        public bool IncludeRingsInOutfits { get; set; } = true;
     }
 }

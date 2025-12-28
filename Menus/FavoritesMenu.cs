@@ -393,10 +393,14 @@ namespace StardewOutfitManager.Menus
             };
 
             // Equipment icons for selected outfit display (below portrait)
-            // Layout: [Hat][Shirt][Left Ring]
-            //         [Boots][Pants][Right Ring]
-            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            // Layout WITH rings: [Hat][Shirt][Left Ring] / [Boots][Pants][Right Ring] (3 columns)
+            // Layout WITHOUT rings: [Hat][Shirt] / [Boots][Pants] (2 columns, centered)
+            bool includeRings = StardewOutfitManager.Config.IncludeRingsInOutfits;
+            int numCols = includeRings ? 3 : 2;
+            int gridWidth = numCols * 64;
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - gridWidth / 2;
             int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
+
             equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64), "Hat")
             {
                 myID = 5000,
@@ -410,7 +414,7 @@ namespace StardewOutfitManager.Menus
             {
                 myID = 5001,
                 leftNeighborID = 5000,
-                rightNeighborID = 5004,
+                rightNeighborID = includeRings ? 5004 : ClickableComponent.SNAP_AUTOMATIC,
                 downNeighborID = 5002,
                 upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
                 region = EQUIPMENT
@@ -419,7 +423,7 @@ namespace StardewOutfitManager.Menus
             {
                 myID = 5002,
                 leftNeighborID = 5003,
-                rightNeighborID = 5005,
+                rightNeighborID = includeRings ? 5005 : ClickableComponent.SNAP_AUTOMATIC,
                 upNeighborID = 5001,
                 downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
                 region = EQUIPMENT
@@ -433,24 +437,29 @@ namespace StardewOutfitManager.Menus
                 leftNeighborID = ClickableComponent.SNAP_AUTOMATIC,
                 region = EQUIPMENT
             });
-            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring")
+
+            // Only add ring slots if rings are included in outfits
+            if (includeRings)
             {
-                myID = 5004,
-                leftNeighborID = 5001,
-                downNeighborID = 5005,
-                upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                region = EQUIPMENT
-            });
-            equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring")
-            {
-                myID = 5005,
-                leftNeighborID = 5002,
-                upNeighborID = 5004,
-                downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
-                region = EQUIPMENT
-            });
+                equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64), "Left Ring")
+                {
+                    myID = 5004,
+                    leftNeighborID = 5001,
+                    downNeighborID = 5005,
+                    upNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                    rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                    region = EQUIPMENT
+                });
+                equipmentIcons.Add(new ClickableComponent(new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64), "Right Ring")
+                {
+                    myID = 5005,
+                    leftNeighborID = 5002,
+                    upNeighborID = 5004,
+                    downNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                    rightNeighborID = ClickableComponent.SNAP_AUTOMATIC,
+                    region = EQUIPMENT
+                });
+            }
 
             // Basic UI Functionality Buttons
             okButton = new ClickableTextureComponent("OK", new Rectangle(base.xPositionOnScreen + base.width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, base.yPositionOnScreen + base.height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64), null, null, Game1.mouseCursors, Game1.getSourceRectForStandardTileSheet(Game1.mouseCursors, 46), 1f)
@@ -1215,14 +1224,20 @@ namespace StardewOutfitManager.Menus
             deleteButton.bounds = new Rectangle(_portraitBox.Right + 8, _portraitBox.Y + 56 + 8, 56, 56);
 
             // Reposition equipment icons
-            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - 81 - 16;
+            bool includeRings = StardewOutfitManager.Config.IncludeRingsInOutfits;
+            int numCols = includeRings ? 3 : 2;
+            int gridWidth = numCols * 64;
+            int eqIconXOffset = _portraitBox.X + _portraitBox.Width / 2 - gridWidth / 2;
             int eqIconYOffset = _portraitBox.Y + _portraitBox.Height + 32;
             equipmentIcons[0].bounds = new Rectangle(eqIconXOffset, eqIconYOffset, 64, 64);           // Hat
             equipmentIcons[1].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset, 64, 64);      // Shirt
             equipmentIcons[2].bounds = new Rectangle(eqIconXOffset + 64, eqIconYOffset + 64, 64, 64); // Pants
             equipmentIcons[3].bounds = new Rectangle(eqIconXOffset, eqIconYOffset + 64, 64, 64);      // Boots
-            equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
-            equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
+            if (includeRings && equipmentIcons.Count > 4)
+            {
+                equipmentIcons[4].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset, 64, 64);     // Left Ring
+                equipmentIcons[5].bounds = new Rectangle(eqIconXOffset + 128, eqIconYOffset + 64, 64, 64);// Right Ring
+            }
 
             // Reposition OK button
             okButton.bounds = new Rectangle(xPositionOnScreen + width - IClickableMenu.borderWidth - IClickableMenu.spaceToClearSideBorder - 56, yPositionOnScreen + height - IClickableMenu.borderWidth - IClickableMenu.spaceToClearTopBorder + 28, 64, 64);
@@ -1399,10 +1414,12 @@ namespace StardewOutfitManager.Menus
             if (slot == null) return;
 
             // Infobox dimensions - use 64x64 slots like WardrobeMenu for proper item alignment
+            bool includeRings = StardewOutfitManager.Config.IncludeRingsInOutfits;
             int itemSize = 64;
             int padding = 16;
             int gridSpacing = 0;
-            int gridWidth = 3 * itemSize + 2 * gridSpacing;
+            int numCols = includeRings ? 3 : 2;
+            int gridWidth = numCols * itemSize + (numCols - 1) * gridSpacing;
 
             // Measure the outfit name to determine if we need a wider box (add quotes around saved outfit names)
             string displayName = $"\"{slot.outfitName}\"";
@@ -1434,18 +1451,23 @@ namespace StardewOutfitManager.Menus
             // Draw outfit name left-aligned within the box
             Utility.drawTextWithShadow(b, displayName, Game1.smallFont, new Vector2(boxX + padding, boxY + padding), Game1.textColor);
 
-            // Draw 2x3 item grid below the name, centered if box is wider than grid
+            // Draw item grid below the name, centered if box is wider than grid
+            // WITH rings: 2x3 grid - Hat, Shirt, LeftRing (top row), Shoes, Pants, RightRing (bottom row)
+            // WITHOUT rings: 2x2 grid - Hat, Shirt (top row), Shoes, Pants (bottom row)
             int gridX = boxX + (boxWidth - gridWidth) / 2;
             int gridY = boxY + padding + 32;
 
-            // Slot keys in order: Hat, Shirt, Left Ring (top row), Boots, Pants, Right Ring (bottom row)
-            string[] slotKeys = { "Hat", "Shirt", "LeftRing", "Shoes", "Pants", "RightRing" };
-            int[] emptyIcons = { EMPTY_HAT_ICON, EMPTY_SHIRT_ICON, EMPTY_RING_ICON, EMPTY_BOOTS_ICON, EMPTY_PANTS_ICON, EMPTY_RING_ICON };
+            string[] slotKeys = includeRings
+                ? new[] { "Hat", "Shirt", "LeftRing", "Shoes", "Pants", "RightRing" }
+                : new[] { "Hat", "Shirt", "Shoes", "Pants" };
+            int[] emptyIcons = includeRings
+                ? new[] { EMPTY_HAT_ICON, EMPTY_SHIRT_ICON, EMPTY_RING_ICON, EMPTY_BOOTS_ICON, EMPTY_PANTS_ICON, EMPTY_RING_ICON }
+                : new[] { EMPTY_HAT_ICON, EMPTY_SHIRT_ICON, EMPTY_BOOTS_ICON, EMPTY_PANTS_ICON };
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < slotKeys.Length; i++)
             {
-                int col = i % 3;
-                int row = i / 3;
+                int col = i % numCols;
+                int row = i / numCols;
                 int itemX = gridX + col * (itemSize + gridSpacing);
                 int itemY = gridY + row * (itemSize + gridSpacing);
 
