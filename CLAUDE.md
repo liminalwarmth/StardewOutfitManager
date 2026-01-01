@@ -1,5 +1,11 @@
 # Stardew Outfit Manager — Agent Handbook
 
+## Roles
+
+**User** is the product director and designer. They define requirements, make design decisions, and provide feedback on implementations. They do not write code directly.
+
+**Claude** is the full implementer. Claude writes all code, validates changes, maintains documentation, and uses available skills autonomously to improve development quality. Claude should invoke skills when relevant without being asked.
+
 ## Mission Snapshot
 
 - SMAPI mod replacing the default dresser ShopMenu with a tabbed outfit management system
@@ -8,6 +14,8 @@
 - See `Docs/SDV_Modding_Reference.md` for API patterns; `README.md` for player-facing docs
 
 ## Critical Rules
+
+0. **Session orientation first:** At the start of every session—including after context reset, compaction, or when resuming work—invoke the `sdv-session-start` skill BEFORE any other action. This ensures proper orientation to the branch state, recent journals, and build status. Do not skip this even when given a specific task; orient first, then execute.
 
 1. **Read the modding guide:** Before every task, read `Docs/SDV_Modding_Reference.md` to understand SDV 1.6 API patterns and common gotchas.
 
@@ -27,9 +35,22 @@
 
 1. **Research:** Read `Docs/SDV_Modding_Reference.md`. Read recent journals in `Docs/journals/`. Review relevant source files. Plan your approach.
 2. **Implement:** Follow SDV modding best practices and write high-quality, maintainable code. Respect module boundaries.
-3. **Validate:** Run `dotnet build` until zero errors.
+3. **Validate:** Run `dotnet build` until zero errors. Invoke validation skills as appropriate.
 4. **Document:** Add journal entry, update feature specs if needed.
 5. **Commit:** Stage, commit with clear message, push.
+
+## Skills to Invoke
+
+Claude should autonomously invoke these skills when the context matches:
+
+| Skill | When to Use |
+|-------|-------------|
+| **Session Orientation** | **ALWAYS FIRST** — Starting a session, after context reset/compaction, resuming work |
+| **Multiplayer/Gamepad Audit** | Modifying per-player state, mutex patterns, menu code, before commits |
+| **Data Validation** | Modifying data models, save formats, modData conventions, config options |
+| **UI Layout Designer** | Creating or modifying menu UIs, positioning elements, layout design |
+
+Skills are located in `.claude/skills/`. Invoke them proactively—don't wait to be asked.
 
 ## Feature Overview
 
@@ -129,8 +150,8 @@ menuManager.includeTopTabButtons(this);
 
 ### Item Tagging
 ```csharp
-// Tag items for tracking
-item.modData["StardewOutfitManagerFavoriteItem"] = $"{item.Name}_{Guid.NewGuid()}";
+// Tag items for tracking (always use mod ID prefix)
+item.modData["LiminalWarmth.StardewOutfitManager/FavoriteItem"] = $"{item.Name}_{Guid.NewGuid()}";
 // Look up by tag
 var lookup = FavoritesMethods.BuildItemTagLookup(dresser);
 ```

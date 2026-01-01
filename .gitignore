@@ -14,3 +14,9 @@ Thumbs.db
 
 # Mod deploy
 *.zip
+
+# Reference mods (cloned for research, not committed)
+.reference/
+
+# Conductor workspace files
+.context/
