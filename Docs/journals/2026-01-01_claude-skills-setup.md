@@ -107,6 +107,25 @@ After testing skills, made the following refinements:
 3. **Fixed modData key example in CLAUDE.md**
    - Changed from unprefixed legacy key to proper `LiminalWarmth.StardewOutfitManager/` prefix
 
+## Hook Fix (PR Review Follow-up)
+
+During PR review, discovered the pre-commit hook wasn't firing:
+
+**Root Cause:**
+- Hook config was in `.claude/hooks/hooks.json` (wrong location)
+- Should be in `.claude/settings.json` under a `hooks` key
+- The `type: "prompt"` was advisory only; needed `type: "command"` for actual blocking
+
+**Fix Applied:**
+1. Created `.claude/settings.json` with proper hook configuration
+2. Updated `pre-commit-check.sh` to:
+   - Read JSON from stdin to get the Bash command
+   - Only run validation when command contains "git commit"
+   - Use exit code 2 to block commits on build failure
+3. Removed obsolete `.claude/hooks/hooks.json`
+
+**Note:** Hooks may not fire in Conductor environment due to different tool invocation path. The configuration is now correct for native Claude Code usage.
+
 ## Next Steps
 - Continue testing skills in development work
 - Add missing reference materials as needed
