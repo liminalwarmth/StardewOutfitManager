@@ -37,7 +37,7 @@
 2. **Implement:** Follow SDV modding best practices and write high-quality, maintainable code. Respect module boundaries.
 3. **Validate:** Run `dotnet build` until zero errors. Invoke validation skills as appropriate.
 4. **Document:** Add journal entry, update feature specs if needed.
-5. **Commit:** Stage, commit with clear message, push. Pre-commit validation will block if issues exist.
+5. **Commit:** Stage, commit with clear message, push.
 
 ## Skills to Invoke
 
