@@ -1,0 +1,13 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "If this Bash command is a git commit, perform pre-commit validation:\n\n1. **Build Check**: Verify `dotnet build` passes with 0 errors\n2. **Multiplayer/Gamepad Audit**: Check for PerScreen usage, mutex patterns, and gamepad navigation issues\n3. **Data Validation**: Verify modData key conventions and data structure integrity\n4. **Journal Entry**: Ensure a journal entry exists for this session's work in Docs/journals/\n\nIf any critical issues are found, recommend blocking the commit and report the issues. Only allow the commit to proceed if all checks pass.\n\nIf this is NOT a git commit command, proceed normally without validation."
+        }
+      ]
+    }
+  ]
+}
